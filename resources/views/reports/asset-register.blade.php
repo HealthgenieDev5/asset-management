@@ -4,7 +4,7 @@
     <div class="mb-5 flex items-center justify-between flex-wrap gap-3">
         <div>
             <flux:heading size="xl" class="font-extrabold">Asset <span class="text-accent">Register</span></flux:heading>
-            <flux:text class="text-zinc-400 mt-1">Complete list of all company assets.</flux:text>
+            <flux:text class="text-zinc-500 dark:text-zinc-400 mt-1">Complete list of all company assets.</flux:text>
         </div>
         <div class="flex gap-2 text-xs text-zinc-500">
             {{ $assets->total() }} {{ Str::plural('asset', $assets->total()) }}
@@ -17,10 +17,10 @@
         'exportUrl'  => route('assets.export', array_filter(request()->only(['category_id', 'subcategory_id', 'department', 'status', 'search']))),
     ])
 
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 overflow-x-auto print:border-0 print:bg-white">
+    <div class="rounded-xl border border-zinc-200 bg-white overflow-x-auto dark:border-zinc-800 dark:bg-zinc-900 print:border-0 print:bg-white">
         <table class="w-full text-sm print:text-xs">
             <thead>
-                <tr class="border-b border-zinc-800 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 print:border-gray-300 print:text-gray-600">
+                <tr class="border-b border-zinc-200 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:border-zinc-800 print:border-gray-300 print:text-gray-600">
                     <th class="px-4 py-3">#</th>
                     <th class="px-4 py-3">Code</th>
                     <th class="px-4 py-3">Asset Name</th>
@@ -34,7 +34,7 @@
                     <th class="px-4 py-3">Status</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-800 print:divide-gray-200">
+            <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800 print:divide-gray-200">
                 @forelse ($assets as $asset)
                     <tr class="hover:bg-accent/5 print:hover:bg-transparent">
                         <td class="px-4 py-2.5 text-zinc-500 print:text-gray-400">{{ $assets->firstItem() + $loop->index }}</td>
@@ -42,23 +42,23 @@
                             <a href="{{ route('assets.show', $asset) }}" class="font-mono text-xs font-semibold text-accent print:text-gray-800">{{ $asset->asset_code }}</a>
                         </td>
                         <td class="px-4 py-2.5">
-                            <div class="font-medium text-zinc-100 print:text-gray-900">{{ $asset->asset_name }}</div>
+                            <div class="font-medium text-zinc-800 dark:text-zinc-100 print:text-gray-900">{{ $asset->asset_name }}</div>
                             @if ($asset->manufacturer || $asset->model)
                                 <div class="text-xs text-zinc-500 print:text-gray-500">{{ implode(' · ', array_filter([$asset->manufacturer, $asset->model])) }}</div>
                             @endif
                         </td>
-                        <td class="px-4 py-2.5 text-zinc-300 print:text-gray-700">
+                        <td class="px-4 py-2.5 text-zinc-600 dark:text-zinc-300 print:text-gray-700">
                             {{ $asset->category?->name }}
                             @if ($asset->subcategory)
-                                <span class="text-zinc-500"> / {{ $asset->subcategory->name }}</span>
+                                <span class="text-zinc-400 dark:text-zinc-500"> / {{ $asset->subcategory->name }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-2.5 font-mono text-xs text-zinc-400 print:text-gray-600">{{ $asset->serial_number ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-zinc-400 print:text-gray-600">{{ $asset->location ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-zinc-400 print:text-gray-600">{{ $asset->department ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-zinc-400 print:text-gray-600">{{ $asset->custodian ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-zinc-400 print:text-gray-600">{{ $asset->purchase_date?->format('d M Y') ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-right text-zinc-300 print:text-gray-700">
+                        <td class="px-4 py-2.5 font-mono text-xs text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->serial_number ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->location ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->department ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->custodian ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->purchase_date?->format('d M Y') ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-right text-zinc-700 dark:text-zinc-300 print:text-gray-700">
                             {{ $asset->bill_amount ? '₹ ' . number_format($asset->bill_amount, 2) : '—' }}
                         </td>
                         <td class="px-4 py-2.5">

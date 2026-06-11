@@ -15,7 +15,7 @@
     ];
     $iconClass = $colorMap[$color] ?? $colorMap['lime'];
 @endphp
-<a href="{{ $href }}" class="group flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+<a href="{{ $href }}" class="group flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/60">
     <div class="flex items-start gap-3">
         <span class="inline-flex items-center justify-center rounded-lg border p-2 {{ $iconClass }}">
             @switch($icon)
@@ -38,7 +38,7 @@
             @endswitch
         </span>
         <div class="flex-1 min-w-0">
-            <div class="text-sm font-semibold text-zinc-100 group-hover:text-accent transition-colors">{{ $title }}</div>
+            <div class="text-sm font-semibold text-zinc-800 group-hover:text-accent transition-colors dark:text-zinc-100">{{ $title }}</div>
             <div class="mt-0.5 text-xs leading-relaxed text-zinc-500">{{ $description }}</div>
         </div>
     </div>

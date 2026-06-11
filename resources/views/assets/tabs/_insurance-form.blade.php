@@ -21,13 +21,13 @@
 
     <flux:field>
         <flux:label>Policy From</flux:label>
-        <flux:input type="date" name="policy_date_from" value="{{ $policy?->policy_date_from?->format('Y-m-d') ?? old('policy_date_from') }}" />
+        <x-date-picker name="policy_date_from" value="{{ $policy?->policy_date_from?->format('Y-m-d') ?? old('policy_date_from') }}" />
         @error('policy_date_from') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
     <flux:field>
         <flux:label>Policy Expiry Date</flux:label>
-        <flux:input type="date" name="policy_date_to" value="{{ $policy?->policy_date_to?->format('Y-m-d') ?? old('policy_date_to') }}" />
+        <x-date-picker name="policy_date_to" value="{{ $policy?->policy_date_to?->format('Y-m-d') ?? old('policy_date_to') }}" />
         @error('policy_date_to') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
@@ -57,7 +57,7 @@
 
     <flux:field>
         <flux:label>Bill Date</flux:label>
-        <flux:input type="date" name="bill_date" value="{{ $policy?->bill_date?->format('Y-m-d') ?? old('bill_date') }}" />
+        <x-date-picker name="bill_date" value="{{ $policy?->bill_date?->format('Y-m-d') ?? old('bill_date') }}" />
         @error('bill_date') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 

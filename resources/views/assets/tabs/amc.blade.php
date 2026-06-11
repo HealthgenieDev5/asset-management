@@ -17,8 +17,8 @@
 
     {{-- Add Form --}}
     <div x-show="showForm && editId === null" x-transition x-cloak
-         class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">New AMC Contract</flux:heading>
+         class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-800 dark:text-zinc-300">New AMC Contract</flux:heading>
 
         <form method="POST" action="{{ route('assets.amc.store', $asset) }}"
               enctype="multipart/form-data" class="space-y-4">
@@ -36,7 +36,7 @@
 
     {{-- Contract List --}}
     @if ($asset->amcContracts->isEmpty())
-        <div class="rounded-xl border border-dashed border-zinc-700 bg-zinc-900 py-14 text-center">
+        <div x-show="!showForm" class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-14 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:icon.wrench-screwdriver class="mx-auto size-10 text-zinc-600" />
             <flux:heading class="mt-4 text-zinc-400">No AMC Contracts</flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">Add an Annual Maintenance Contract to track coverage and renewal dates.</flux:text>
@@ -54,16 +54,16 @@
                     $expiryClass = $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-200');
                 @endphp
 
-                <div class="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+                <div class="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
                     {{-- Card header --}}
-                    <div class="flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-800/40 px-5 py-3">
+                    <div class="flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-5 py-3 dark:border-zinc-800 dark:bg-zinc-800/40">
                         <div class="flex items-center gap-3 min-w-0">
                             <flux:icon.wrench-screwdriver class="size-4 shrink-0 text-zinc-400" />
-                            <span class="truncate text-sm font-semibold text-zinc-200">
+                            <span class="truncate text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                                 {{ $amc->vendor_name ?: 'AMC Contract' }}
                             </span>
                             @if ($amc->contract_number)
-                                <span class="font-mono text-xs text-zinc-500">{{ $amc->contract_number }}</span>
+                                <span class="font-mono text-xs text-zinc-500 dark:text-zinc-500">{{ $amc->contract_number }}</span>
                             @endif
                         </div>
                         <div class="flex shrink-0 items-center gap-2">
@@ -76,14 +76,14 @@
                             @endif
                             <button type="button"
                                     @click="editId = editId === {{ $amc->id }} ? null : {{ $amc->id }}"
-                                    class="rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-300 hover:border-accent hover:text-accent transition-colors">
+                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
                                 Edit
                             </button>
                             <form method="POST" action="{{ route('assets.amc.destroy', [$asset, $amc]) }}"
                                   onsubmit="return confirm('Delete this AMC contract?')">
                                 @csrf @method('DELETE')
                                 <button type="submit"
-                                        class="rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors">
+                                        class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors dark:border-zinc-700">
                                     Delete
                                 </button>
                             </form>
@@ -95,11 +95,11 @@
                         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Coverage Type</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-200">{{ $amc->coverage_type_label }}</dd>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $amc->coverage_type_label }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">From</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-200">{{ $amc->amc_date_from?->format('d M Y') ?: '—' }}</dd>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $amc->amc_date_from?->format('d M Y') ?: '—' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
@@ -112,24 +112,24 @@
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Amount</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-200">
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                                     {{ $amc->amc_amount ? '₹ ' . number_format($amc->amc_amount, 2) : '—' }}
                                 </dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Bill No</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-200">{{ $amc->amc_bill_no ?: '—' }}</dd>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $amc->amc_bill_no ?: '—' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-200">
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                                     {{ $amc->reminder_before_days ? $amc->reminder_before_days . ' days' : '—' }}
                                 </dd>
                             </div>
                             @if ($amc->vendor_contact_person || $amc->vendor_phone || $amc->vendor_email)
                                 <div class="sm:col-span-2 lg:col-span-3">
                                     <dt class="text-xs font-medium text-zinc-500">Vendor Contact</dt>
-                                    <dd class="mt-0.5 text-sm text-zinc-200">
+                                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                                         {{ implode(' · ', array_filter([$amc->vendor_contact_person, $amc->vendor_phone, $amc->vendor_email])) }}
                                     </dd>
                                 </div>
@@ -137,13 +137,13 @@
                             @if ($amc->coverage_details)
                                 <div class="sm:col-span-2 lg:col-span-3">
                                     <dt class="text-xs font-medium text-zinc-500">Coverage Details</dt>
-                                    <dd class="mt-0.5 text-sm text-zinc-200 whitespace-pre-line">{{ $amc->coverage_details }}</dd>
+                                    <dd class="mt-0.5 text-sm text-zinc-800 whitespace-pre-line dark:text-zinc-200">{{ $amc->coverage_details }}</dd>
                                 </div>
                             @endif
                             @if ($amc->remarks)
                                 <div>
                                     <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
-                                    <dd class="mt-0.5 text-sm text-zinc-200">{{ $amc->remarks }}</dd>
+                                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $amc->remarks }}</dd>
                                 </div>
                             @endif
                         </dl>
@@ -153,13 +153,13 @@
                             <div class="mt-4 space-y-1.5 border-t border-zinc-800 pt-4">
                                 <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
                                 @foreach ($amc->documents as $doc)
-                                    <div class="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-800/50 px-3 py-2">
+                                    <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
                                         @if ($doc->isImage())
                                             <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
                                         @else
                                             <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
                                         @endif
-                                        <span class="flex-1 truncate text-xs text-zinc-300">{{ $doc->file_original_name }}</span>
+                                        <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
                                         <span class="text-xs text-zinc-600">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
                                         <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
                                            class="text-xs text-accent hover:underline">View</a>
@@ -171,8 +171,8 @@
 
                     {{-- Inline edit form --}}
                     <div x-show="editId === {{ $amc->id }}" x-transition x-cloak
-                         class="border-t border-zinc-800 bg-zinc-950/40 px-5 py-5">
-                        <flux:heading class="mb-4 text-sm font-semibold text-zinc-300">Edit AMC Contract</flux:heading>
+                         class="border-t border-zinc-200 bg-zinc-50/80 px-5 py-5 dark:border-zinc-800 dark:bg-zinc-950/40">
+                        <flux:heading class="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-300">Edit AMC Contract</flux:heading>
                         <form method="POST" action="{{ route('assets.amc.update', [$asset, $amc]) }}"
                               enctype="multipart/form-data" class="space-y-4">
                             @csrf @method('PUT')

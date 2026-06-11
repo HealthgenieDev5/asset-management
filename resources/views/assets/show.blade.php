@@ -13,13 +13,13 @@
                     </span>
                 </div>
                 <flux:heading size="xl" class="font-extrabold mt-1">{{ $asset->asset_name }}</flux:heading>
-                <flux:text class="text-zinc-400 text-sm mt-0.5">
+                <flux:text class="text-zinc-500 text-sm mt-0.5 dark:text-zinc-400">
                     {{ $asset->category?->name }}
                     @if ($asset->subcategory)
-                        <span class="text-zinc-600"> / </span>{{ $asset->subcategory->name }}
+                        <span class="text-zinc-400 dark:text-zinc-600"> / </span>{{ $asset->subcategory->name }}
                     @endif
                     @if ($asset->manufacturer || $asset->model)
-                        <span class="text-zinc-600"> · </span>{{ implode(' ', array_filter([$asset->manufacturer, $asset->model])) }}
+                        <span class="text-zinc-400 dark:text-zinc-600"> · </span>{{ implode(' ', array_filter([$asset->manufacturer, $asset->model])) }}
                     @endif
                 </flux:text>
             </div>
@@ -46,13 +46,13 @@
     <div class="flex gap-6 lg:flex-row flex-col" x-data="{ tab: '{{ $tab }}' }">
         {{-- Vertical Tab List --}}
         <nav class="lg:w-48 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible shrink-0
-                    border-b lg:border-b-0 lg:border-r border-zinc-800 pb-2 lg:pb-0 lg:pr-2">
+                    border-b lg:border-b-0 lg:border-r border-zinc-200 pb-2 lg:pb-0 lg:pr-2 dark:border-zinc-800">
             @foreach ($tabs as $key => $tabInfo)
                 <button type="button"
                         @click="tab = '{{ $key }}'"
                         :class="tab === '{{ $key }}'
                             ? 'bg-accent/10 text-accent border-l-2 border-accent lg:rounded-l-none'
-                            : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'"
+                            : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'"
                         class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap text-left w-full">
                     <flux:icon :icon="$tabInfo['icon']" class="size-4 shrink-0" />
                     {{ $tabInfo['label'] }}

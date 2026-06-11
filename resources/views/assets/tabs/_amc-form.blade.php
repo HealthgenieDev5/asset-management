@@ -25,13 +25,13 @@
 
     <flux:field>
         <flux:label>AMC From</flux:label>
-        <flux:input type="date" name="amc_date_from" value="{{ $amc?->amc_date_from?->format('Y-m-d') ?? old('amc_date_from') }}" />
+        <x-date-picker name="amc_date_from" value="{{ $amc?->amc_date_from?->format('Y-m-d') ?? old('amc_date_from') }}" />
         @error('amc_date_from') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
     <flux:field>
         <flux:label>AMC Lapse Date</flux:label>
-        <flux:input type="date" name="amc_date_to" value="{{ $amc?->amc_date_to?->format('Y-m-d') ?? old('amc_date_to') }}" />
+        <x-date-picker name="amc_date_to" value="{{ $amc?->amc_date_to?->format('Y-m-d') ?? old('amc_date_to') }}" />
         @error('amc_date_to') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
@@ -55,7 +55,7 @@
 
     <flux:field>
         <flux:label>Bill Date</flux:label>
-        <flux:input type="date" name="amc_bill_date" value="{{ $amc?->amc_bill_date?->format('Y-m-d') ?? old('amc_bill_date') }}" />
+        <x-date-picker name="amc_bill_date" value="{{ $amc?->amc_bill_date?->format('Y-m-d') ?? old('amc_bill_date') }}" />
         @error('amc_bill_date') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
@@ -99,9 +99,10 @@
 <flux:field>
     <flux:label>AMC Bill / Document</flux:label>
     <input type="file" name="amc_bill_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-           class="block w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200
-                  file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1
-                  file:text-xs file:font-medium file:text-zinc-200 hover:file:bg-zinc-600 focus:outline-none focus:ring-1 focus:ring-accent" />
+           class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                  file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1
+                  file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent
+                  dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600" />
     <flux:description>PDF, JPG, PNG, WEBP — max 5 MB</flux:description>
     @if ($amc?->documents->isNotEmpty())
         <p class="text-xs text-zinc-500">Already uploaded: {{ $amc->documents->first()->file_original_name }} — upload a new file to replace.</p>

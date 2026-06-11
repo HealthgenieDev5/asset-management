@@ -11,6 +11,17 @@ class Asset extends Model
 {
     use SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Asset $asset) {
+            $asset->services()->each(fn ($s) => $s->delete());
+            $asset->amcContracts()->delete();
+            $asset->insurancePolicies()->delete();
+            $asset->extendedWarranties()->delete();
+            $asset->documents()->delete();
+        });
+    }
+
     protected $fillable = [
         'asset_code',
         'asset_name',

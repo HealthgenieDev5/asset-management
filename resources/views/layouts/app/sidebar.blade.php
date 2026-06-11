@@ -3,17 +3,17 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-zinc-950 dark:bg-zinc-950">
+    <body class="min-h-screen bg-zinc-100 dark:bg-zinc-950">
 
         {{-- Mobile top bar --}}
-        <div class="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4 py-3 lg:hidden">
+        <div class="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 lg:hidden dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex items-center gap-2">
                 <div class="flex size-7 items-center justify-center rounded-lg bg-accent">
                     <flux:icon.cube class="size-4 text-zinc-950" />
                 </div>
-                <span class="font-extrabold text-zinc-100">AssetManager</span>
+                <span class="font-extrabold text-zinc-900 dark:text-zinc-100">AssetManager</span>
             </div>
-            <button id="mobile-menu-toggle" class="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100">
+            <button id="mobile-menu-toggle" class="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100">
                 <flux:icon.bars-3 class="size-5" />
             </button>
         </div>
@@ -21,9 +21,10 @@
         <div class="flex min-h-screen lg:min-h-0">
             {{-- Sidebar --}}
             <aside id="sidebar"
-                class="fixed inset-y-0 left-0 z-50 flex w-56 flex-col bg-zinc-900 border-r border-zinc-800
+                class="fixed inset-y-0 left-0 z-50 flex w-56 flex-col bg-white border-r border-zinc-200
                        -translate-x-full transition-transform duration-200
-                       lg:static lg:translate-x-0 lg:min-h-screen">
+                       lg:static lg:translate-x-0 lg:min-h-screen
+                       dark:bg-zinc-900 dark:border-zinc-800">
 
                 {{-- Brand --}}
                 <div class="flex items-center gap-3 px-5 py-5">
@@ -31,7 +32,7 @@
                         <flux:icon.cube class="size-5 text-zinc-950" />
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-extrabold text-zinc-100 leading-tight">AssetManager</p>
+                        <p class="truncate text-sm font-extrabold text-zinc-900 leading-tight dark:text-zinc-100">AssetManager</p>
                         <p class="truncate text-xs text-zinc-500 leading-tight">Fixed Asset System</p>
                     </div>
                 </div>
@@ -79,7 +80,7 @@
 
                     {{-- Assets group --}}
                     <div class="mb-1">
-                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Assets</p>
+                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Assets</p>
                         @foreach ($assetItems as $nav)
                             @include('layouts.app._nav-item', $nav)
                         @endforeach
@@ -87,7 +88,7 @@
 
                     {{-- Reminders --}}
                     <div class="mb-1">
-                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Alerts</p>
+                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Alerts</p>
                         @foreach ($reminderItems as $nav)
                             @include('layouts.app._nav-item', $nav)
                         @endforeach
@@ -95,7 +96,7 @@
 
                     {{-- Reports --}}
                     <div class="mb-1">
-                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Reports</p>
+                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Reports</p>
                         @foreach ($reportItems as $nav)
                             @include('layouts.app._nav-item', $nav)
                         @endforeach
@@ -104,14 +105,14 @@
                 </nav>
 
                 {{-- User footer --}}
-                <div class="border-t border-zinc-800 px-3 py-3">
+                <div class="border-t border-zinc-200 px-3 py-3 dark:border-zinc-800">
                     <flux:dropdown position="top" align="start" class="w-full">
-                        <button class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-zinc-800">
+                        <button class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800">
                             <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">
                                 {{ auth()->user()->initials() }}
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-semibold text-zinc-100">{{ auth()->user()->name }}</p>
+                                <p class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ auth()->user()->name }}</p>
                                 <p class="truncate text-xs text-zinc-500">{{ auth()->user()->email }}</p>
                             </div>
                             <flux:icon.chevron-up-down class="size-4 shrink-0 text-zinc-500" />
@@ -140,7 +141,7 @@
             </div>
 
             {{-- Main content --}}
-            <div class="flex-1 min-w-0 overflow-y-auto">
+            <div class="flex-1 min-w-0 overflow-y-auto bg-zinc-100 dark:bg-zinc-950">
                 {{ $slot }}
             </div>
         </div>

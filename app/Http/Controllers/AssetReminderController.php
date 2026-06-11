@@ -34,6 +34,7 @@ class AssetReminderController extends Controller
 
         // Extended warranties
         AssetExtendedWarranty::whereNotNull('extended_warranty_date_to')
+            ->whereHas('asset')
             ->with('asset.category')
             ->get()
             ->each(function ($ew) use (&$reminders) {
@@ -49,6 +50,7 @@ class AssetReminderController extends Controller
 
         // AMC contracts
         AssetAmcContract::whereNotNull('amc_date_to')
+            ->whereHas('asset')
             ->with('asset.category')
             ->get()
             ->each(function ($amc) use (&$reminders) {
@@ -64,6 +66,7 @@ class AssetReminderController extends Controller
 
         // Insurance policies
         AssetInsurancePolicy::whereNotNull('policy_date_to')
+            ->whereHas('asset')
             ->with('asset.category')
             ->get()
             ->each(function ($policy) use (&$reminders) {
@@ -124,6 +127,7 @@ class AssetReminderController extends Controller
 
         // Next service dates (most recent service record per asset that has a next_service_date)
         AssetService::whereNotNull('next_service_date')
+            ->whereHas('asset')
             ->with('asset.category')
             ->get()
             ->each(function ($svc) use (&$reminders) {
@@ -139,6 +143,7 @@ class AssetReminderController extends Controller
 
         // Certification expiry from service records
         AssetService::whereNotNull('certification_expiry')
+            ->whereHas('asset')
             ->with('asset.category')
             ->get()
             ->each(function ($svc) use (&$reminders) {

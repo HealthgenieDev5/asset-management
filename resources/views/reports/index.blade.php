@@ -1,7 +1,7 @@
 <x-layouts::app title="Reports">
     <div class="mb-6">
         <flux:heading size="xl" class="font-extrabold">Reports <span class="text-accent">Hub</span></flux:heading>
-        <flux:text class="text-zinc-400 mt-1">Browse all reports. Click any card to open the report with filters.</flux:text>
+        <flux:text class="text-zinc-500 dark:text-zinc-400 mt-1">Browse all reports. Click any card to open the report with filters.</flux:text>
     </div>
 
     {{-- Asset Register --}}

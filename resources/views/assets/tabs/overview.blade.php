@@ -5,8 +5,8 @@
 <div class="space-y-6">
 
     {{-- Core Details --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Core Details</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Core Details</flux:heading>
         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ([
                 ['Asset Code',    $asset->asset_code],
@@ -20,7 +20,7 @@
             ] as [$label, $value])
                 <div>
                     <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
-                    <dd class="mt-0.5 text-sm text-zinc-200">
+                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                         @if ($label === 'Asset Code')
                             <span class="font-mono text-accent">{{ $value }}</span>
                         @elseif ($label === 'Status')
@@ -37,8 +37,8 @@
     </div>
 
     {{-- Location & Ownership --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Location & Ownership</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Location & Ownership</flux:heading>
         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ([
                 ['Location',        $asset->location ?: '—'],
@@ -48,15 +48,15 @@
             ] as [$label, $value])
                 <div>
                     <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
-                    <dd class="mt-0.5 text-sm text-zinc-200">{{ $value }}</dd>
+                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $value }}</dd>
                 </div>
             @endforeach
         </dl>
     </div>
 
     {{-- Purchase Details --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Purchase Details</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Purchase Details</flux:heading>
         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             @foreach ([
                 ['Bill Number',   $asset->bill_no ?: '—'],
@@ -66,15 +66,15 @@
             ] as [$label, $value])
                 <div>
                     <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
-                    <dd class="mt-0.5 text-sm text-zinc-200">{{ $value }}</dd>
+                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $value }}</dd>
                 </div>
             @endforeach
         </dl>
     </div>
 
     {{-- Original Warranty --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Original Warranty</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Original Warranty</flux:heading>
         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
             <div class="sm:col-span-2">
                 <dt class="text-xs font-medium text-zinc-500">Warranty Details</dt>
@@ -104,17 +104,17 @@
     </div>
 
     {{-- Maintenance Schedule --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Maintenance Schedule</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Maintenance Schedule</flux:heading>
         <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
                 <dt class="text-xs font-medium text-zinc-500">Schedule Type</dt>
-                <dd class="mt-0.5 text-sm text-zinc-200 capitalize">{{ str_replace('_', ' ', $asset->maintenance_schedule_type) }}</dd>
+                <dd class="mt-0.5 text-sm text-zinc-800 capitalize dark:text-zinc-200">{{ str_replace('_', ' ', $asset->maintenance_schedule_type) }}</dd>
             </div>
             @if ($asset->maintenance_schedule_type !== 'none')
                 <div>
                     <dt class="text-xs font-medium text-zinc-500">Interval</dt>
-                    <dd class="mt-0.5 text-sm text-zinc-200">
+                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                         {{ $asset->maintenance_interval_value }} {{ str_replace('_', ' ', $asset->maintenance_interval_unit) }}
                     </dd>
                 </div>
@@ -130,7 +130,7 @@
             @if ($asset->inspection_required)
                 <div>
                     <dt class="text-xs font-medium text-zinc-500">Inspection Frequency</dt>
-                    <dd class="mt-0.5 text-sm text-zinc-200">
+                    <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                         {{ $asset->inspection_frequency_value }} {{ $asset->inspection_frequency_unit }}
                     </dd>
                 </div>
@@ -140,8 +140,8 @@
 
     {{-- Vehicle Compliance (only for VE category) --}}
     @if ($asset->isVehicle())
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-            <flux:heading class="mb-4 font-semibold text-zinc-300">Vehicle Compliance</flux:heading>
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Vehicle Compliance</flux:heading>
             <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ([
                     ['PUC Expiry',      $asset->puc_expiry_date,      $asset->puc_reminder_before_days],
@@ -153,7 +153,7 @@
                         <dd class="mt-0.5 text-sm">
                             @if ($date)
                                 @php $expired = $date->isPast(); $soon = !$expired && $date->diffInDays(now()) <= 30; @endphp
-                                <span class="{{ $expired ? 'text-red-400' : ($soon ? 'text-yellow-400' : 'text-zinc-200') }}">
+                                <span class="{{ $expired ? 'text-red-400' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
                                     {{ $date->format('d M Y') }}
                                     @if ($expired) <span class="text-xs">(expired)</span>
                                     @elseif ($soon) <span class="text-xs">(expiring soon)</span>
@@ -176,7 +176,7 @@
                 ] as [$label, $value])
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-200">{{ $value }}</dd>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $value }}</dd>
                     </div>
                 @endforeach
             </dl>
@@ -185,9 +185,9 @@
 
     {{-- Remarks --}}
     @if ($asset->remarks)
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-            <flux:heading class="mb-2 font-semibold text-zinc-300">Remarks</flux:heading>
-            <p class="text-sm text-zinc-300 whitespace-pre-line">{{ $asset->remarks }}</p>
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <flux:heading class="mb-2 font-semibold text-zinc-700 dark:text-zinc-300">Remarks</flux:heading>
+            <p class="text-sm text-zinc-700 whitespace-pre-line dark:text-zinc-300">{{ $asset->remarks }}</p>
         </div>
     @endif
 

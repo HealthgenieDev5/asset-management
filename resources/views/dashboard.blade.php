@@ -5,30 +5,29 @@
         <flux:heading size="xl" class="font-extrabold">
             Asset Management <span class="text-accent">Dashboard</span>
         </flux:heading>
-        <flux:text class="mt-1 text-zinc-400">Overview of your company's fixed assets and upcoming reminders.</flux:text>
+        <flux:text class="mt-1 text-zinc-500 dark:text-zinc-400">Overview of your company's fixed assets and upcoming reminders.</flux:text>
     </div>
 
     {{-- ── Row 1: Asset Status Cards ── --}}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         @php
             $statusCards = [
-                ['label' => 'Total Assets',          'value' => $assetStats['total'],             'status' => null,                'icon' => 'clipboard-document-list', 'color' => 'text-accent'],
-                ['label' => 'Active',                'value' => $assetStats['active'],            'status' => 'active',            'icon' => 'check-circle',            'color' => 'text-green-400'],
-                ['label' => 'Under Repair',          'value' => $assetStats['under_repair'],      'status' => 'under_repair',      'icon' => 'wrench-screwdriver',      'color' => 'text-yellow-400'],
-                ['label' => 'Under Maintenance',     'value' => $assetStats['under_maintenance'], 'status' => 'under_maintenance', 'icon' => 'cog-6-tooth',             'color' => 'text-blue-400'],
-                ['label' => 'Disposed / Written Off','value' => $assetStats['disposed'],          'status' => 'disposed',          'icon' => 'archive-box-x-mark',      'color' => 'text-zinc-500'],
-                ['label' => 'Inactive',              'value' => $assetStats['inactive'],          'status' => 'inactive',          'icon' => 'pause-circle',            'color' => 'text-zinc-500'],
+                ['label' => 'Total Assets',          'value' => $assetStats['total'],    'status' => null,           'icon' => 'clipboard-document-list', 'color' => 'text-accent'],
+                ['label' => 'Active',                'value' => $assetStats['active'],   'status' => 'active',       'icon' => 'check-circle',            'color' => 'text-green-400'],
+                ['label' => 'Under Repair',          'value' => $assetStats['under_repair'], 'status' => 'under_repair', 'icon' => 'wrench-screwdriver',  'color' => 'text-yellow-400'],
+                ['label' => 'Disposed / Written Off','value' => $assetStats['disposed'], 'status' => 'disposed',     'icon' => 'archive-box-x-mark',      'color' => 'text-zinc-500'],
+                ['label' => 'Inactive',              'value' => $assetStats['inactive'], 'status' => 'inactive',     'icon' => 'pause-circle',            'color' => 'text-zinc-500'],
             ];
         @endphp
 
         @foreach ($statusCards as $card)
             <a href="{{ route('assets.index', $card['status'] ? ['status' => $card['status']] : []) }}"
-               class="rounded-xl border border-zinc-800 bg-zinc-900 p-5 transition hover:border-zinc-600">
+               class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600">
                 <div class="flex items-center justify-between">
-                    <flux:text class="text-xs font-medium text-zinc-400">{{ $card['label'] }}</flux:text>
+                    <flux:text class="text-xs font-medium text-zinc-500 dark:text-zinc-400">{{ $card['label'] }}</flux:text>
                     <flux:icon :icon="$card['icon']" class="size-4 {{ $card['color'] }}" />
                 </div>
-                <div class="mt-3 text-3xl font-extrabold text-zinc-100">{{ number_format($card['value']) }}</div>
+                <div class="mt-3 text-3xl font-extrabold text-zinc-900 dark:text-zinc-100">{{ number_format($card['value']) }}</div>
             </a>
         @endforeach
     </div>
@@ -36,7 +35,7 @@
     {{-- ── Row 2: Global Reminder Totals ── --}}
     <div class="mt-6 grid gap-4 sm:grid-cols-3">
         <a href="{{ route('asset-reminders.index', ['filter' => 'expired']) }}"
-           class="rounded-xl border border-red-800/50 bg-red-950/20 p-5 transition hover:border-red-700/60">
+           class="rounded-xl border border-red-200 bg-red-50 p-5 transition hover:border-red-300 dark:border-red-800/50 dark:bg-red-950/20 dark:hover:border-red-700/60">
             <div class="flex items-center justify-between">
                 <flux:text class="text-sm font-medium text-red-400">Expired Reminders</flux:text>
                 <flux:icon.exclamation-circle class="size-5 text-red-500" />
@@ -46,7 +45,7 @@
         </a>
 
         <a href="{{ route('asset-reminders.index', ['filter' => 'upcoming']) }}"
-           class="rounded-xl border border-orange-800/50 bg-orange-950/20 p-5 transition hover:border-orange-700/60">
+           class="rounded-xl border border-orange-200 bg-orange-50 p-5 transition hover:border-orange-300 dark:border-orange-800/50 dark:bg-orange-950/20 dark:hover:border-orange-700/60">
             <div class="flex items-center justify-between">
                 <flux:text class="text-sm font-medium text-orange-400">Expiring in 7 Days</flux:text>
                 <flux:icon.clock class="size-5 text-orange-500" />
@@ -56,7 +55,7 @@
         </a>
 
         <a href="{{ route('asset-reminders.index', ['filter' => 'upcoming']) }}"
-           class="rounded-xl border border-yellow-800/50 bg-yellow-950/20 p-5 transition hover:border-yellow-700/60">
+           class="rounded-xl border border-yellow-200 bg-yellow-50 p-5 transition hover:border-yellow-300 dark:border-yellow-800/50 dark:bg-yellow-950/20 dark:hover:border-yellow-700/60">
             <div class="flex items-center justify-between">
                 <flux:text class="text-sm font-medium text-yellow-400">Expiring in 30 Days</flux:text>
                 <flux:icon.calendar-days class="size-5 text-yellow-500" />
@@ -68,7 +67,7 @@
 
     {{-- ── Row 3: Per-Type Expiry Breakdown ── --}}
     <div class="mt-6">
-        <flux:heading class="mb-3 text-sm font-semibold text-zinc-400 uppercase tracking-wider">Expiry Breakdown by Type</flux:heading>
+        <flux:heading class="mb-3 text-sm font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Expiry Breakdown by Type</flux:heading>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             @php
                 $expiryTypes = [
@@ -80,10 +79,10 @@
             @endphp
 
             @foreach ($expiryTypes as $et)
-                <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
                     <div class="flex items-center gap-2 mb-4">
                         <flux:icon :icon="$et['icon']" class="size-4 {{ $et['accent'] }}" />
-                        <flux:text class="text-sm font-semibold text-zinc-300">{{ $et['label'] }}</flux:text>
+                        <flux:text class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{{ $et['label'] }}</flux:text>
                     </div>
                     <div class="space-y-2 text-sm">
                         <div class="flex items-center justify-between">
@@ -107,7 +106,7 @@
     {{-- ── Row 4: Vehicle Compliance ── --}}
     @if ($puc['expired'] + $puc['in7'] + $puc['in30'] + $fitness['expired'] + $fitness['in7'] + $fitness['in30'] + $roadTax['expired'] + $roadTax['in7'] + $roadTax['in30'] > 0)
     <div class="mt-6">
-        <flux:heading class="mb-3 text-sm font-semibold text-zinc-400 uppercase tracking-wider">Vehicle Compliance</flux:heading>
+        <flux:heading class="mb-3 text-sm font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Vehicle Compliance</flux:heading>
         <div class="grid gap-4 sm:grid-cols-3">
             @php
                 $vehicleTypes = [
@@ -118,10 +117,10 @@
             @endphp
 
             @foreach ($vehicleTypes as $vt)
-                <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
                     <div class="flex items-center gap-2 mb-4">
                         <flux:icon :icon="$vt['icon']" class="size-4 {{ $vt['accent'] }}" />
-                        <flux:text class="text-sm font-semibold text-zinc-300">{{ $vt['label'] }}</flux:text>
+                        <flux:text class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{{ $vt['label'] }}</flux:text>
                     </div>
                     <div class="space-y-2 text-sm">
                         <div class="flex items-center justify-between">
@@ -146,7 +145,7 @@
     {{-- ── Row 4b: Service Due & Certification Expiry ── --}}
     @if ($serviceDue['expired'] + $serviceDue['in7'] + $serviceDue['in30'] + $certExpiry['expired'] + $certExpiry['in7'] + $certExpiry['in30'] > 0)
     <div class="mt-6">
-        <flux:heading class="mb-3 text-sm font-semibold text-zinc-400 uppercase tracking-wider">Service &amp; Inspection</flux:heading>
+        <flux:heading class="mb-3 text-sm font-semibold text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Service &amp; Inspection</flux:heading>
         <div class="grid gap-4 sm:grid-cols-2">
             @php
                 $serviceTypes = [
@@ -156,10 +155,10 @@
             @endphp
 
             @foreach ($serviceTypes as $st)
-                <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+                <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
                     <div class="flex items-center gap-2 mb-4">
                         <flux:icon :icon="$st['icon']" class="size-4 {{ $st['accent'] }}" />
-                        <flux:text class="text-sm font-semibold text-zinc-300">{{ $st['label'] }}</flux:text>
+                        <flux:text class="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{{ $st['label'] }}</flux:text>
                     </div>
                     <div class="space-y-2 text-sm">
                         <div class="flex items-center justify-between">
@@ -185,9 +184,9 @@
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
 
         {{-- Upcoming Expiries --}}
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex items-center justify-between mb-4">
-                <flux:heading class="font-semibold text-zinc-300">Upcoming Expiries (30 days)</flux:heading>
+                <flux:heading class="font-semibold text-zinc-700 dark:text-zinc-300">Upcoming Expiries (30 days)</flux:heading>
                 <flux:button href="{{ route('asset-reminders.index') }}" wire:navigate variant="ghost" size="sm">
                     View All
                 </flux:button>
@@ -202,13 +201,13 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="border-b border-zinc-800">
+                            <tr class="border-b border-zinc-200 dark:border-zinc-800">
                                 <th class="pb-2 text-left text-xs font-medium text-zinc-500">Asset</th>
                                 <th class="pb-2 text-left text-xs font-medium text-zinc-500">Type</th>
                                 <th class="pb-2 text-right text-xs font-medium text-zinc-500">Expires</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800/60">
+                        <tbody class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                             @foreach ($upcomingExpiries as $item)
                                 @php
                                     $daysLeft = now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($item['expiry_date'])->startOfDay(), false);
@@ -218,7 +217,7 @@
                                     <td class="py-2 pr-3">
                                         @if ($item['asset_id'])
                                             <a href="{{ route('assets.show', [$item['asset_id'], 'tab' => $item['tab']]) }}"
-                                               class="font-medium text-zinc-200 hover:text-accent transition">
+                                               class="font-medium text-zinc-800 hover:text-accent transition dark:text-zinc-200">
                                                 {{ $item['asset_code'] }}
                                             </a>
                                             <div class="text-xs text-zinc-500 truncate max-w-35">{{ $item['asset_name'] }}</div>
@@ -242,9 +241,9 @@
         </div>
 
         {{-- Recent Assets --}}
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div class="flex items-center justify-between mb-4">
-                <flux:heading class="font-semibold text-zinc-300">Recently Added Assets</flux:heading>
+                <flux:heading class="font-semibold text-zinc-700 dark:text-zinc-300">Recently Added Assets</flux:heading>
                 <flux:button href="{{ route('assets.create') }}" wire:navigate variant="ghost" size="sm">
                     <flux:icon.plus class="size-3" />
                     Add Asset
@@ -263,28 +262,27 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="border-b border-zinc-800">
+                            <tr class="border-b border-zinc-200 dark:border-zinc-800">
                                 <th class="pb-2 text-left text-xs font-medium text-zinc-500">Asset</th>
                                 <th class="pb-2 text-left text-xs font-medium text-zinc-500">Category</th>
                                 <th class="pb-2 text-right text-xs font-medium text-zinc-500">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800/60">
+                        <tbody class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                             @foreach ($recentAssets as $asset)
                                 @php
                                     $statusColor = match($asset->status) {
-                                        'active'            => 'bg-green-900/40 text-green-400',
-                                        'under_repair'      => 'bg-yellow-900/40 text-yellow-400',
-                                        'under_maintenance' => 'bg-blue-900/40 text-blue-400',
-                                        'disposed','written_off' => 'bg-zinc-800 text-zinc-500',
-                                        'inactive'          => 'bg-zinc-800 text-zinc-500',
-                                        default             => 'bg-zinc-800 text-zinc-400',
+                                        'active'            => 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
+                                        'under_repair'           => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
+                                        'disposed','written_off' => 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500',
+                                        'inactive'          => 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500',
+                                        default             => 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
                                     };
                                 @endphp
                                 <tr>
                                     <td class="py-2 pr-3">
                                         <a href="{{ route('assets.show', $asset) }}"
-                                           class="font-medium text-zinc-200 hover:text-accent transition">
+                                           class="font-medium text-zinc-800 hover:text-accent transition dark:text-zinc-200">
                                             {{ $asset->asset_code }}
                                         </a>
                                         <div class="text-xs text-zinc-500 truncate max-w-35">{{ $asset->asset_name }}</div>
@@ -315,8 +313,8 @@
     </div>
 
     {{-- ── Row 6: Quick Actions ── --}}
-    <div class="mt-6 rounded-xl border border-zinc-800 bg-zinc-900 p-5">
-        <flux:heading class="mb-4 font-semibold text-zinc-300">Quick Actions</flux:heading>
+    <div class="mt-6 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Quick Actions</flux:heading>
         <div class="flex flex-wrap gap-3">
             <flux:button href="{{ route('assets.create') }}" wire:navigate variant="ghost" size="sm">
                 <flux:icon.plus class="size-4" />

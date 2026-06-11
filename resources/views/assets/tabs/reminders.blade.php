@@ -63,7 +63,7 @@
 <div class="space-y-5">
     <div class="flex items-center justify-between">
         <div>
-            <flux:heading class="font-semibold text-zinc-200">Expiry Reminders</flux:heading>
+            <flux:heading class="font-semibold text-zinc-800 dark:text-zinc-200">Expiry Reminders</flux:heading>
             <flux:text class="text-xs text-zinc-500 mt-0.5">
                 All tracked expiry dates for this asset.
             </flux:text>
@@ -71,7 +71,7 @@
     </div>
 
     @if ($items->isEmpty())
-        <div class="rounded-xl border border-dashed border-zinc-700 bg-zinc-900 py-14 text-center">
+        <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-14 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:icon.bell-alert class="mx-auto size-10 text-zinc-600" />
             <flux:heading class="mt-4 text-zinc-400">No Expiry Dates Tracked</flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">
@@ -79,10 +79,10 @@
             </flux:text>
         </div>
     @else
-        <div class="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+        <div class="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-zinc-800 bg-zinc-800/40">
+                    <tr class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
                         <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Type</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Detail</th>
                         <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Expiry Date</th>
@@ -91,7 +91,7 @@
                         <th class="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Status</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-800/60">
+                <tbody class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                     @foreach ($items as $item)
                         @php
                             $days    = (int) now()->startOfDay()->diffInDays($item['expiry']->copy()->startOfDay(), false);
@@ -112,24 +112,24 @@
                                 $statusLabel = 'Active';
                                 $statusClass = 'bg-green-400/10 text-green-400';
                                 $daysLabel   = $days . 'd';
-                                $daysClass   = 'text-zinc-200';
+                                $daysClass   = 'text-zinc-800 dark:text-zinc-200';
                             }
 
                             $reminderDate = $item['reminder']
                                 ? $item['expiry']->copy()->subDays($item['reminder'])->format('d M Y')
                                 : '—';
                         @endphp
-                        <tr class="hover:bg-zinc-800/30 transition-colors">
+                        <tr class="hover:bg-zinc-50 transition-colors dark:hover:bg-zinc-800/30">
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <flux:icon :icon="$item['icon']" class="size-4 shrink-0 text-zinc-400" />
-                                    <span class="font-medium text-zinc-200">{{ $item['type'] }}</span>
+                                    <span class="font-medium text-zinc-800 dark:text-zinc-200">{{ $item['type'] }}</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-zinc-400">
+                            <td class="px-4 py-3 text-zinc-500 dark:text-zinc-400">
                                 {{ $item['detail'] ?: '—' }}
                             </td>
-                            <td class="px-4 py-3 text-zinc-200">
+                            <td class="px-4 py-3 text-zinc-800 dark:text-zinc-200">
                                 {{ $item['expiry']->format('d M Y') }}
                             </td>
                             <td class="px-4 py-3 {{ $daysClass }}">

@@ -27,8 +27,8 @@
 }">
 
     {{-- Section: Basic Info --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-5 font-semibold text-zinc-200">Basic Information</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Basic Information</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {{-- Asset Name --}}
@@ -57,7 +57,7 @@
             <flux:field>
                 <flux:label>Category <span class="text-red-400">*</span></flux:label>
                 <select id="category_select" name="asset_category_id"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     x-on:change="loadSubcategories($event.target.value)"
                     required>
                     <option value="">Select Category</option>
@@ -75,7 +75,7 @@
             <flux:field>
                 <flux:label>Subcategory</flux:label>
                 <select name="asset_subcategory_id"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                     <option value="">— None —</option>
                     <template x-for="sub in subcategories" :key="sub.id">
                         <option :value="sub.id"
@@ -98,8 +98,8 @@
     </div>
 
     {{-- Section: Identification --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-5 font-semibold text-zinc-200">Identification & Location</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Identification & Location</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <flux:field>
@@ -153,8 +153,8 @@
     </div>
 
     {{-- Section: Purchase / Bill --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-5 font-semibold text-zinc-200">Purchase & Bill Details</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Purchase & Bill Details</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <flux:field>
@@ -171,21 +171,21 @@
 
             <flux:field>
                 <flux:label>Bill Date</flux:label>
-                <flux:input type="date" name="bill_date" value="{{ $old('bill_date') }}" />
+                <x-date-picker name="bill_date" value="{{ $old('bill_date') }}" />
                 <flux:error name="bill_date" />
             </flux:field>
 
             <flux:field>
                 <flux:label>Purchase Date</flux:label>
-                <flux:input type="date" name="purchase_date" value="{{ $old('purchase_date') }}" />
+                <x-date-picker name="purchase_date" value="{{ $old('purchase_date') }}" />
                 <flux:error name="purchase_date" />
             </flux:field>
         </div>
     </div>
 
     {{-- Section: Warranty --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-5 font-semibold text-zinc-200">Original Warranty</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Original Warranty</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="lg:col-span-2">
@@ -198,7 +198,7 @@
 
             <flux:field>
                 <flux:label>Warranty Lapse Date</flux:label>
-                <flux:input type="date" name="warranty_lapse_date" value="{{ $old('warranty_lapse_date') }}" />
+                <x-date-picker name="warranty_lapse_date" value="{{ $old('warranty_lapse_date') }}" />
                 <flux:error name="warranty_lapse_date" />
             </flux:field>
 
@@ -211,14 +211,14 @@
         </div>
 
         {{-- Warranty document uploads --}}
-        <div class="mt-5 grid gap-4 border-t border-zinc-800 pt-5 sm:grid-cols-2">
+        <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
             {{-- Warranty Card --}}
             <div>
                 <flux:label class="mb-1.5 block">Warranty Card
                     <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
                 </flux:label>
                 @if ($isEdit && ($warrantyCard = $asset->documents->where('document_type', 'warranty_card')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
+                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
                         <a href="{{ Storage::url($warrantyCard->file_path) }}" target="_blank"
                            class="flex-1 truncate text-accent hover:underline">
@@ -231,9 +231,10 @@
                     <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
                 @endif
                 <input type="file" name="warranty_card" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1 file:text-xs file:text-zinc-200
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
                 @error('warranty_card')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
                 @enderror
@@ -245,7 +246,7 @@
                     <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
                 </flux:label>
                 @if ($isEdit && ($activationImg = $asset->documents->where('document_type', 'warranty_activation_image')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
+                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
                         <a href="{{ Storage::url($activationImg->file_path) }}" target="_blank"
                            class="flex-1 truncate text-accent hover:underline">
@@ -258,9 +259,10 @@
                     <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
                 @endif
                 <input type="file" name="warranty_activation_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1 file:text-xs file:text-zinc-200
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
                 @error('warranty_activation_image')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
                 @enderror
@@ -273,8 +275,8 @@
         $ew = $isEdit ? $asset->extendedWarranties->first() : null;
         $ewOld = fn(string $field, $default = '') => old($field, $ew?->$field ?? $default);
     @endphp
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-1 font-semibold text-zinc-200">Extended Warranty</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-1 font-semibold text-zinc-800 dark:text-zinc-200">Extended Warranty</flux:heading>
         <flux:text class="mb-5 text-xs text-zinc-500">Optional — fill only if an extended warranty was purchased separately from the original.</flux:text>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -288,16 +290,14 @@
             {{-- Date From --}}
             <flux:field>
                 <flux:label>Warranty From</flux:label>
-                <flux:input type="date" name="ew_date_from"
-                    value="{{ $ew?->extended_warranty_date_from ? old('ew_date_from', $ew->extended_warranty_date_from->format('Y-m-d')) : old('ew_date_from') }}" />
+                <x-date-picker name="ew_date_from" value="{{ $ew?->extended_warranty_date_from ? old('ew_date_from', $ew->extended_warranty_date_from->format('Y-m-d')) : old('ew_date_from') }}" />
                 <flux:error name="ew_date_from" />
             </flux:field>
 
             {{-- Date To --}}
             <flux:field>
                 <flux:label>Warranty Lapse Date</flux:label>
-                <flux:input type="date" name="ew_date_to"
-                    value="{{ $ew?->extended_warranty_date_to ? old('ew_date_to', $ew->extended_warranty_date_to->format('Y-m-d')) : old('ew_date_to') }}" />
+                <x-date-picker name="ew_date_to" value="{{ $ew?->extended_warranty_date_to ? old('ew_date_to', $ew->extended_warranty_date_to->format('Y-m-d')) : old('ew_date_to') }}" />
                 <flux:error name="ew_date_to" />
             </flux:field>
 
@@ -341,14 +341,14 @@
         </div>
 
         {{-- Extended Warranty Document Uploads --}}
-        <div class="mt-5 grid gap-4 border-t border-zinc-800 pt-5 sm:grid-cols-2">
+        <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
             {{-- Bill Image --}}
             <div>
                 <flux:label class="mb-1.5 block">Extended Warranty Bill
                     <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
                 </flux:label>
                 @if ($ew && ($ewBill = $ew->documents->where('document_type', 'extended_warranty_bill')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
+                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
                         <a href="{{ Storage::url($ewBill->file_path) }}" target="_blank"
                            class="flex-1 truncate text-accent hover:underline">{{ $ewBill->file_original_name }}</a>
@@ -357,9 +357,10 @@
                     <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace.</p>
                 @endif
                 <input type="file" name="ew_bill_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1 file:text-xs file:text-zinc-200
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
                 @error('ew_bill_image')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
                 @enderror
@@ -371,7 +372,7 @@
                     <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
                 </flux:label>
                 @if ($ew && ($ewActivation = $ew->documents->where('document_type', 'extended_warranty_image')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
+                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
                         <a href="{{ Storage::url($ewActivation->file_path) }}" target="_blank"
                            class="flex-1 truncate text-accent hover:underline">{{ $ewActivation->file_original_name }}</a>
@@ -380,9 +381,10 @@
                     <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace.</p>
                 @endif
                 <input type="file" name="ew_activation_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1 file:text-xs file:text-zinc-200
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
                 @error('ew_activation_image')
                     <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
                 @enderror
@@ -391,8 +393,8 @@
     </div>
 
     {{-- Section: Maintenance Schedule --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <flux:heading class="mb-5 font-semibold text-zinc-200">Maintenance Schedule</flux:heading>
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Maintenance Schedule</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <flux:field>
@@ -430,13 +432,13 @@
         </div>
 
         {{-- Inspection --}}
-        <div class="mt-4 border-t border-zinc-800 pt-4">
+        <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <div class="flex items-center gap-3 mb-4">
                 <input type="checkbox" name="inspection_required" id="inspection_required" value="1"
                     x-model="inspectionRequired"
                     @checked($old('inspection_required', false))
-                    class="size-4 rounded border-zinc-600 bg-zinc-700 text-accent focus:ring-accent" />
-                <label for="inspection_required" class="text-sm font-medium text-zinc-300">Inspection Required</label>
+                    class="size-4 rounded border-zinc-400 bg-white text-accent focus:ring-accent dark:border-zinc-600 dark:bg-zinc-700" />
+                <label for="inspection_required" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Inspection Required</label>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2" x-show="inspectionRequired">
@@ -462,8 +464,8 @@
     </div>
 
     {{-- Section: Vehicle Fields (shown only when category = VE) --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6" x-show="isVehicle" x-transition>
-        <flux:heading class="mb-5 font-semibold text-zinc-200">
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900" x-show="isVehicle" x-transition>
+        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">
             Vehicle Compliance Dates
             <span class="ml-2 text-xs font-normal text-zinc-500">(Vehicle category only)</span>
         </flux:heading>
@@ -471,7 +473,7 @@
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <flux:field>
                 <flux:label>PUC Expiry Date</flux:label>
-                <flux:input type="date" name="puc_expiry_date" value="{{ $old('puc_expiry_date') }}" />
+                <x-date-picker name="puc_expiry_date" value="{{ $old('puc_expiry_date') }}" />
                 <flux:error name="puc_expiry_date" />
             </flux:field>
 
@@ -485,7 +487,7 @@
 
             <flux:field>
                 <flux:label>Fitness Expiry Date</flux:label>
-                <flux:input type="date" name="fitness_expiry_date" value="{{ $old('fitness_expiry_date') }}" />
+                <x-date-picker name="fitness_expiry_date" value="{{ $old('fitness_expiry_date') }}" />
                 <flux:error name="fitness_expiry_date" />
             </flux:field>
 
@@ -499,7 +501,7 @@
 
             <flux:field>
                 <flux:label>Road Tax Expiry Date</flux:label>
-                <flux:input type="date" name="road_tax_expiry_date" value="{{ $old('road_tax_expiry_date') }}" />
+                <x-date-picker name="road_tax_expiry_date" value="{{ $old('road_tax_expiry_date') }}" />
                 <flux:error name="road_tax_expiry_date" />
             </flux:field>
 
@@ -532,7 +534,7 @@
     </div>
 
     {{-- Section: Remarks --}}
-    <div class="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <flux:field>
             <flux:label>Remarks</flux:label>
             <flux:textarea name="remarks" rows="3" placeholder="Any additional notes about this asset">{{ $old('remarks') }}</flux:textarea>

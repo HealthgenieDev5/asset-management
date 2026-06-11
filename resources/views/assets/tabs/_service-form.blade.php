@@ -21,15 +21,13 @@
 
     <flux:field>
         <flux:label>Service Date</flux:label>
-        <flux:input type="date" name="service_date"
-                    value="{{ $service?->service_date?->format('Y-m-d') ?? old('service_date') }}" />
+        <x-date-picker name="service_date" value="{{ $service?->service_date?->format('Y-m-d') ?? old('service_date') }}" />
         @error('service_date') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
     <flux:field>
         <flux:label>Next Service Date</flux:label>
-        <flux:input type="date" name="next_service_date"
-                    value="{{ $service?->next_service_date?->format('Y-m-d') ?? old('next_service_date') }}" />
+        <x-date-picker name="next_service_date" value="{{ $service?->next_service_date?->format('Y-m-d') ?? old('next_service_date') }}" />
         @error('next_service_date') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
@@ -70,8 +68,7 @@
 
     <flux:field>
         <flux:label>Bill Date</flux:label>
-        <flux:input type="date" name="bill_date"
-                    value="{{ $service?->bill_date?->format('Y-m-d') ?? old('bill_date') }}" />
+        <x-date-picker name="bill_date" value="{{ $service?->bill_date?->format('Y-m-d') ?? old('bill_date') }}" />
         @error('bill_date') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
@@ -122,8 +119,7 @@
 <div class="grid gap-4 sm:grid-cols-2">
     <flux:field>
         <flux:label>Certification Expiry</flux:label>
-        <flux:input type="date" name="certification_expiry"
-                    value="{{ $service?->certification_expiry?->format('Y-m-d') ?? old('certification_expiry') }}" />
+        <x-date-picker name="certification_expiry" value="{{ $service?->certification_expiry?->format('Y-m-d') ?? old('certification_expiry') }}" />
         <flux:description>For inspection records — leave blank if not applicable.</flux:description>
         @error('certification_expiry') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>

@@ -19,12 +19,11 @@ class DashboardController extends Controller
             ->pluck('cnt', 'status');
 
         $assetStats = [
-            'total'            => Asset::count(),
-            'active'           => $statusCounts->get('active', 0),
-            'under_repair'     => $statusCounts->get('under_repair', 0),
-            'under_maintenance'=> $statusCounts->get('under_maintenance', 0),
-            'disposed'         => $statusCounts->get('disposed', 0) + $statusCounts->get('written_off', 0),
-            'inactive'         => $statusCounts->get('inactive', 0),
+            'total'        => Asset::count(),
+            'active'       => $statusCounts->get('active', 0),
+            'under_repair' => $statusCounts->get('under_repair', 0),
+            'disposed'     => $statusCounts->get('disposed', 0) + $statusCounts->get('written_off', 0),
+            'inactive'     => $statusCounts->get('inactive', 0),
         ];
 
         $now  = now()->toDateString();

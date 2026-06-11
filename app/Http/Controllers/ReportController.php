@@ -221,6 +221,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetExtendedWarranty::with(['asset.category', 'asset.subcategory'])
+            ->whereHas('asset')
             ->whereNotNull('extended_warranty_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -239,6 +240,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetExtendedWarranty::with(['asset.category'])
+            ->whereHas('asset')
             ->whereNotNull('extended_warranty_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -269,6 +271,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetAmcContract::with(['asset.category', 'asset.subcategory'])
+            ->whereHas('asset')
             ->whereNotNull('amc_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -287,6 +290,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetAmcContract::with(['asset.category'])
+            ->whereHas('asset')
             ->whereNotNull('amc_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -316,6 +320,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetInsurancePolicy::with(['asset.category', 'asset.subcategory'])
+            ->whereHas('asset')
             ->whereNotNull('policy_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -334,6 +339,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetInsurancePolicy::with(['asset.category'])
+            ->whereHas('asset')
             ->whereNotNull('policy_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -503,6 +509,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetService::with(['asset.category', 'asset.subcategory'])
+            ->whereHas('asset')
             ->whereNotNull('certification_expiry')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -521,6 +528,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetService::with(['asset.category'])
+            ->whereHas('asset')
             ->whereNotNull('certification_expiry')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -549,6 +557,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetService::with(['asset.category', 'asset.subcategory'])
+            ->whereHas('asset')
             ->whereNotNull('next_service_date')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -568,6 +577,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = AssetService::with(['asset.category'])
+            ->whereHas('asset')
             ->whereNotNull('next_service_date')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
@@ -597,6 +607,7 @@ class ReportController extends Controller
     public function serviceHistory(Request $request)
     {
         $records = AssetService::with(['asset.category', 'asset.subcategory', 'parts'])
+            ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
@@ -611,6 +622,7 @@ class ReportController extends Controller
     public function exportServiceHistory(Request $request): StreamedResponse
     {
         $rows = AssetService::with(['asset.category', 'parts'])
+            ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
@@ -637,6 +649,7 @@ class ReportController extends Controller
     public function maintenanceCost(Request $request)
     {
         $records = AssetService::with(['asset.category', 'asset.subcategory', 'parts'])
+            ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
@@ -651,6 +664,7 @@ class ReportController extends Controller
     public function exportMaintenanceCost(Request $request): StreamedResponse
     {
         $rows = AssetService::with(['asset.category', 'parts'])
+            ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))

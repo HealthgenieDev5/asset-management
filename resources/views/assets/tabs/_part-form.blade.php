@@ -27,8 +27,7 @@
 
     <flux:field>
         <flux:label>Warranty Till</flux:label>
-        <flux:input type="date" name="warranty_till"
-                    value="{{ $part?->warranty_till?->format('Y-m-d') ?? old('warranty_till') }}" />
+        <x-date-picker name="warranty_till" value="{{ $part?->warranty_till?->format('Y-m-d') ?? old('warranty_till') }}" />
         @error('warranty_till') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 
