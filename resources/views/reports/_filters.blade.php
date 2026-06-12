@@ -126,9 +126,25 @@
             @endif
 
             <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Location</label>
+                <select name="location" onchange="this.form.submit()"
+                        class="h-8 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-xs text-zinc-700 transition focus:border-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:focus:bg-zinc-800 {{ request('location') ? 'border-accent/60 bg-accent/5 font-semibold text-accent dark:bg-accent/10' : '' }}">
+                    <option value="">All Locations</option>
+                    @foreach ($locations as $loc)
+                        <option value="{{ $loc }}" @selected(request('location') === $loc)>{{ $loc }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-1">
                 <label class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Department</label>
-                <input type="text" name="department" value="{{ request('department') }}" placeholder="Any"
-                       class="h-8 w-36 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-xs text-zinc-800 placeholder-zinc-400 transition focus:border-accent focus:bg-white focus:text-zinc-900 focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:placeholder-zinc-500 dark:focus:bg-zinc-800 dark:focus:text-zinc-100 {{ request('department') ? 'border-accent/60 bg-accent/5 font-semibold text-accent dark:bg-accent/10' : '' }}" />
+                <select name="department" onchange="this.form.submit()"
+                        class="h-8 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-xs text-zinc-700 transition focus:border-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:focus:bg-zinc-800 {{ request('department') ? 'border-accent/60 bg-accent/5 font-semibold text-accent dark:bg-accent/10' : '' }}">
+                    <option value="">All Departments</option>
+                    @foreach ($departments as $dept)
+                        <option value="{{ $dept }}" @selected(request('department') === $dept)>{{ $dept }}</option>
+                    @endforeach
+                </select>
             </div>
 
             @if ($showExpiry)
@@ -213,6 +229,11 @@
                         {{ $sub->name }}
                     </span>
                 @endforeach
+                @if (request('location'))
+                    <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        Location: {{ request('location') }}
+                    </span>
+                @endif
                 @if (request('department'))
                     <span class="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                         Dept: {{ request('department') }}

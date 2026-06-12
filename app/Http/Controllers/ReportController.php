@@ -27,6 +27,8 @@ class ReportController extends Controller
         return [
             'categories'    => AssetCategory::orderBy('name')->get(['id', 'name']),
             'subcategories' => AssetSubcategory::orderBy('name')->get(['id', 'name', 'asset_category_id']),
+            'departments'   => Asset::whereNotNull('department')->distinct()->orderBy('department')->pluck('department'),
+            'locations'     => Asset::whereNotNull('location')->distinct()->orderBy('location')->pluck('location'),
         ];
     }
 
@@ -37,8 +39,8 @@ class ReportController extends Controller
         return Asset::with(['category', 'subcategory'])
             ->when($request->category_id,    fn($q, $v) => $q->where('asset_category_id', $v))
             ->when($request->subcategory_id, fn($q, $v) => $q->where('asset_subcategory_id', $v))
-            ->when($request->department,     fn($q, $v) => $q->where('department', 'like', "%{$v}%"))
-            ->when($request->location,       fn($q, $v) => $q->where('location', 'like', "%{$v}%"))
+            ->when($request->department,     fn($q, $v) => $q->where('department', $v))
+            ->when($request->location,       fn($q, $v) => $q->where('location', $v))
             ->when($request->custodian,      fn($q, $v) => $q->where('custodian', 'like', "%{$v}%"))
             ->when($request->vendor,         fn($q, $v) => $q->where('vendor_supplier', 'like', "%{$v}%"))
             ->when($request->status,         fn($q, $v) => $q->where('status', $v));
@@ -230,7 +232,7 @@ class ReportController extends Controller
             ->whereNotNull('extended_warranty_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('extended_warranty_date_to', '<', today()),
             'in30'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(30)),
@@ -249,7 +251,7 @@ class ReportController extends Controller
             ->whereNotNull('extended_warranty_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('extended_warranty_date_to', '<', today()),
             'in30'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(30)),
@@ -280,7 +282,7 @@ class ReportController extends Controller
             ->whereNotNull('amc_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('amc_date_to', '<', today()),
             'in30'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(30)),
@@ -299,7 +301,7 @@ class ReportController extends Controller
             ->whereNotNull('amc_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('amc_date_to', '<', today()),
             'in30'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(30)),
@@ -329,7 +331,7 @@ class ReportController extends Controller
             ->whereNotNull('policy_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('policy_date_to', '<', today()),
             'in30'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(30)),
@@ -348,7 +350,7 @@ class ReportController extends Controller
             ->whereNotNull('policy_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('policy_date_to', '<', today()),
             'in30'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(30)),
@@ -518,7 +520,7 @@ class ReportController extends Controller
             ->whereNotNull('certification_expiry')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('certification_expiry', '<', today()),
             'in30'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(30)),
@@ -537,7 +539,7 @@ class ReportController extends Controller
             ->whereNotNull('certification_expiry')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")));
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
         $query  = match ($filter) {
             'expired' => $query->whereDate('certification_expiry', '<', today()),
             'in30'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(30)),
@@ -566,7 +568,7 @@ class ReportController extends Controller
             ->whereNotNull('next_service_date')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
         $query  = match ($filter) {
             'overdue' => $query->whereDate('next_service_date', '<', today()),
@@ -586,7 +588,7 @@ class ReportController extends Controller
             ->whereNotNull('next_service_date')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
         $query  = match ($filter) {
             'overdue' => $query->whereDate('next_service_date', '<', today()),
@@ -615,7 +617,7 @@ class ReportController extends Controller
             ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v))
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
@@ -630,7 +632,7 @@ class ReportController extends Controller
             ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v))
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
@@ -657,7 +659,7 @@ class ReportController extends Controller
             ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v))
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
@@ -672,7 +674,7 @@ class ReportController extends Controller
             ->whereHas('asset')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', 'like', "%{$v}%")))
+            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v))
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
@@ -696,7 +698,7 @@ class ReportController extends Controller
     {
         $assets = Asset::with(['category', 'subcategory'])
             ->whereNotNull('vehicle_obv')
-            ->when($request->department, fn($q, $v) => $q->where('department', 'like', "%{$v}%"))
+            ->when($request->department, fn($q, $v) => $q->where('department', $v))
             ->when($request->custodian,  fn($q, $v) => $q->where('custodian', 'like', "%{$v}%"))
             ->when($request->status,     fn($q, $v) => $q->where('status', $v))
             ->when($request->search,     fn($q, $v) => $q->where(fn($q2) => $q2
@@ -713,7 +715,7 @@ class ReportController extends Controller
     {
         $rows = Asset::with(['category'])
             ->whereNotNull('vehicle_obv')
-            ->when($request->department, fn($q, $v) => $q->where('department', 'like', "%{$v}%"))
+            ->when($request->department, fn($q, $v) => $q->where('department', $v))
             ->when($request->custodian,  fn($q, $v) => $q->where('custodian', 'like', "%{$v}%"))
             ->when($request->status,     fn($q, $v) => $q->where('status', $v))
             ->when($request->search,     fn($q, $v) => $q->where(fn($q2) => $q2
