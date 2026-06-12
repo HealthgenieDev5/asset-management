@@ -42,6 +42,6 @@ class AssetExtendedWarranty extends Model
 
     public function isExpired(): bool
     {
-        return $this->extended_warranty_date_to && $this->extended_warranty_date_to->isPast();
+        return $this->extended_warranty_date_to && $this->extended_warranty_date_to->lt(now()->startOfDay());
     }
 }

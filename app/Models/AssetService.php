@@ -134,7 +134,7 @@ class AssetService extends Model
 
     public function isNextServiceOverdue(): bool
     {
-        return $this->next_service_date && $this->next_service_date->isPast();
+        return $this->next_service_date && $this->next_service_date->lt(now()->startOfDay());
     }
 
     public function daysUntilNextService(): ?int
@@ -147,7 +147,7 @@ class AssetService extends Model
 
     public function isCertificationExpired(): bool
     {
-        return $this->certification_expiry && $this->certification_expiry->isPast();
+        return $this->certification_expiry && $this->certification_expiry->lt(now()->startOfDay());
     }
 
     public function daysUntilCertificationExpiry(): ?int

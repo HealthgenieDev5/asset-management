@@ -119,9 +119,9 @@
                                                     <span class="text-xs text-zinc-500">from {{ $part->purchased_from }}</span>
                                                 @endif
                                                 @if ($part->warranty_till)
-                                                    <span class="text-xs {{ $part->warranty_till->isPast() ? 'text-red-400' : 'text-zinc-500' }}">
+                                                    <span class="text-xs {{ $part->warranty_till->lt(now()->startOfDay()) ? 'text-red-400' : 'text-zinc-500' }}">
                                                         Warranty: {{ $part->warranty_till->format('d M Y') }}
-                                                        @if ($part->warranty_till->isPast()) (Expired) @endif
+                                                        @if ($part->warranty_till->lt(now()->startOfDay())) (Expired) @endif
                                                     </span>
                                                 @endif
                                             </div>

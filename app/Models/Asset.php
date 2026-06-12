@@ -29,6 +29,7 @@ class Asset extends Model
         'asset_category_id',
         'asset_subcategory_id',
         'serial_number',
+        'registration_number',
         'manufacturer',
         'model',
         'model_year',

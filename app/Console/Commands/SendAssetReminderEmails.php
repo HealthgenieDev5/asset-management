@@ -261,7 +261,10 @@ class SendAssetReminderEmails extends Command
         array           $payload,
         bool            $dryRun,
     ): void {
-        if (! $recipient || ! $recipient->email) {
+        $overrideEmail = config('mail.asset_reminder_recipient');
+        $toEmail = $overrideEmail ?: ($recipient?->email ?? null);
+
+        if (! $toEmail) {
             $this->skipped++;
             return;
         }
@@ -274,9 +277,9 @@ class SendAssetReminderEmails extends Command
         }
 
         // Duplicate guard: skip if already sent today for this recipient+key
-        if (! $dryRun && $this->alreadySentToday($recipient->email, $reminderKey)) {
+        if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
             $this->skipped++;
-            $this->line("  ⊘ Already sent [{$reminderKey}] → {$recipient->email}");
+            $this->line("  ⊘ Already sent [{$reminderKey}] → {$toEmail}");
             return;
         }
 
@@ -291,11 +294,11 @@ class SendAssetReminderEmails extends Command
 
         if ($dryRun) {
             $flag = $daysLeft < 0 ? '🔴' : ($daysLeft <= 7 ? '🟡' : '🟢');
-            $this->line("  {$flag}  [{$payload['type']}] {$payload['asset_code']} — {$recipient->email} — {$daysLeft}d");
+            $this->line("  {$flag}  [{$payload['type']}] {$payload['asset_code']} — {$toEmail} — {$daysLeft}d");
         } else {
-            Mail::to($recipient->email)->send(new AssetExpiryReminderMail($mailPayload));
-            $this->recordSent($recipient->email, $reminderKey);
-            $this->line("  ✓ Sent [{$payload['type']}] {$payload['asset_code']} → {$recipient->email}");
+            Mail::to($toEmail)->send(new AssetExpiryReminderMail($mailPayload));
+            $this->recordSent($toEmail, $reminderKey);
+            $this->line("  ✓ Sent [{$payload['type']}] {$payload['asset_code']} → {$toEmail}");
         }
 
         $this->sent++;

@@ -57,7 +57,7 @@ class AssetAmcContract extends Model
 
     public function isExpired(): bool
     {
-        return $this->amc_date_to && $this->amc_date_to->isPast();
+        return $this->amc_date_to && $this->amc_date_to->lt(now()->startOfDay());
     }
 
     public function daysUntilExpiry(): ?int

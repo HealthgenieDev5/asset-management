@@ -58,7 +58,7 @@ class AssetInsurancePolicy extends Model
 
     public function isExpired(): bool
     {
-        return $this->policy_date_to && $this->policy_date_to->isPast();
+        return $this->policy_date_to && $this->policy_date_to->lt(now()->startOfDay());
     }
 
     public function daysUntilExpiry(): ?int

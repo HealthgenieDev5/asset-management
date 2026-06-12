@@ -5,7 +5,9 @@
     $isVehicle = $isEdit ? $asset->isVehicle() : false;
 @endphp
 
-<div class="space-y-6" x-data="{
+<div 
+class="space-y-6" 
+x-data="{
     categoryId: '{{ $old('asset_category_id') }}',
     isVehicle: {{ $isVehicle ? 'true' : 'false' }},
     subcategories: @json($subcategories->map(fn($s) => ['id' => $s->id, 'name' => $s->name])),
@@ -24,7 +26,19 @@
         const opt = sel.options[sel.selectedIndex];
         this.isVehicle = opt && opt.dataset.code === 'VE';
     }
-}">
+}" 
+x-init="
+    $nextTick(() => {
+        flatpickr($el.querySelector('[name=\'bill_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'purchase_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'warranty_lapse_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'ew_date_from\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'ew_date_to\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'puc_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'fitness_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'road_tax_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+    });
+">
 
     {{-- Section: Basic Info --}}
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
@@ -79,7 +93,7 @@
                     <option value="">— None —</option>
                     <template x-for="sub in subcategories" :key="sub.id">
                         <option :value="sub.id"
-                            :selected="sub.id == '{{ $old('asset_subcategory_id') }}'"
+                            :selected="sub.id == '{{ old('asset_subcategory_id', $isEdit ? ($asset->asset_subcategory_id ?? '') : '') }}'"
                             x-text="sub.name"></option>
                     </template>
                 </select>
@@ -472,6 +486,14 @@
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <flux:field>
+                <flux:label>Registration Number</flux:label>
+                <flux:input name="registration_number" value="{{ $old('registration_number') }}" placeholder="e.g. MH12AB1234" class="uppercase" />
+                <flux:error name="registration_number" />
+            </flux:field>
+
+            <div class="lg:col-span-2"></div>{{-- spacer --}}
+
+            <flux:field>
                 <flux:label>PUC Expiry Date</flux:label>
                 <x-date-picker name="puc_expiry_date" value="{{ $old('puc_expiry_date') }}" />
                 <flux:error name="puc_expiry_date" />
@@ -533,15 +555,6 @@
         </div>
     </div>
 
-    {{-- Section: Remarks --}}
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <flux:field>
-            <flux:label>Remarks</flux:label>
-            <flux:textarea name="remarks" rows="3" placeholder="Any additional notes about this asset">{{ $old('remarks') }}</flux:textarea>
-            <flux:error name="remarks" />
-        </flux:field>
-    </div>
-
     {{-- Form Actions --}}
     <div class="flex items-center gap-3 pt-2">
         <flux:button type="submit" variant="primary" icon="check">
@@ -553,16 +566,3 @@
     </div>
 </div>
 
-{{-- Subcategory loader API endpoint inline --}}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Detect vehicle on page load for edit mode
-    const sel = document.getElementById('category_select');
-    if (sel) {
-        const opt = sel.options[sel.selectedIndex];
-        if (opt && opt.dataset.code) {
-            document.querySelector('[x-data]').__x.$data.isVehicle = opt.dataset.code === 'VE';
-        }
-    }
-});
-</script>

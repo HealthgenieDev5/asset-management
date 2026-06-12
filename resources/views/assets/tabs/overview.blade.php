@@ -143,6 +143,13 @@
         <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <flux:heading class="mb-4 font-semibold text-zinc-700 dark:text-zinc-300">Vehicle Compliance</flux:heading>
             <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+                @if ($asset->registration_number)
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Registration Number</dt>
+                        <dd class="mt-0.5 font-mono text-sm font-semibold uppercase text-zinc-800 dark:text-zinc-200">{{ $asset->registration_number }}</dd>
+                    </div>
+                @endif
+
                 @foreach ([
                     ['PUC Expiry',      $asset->puc_expiry_date,      $asset->puc_reminder_before_days],
                     ['Fitness Expiry',  $asset->fitness_expiry_date,  $asset->fitness_reminder_before_days],

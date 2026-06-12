@@ -1,5 +1,14 @@
 @php $v = fn($f) => old($f, $service?->{$f}); @endphp
 
+<div x-data x-init="
+    $nextTick(() => {
+        flatpickr($el.querySelector('[name=\'service_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'next_service_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'bill_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'certification_expiry\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+    });
+">
+
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     <flux:field>
         <flux:label>Service Type</flux:label>
@@ -161,3 +170,5 @@
     @endif
     @error('service_bill') <flux:error>{{ $message }}</flux:error> @enderror
 </flux:field>
+
+</div>{{-- end x-data wrapper --}}

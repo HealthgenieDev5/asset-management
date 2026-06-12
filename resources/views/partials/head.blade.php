@@ -24,48 +24,11 @@
         if (darkSheet) darkSheet.disabled = !document.documentElement.classList.contains('dark');
     }
 
-    function initDatePickers(root) {
-        (root || document).querySelectorAll('[data-datepicker]:not([data-fp-init])').forEach(function (el) {
-            el.setAttribute('data-fp-init', '1');
-            var opts = { dateFormat: 'Y-m-d', allowInput: true, disableMobile: true };
-            if (el.dataset.minDate) opts.minDate = el.dataset.minDate;
-            if (el.dataset.maxDate) opts.maxDate = el.dataset.maxDate;
-            flatpickr(el, opts);
-        });
-    }
+    document.addEventListener('alpine:initialized', syncFlatpickrTheme);
+    document.addEventListener('livewire:navigated', syncFlatpickrTheme);
 
-    function setupObservers() {
-        new MutationObserver(function (mutations) {
-            mutations.forEach(function (mutation) {
-                var el = mutation.target;
-                if (mutation.type === 'attributes' && el.style && el.style.display !== 'none') {
-                    initDatePickers(el);
-                }
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach(function (node) {
-                        if (node.nodeType === 1) initDatePickers(node);
-                    });
-                }
-            });
-        }).observe(document.body, {
-            attributes: true,
-            attributeFilter: ['style'],
-            childList: true,
-            subtree: true,
-        });
-
-        new MutationObserver(syncFlatpickrTheme).observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['class'],
-        });
-    }
-
-    function bootDatepickers() {
-        syncFlatpickrTheme();
-        initDatePickers();
-        setupObservers();
-    }
-
-    document.addEventListener('alpine:initialized', bootDatepickers);
-    document.addEventListener('livewire:navigated', bootDatepickers);
+    new MutationObserver(syncFlatpickrTheme).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+    });
 </script>

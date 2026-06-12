@@ -1,5 +1,11 @@
 @php $v = fn($f) => old($f, $part?->{$f}); @endphp
 
+<div x-data x-init="
+    $nextTick(() => {
+        flatpickr($el.querySelector('[name=\'warranty_till\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+    });
+">
+
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     <flux:field class="sm:col-span-2 lg:col-span-1">
         <flux:label>Part Name</flux:label>
@@ -37,3 +43,5 @@
         @error('remarks') <flux:error>{{ $message }}</flux:error> @enderror
     </flux:field>
 </div>
+
+</div>{{-- end x-data wrapper --}}

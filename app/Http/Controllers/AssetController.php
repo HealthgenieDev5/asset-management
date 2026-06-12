@@ -69,6 +69,7 @@ class AssetController extends Controller
         $validated['inspection_required'] = $request->boolean('inspection_required');
 
         if (! $isVehicle) {
+            $validated['registration_number']             = null;
             $validated['puc_expiry_date']                 = null;
             $validated['puc_reminder_before_days']        = null;
             $validated['fitness_expiry_date']             = null;
@@ -107,7 +108,7 @@ class AssetController extends Controller
 
     public function edit(Asset $asset)
     {
-        $asset->load(['documents', 'extendedWarranties.documents']);
+        $asset->load(['category', 'documents', 'extendedWarranties.documents']);
         $categories = AssetCategory::active()->orderBy('name')->get();
         $subcategories = AssetSubcategory::where('asset_category_id', $asset->asset_category_id)
             ->active()->orderBy('name')->get();
@@ -125,6 +126,7 @@ class AssetController extends Controller
         $validated['inspection_required'] = $request->boolean('inspection_required');
 
         if (! $isVehicle) {
+            $validated['registration_number']             = null;
             $validated['puc_expiry_date']                 = null;
             $validated['puc_reminder_before_days']        = null;
             $validated['fitness_expiry_date']             = null;
@@ -186,6 +188,7 @@ class AssetController extends Controller
         ];
 
         if ($isVehicle) {
+            $rules['registration_number']             = ['nullable', 'string', 'max:50'];
             $rules['puc_expiry_date']                 = ['nullable', 'date'];
             $rules['puc_reminder_before_days']        = ['nullable', 'integer', 'min:1', 'max:365'];
             $rules['fitness_expiry_date']             = ['nullable', 'date'];

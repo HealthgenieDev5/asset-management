@@ -1,5 +1,13 @@
 @php $v = fn($f) => old($f, $policy?->{$f}); @endphp
 
+<div x-data x-init="
+    $nextTick(() => {
+        flatpickr($el.querySelector('[name=\'policy_date_from\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'policy_date_to\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+        flatpickr($el.querySelector('[name=\'bill_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
+    });
+">
+
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     <flux:field>
         <flux:label>Policy Number</flux:label>
@@ -104,3 +112,5 @@
     @endif
     @error('insurance_document') <flux:error>{{ $message }}</flux:error> @enderror
 </flux:field>
+
+</div>{{-- end x-data wrapper --}}
