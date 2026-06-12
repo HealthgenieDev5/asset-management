@@ -5,40 +5,51 @@
     $isVehicle = $isEdit ? $asset->isVehicle() : false;
 @endphp
 
-<div 
-class="space-y-6" 
-x-data="{
-    categoryId: '{{ $old('asset_category_id') }}',
-    isVehicle: {{ $isVehicle ? 'true' : 'false' }},
-    subcategories: @json($subcategories->map(fn($s) => ['id' => $s->id, 'name' => $s->name])),
-    maintenanceType: '{{ $old('maintenance_schedule_type', 'none') }}',
-    inspectionRequired: {{ $old('inspection_required', false) ? 'true' : 'false' }},
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('assetForm', () => ({
+        categoryId: '{{ $old('asset_category_id') }}',
+        isVehicle: {{ $isVehicle ? 'true' : 'false' }},
+        subcategories: {!! json_encode($subcategories->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->values()) !!},
+        selectedSubcategoryId: null,
+        _initialSubcategoryId: {{ old('asset_subcategory_id', $isEdit ? ($asset->asset_subcategory_id ?? 'null') : 'null') }},
+        maintenanceType: '{{ $old('maintenance_schedule_type', 'none') }}',
+        inspectionRequired: {{ $old('inspection_required', false) ? 'true' : 'false' }},
 
-    async loadSubcategories(catId) {
-        this.categoryId = catId;
-        if (!catId) { this.subcategories = []; this.isVehicle = false; return; }
-        const resp = await fetch(`/api/subcategories?category_id=${catId}`);
-        const data = await resp.json();
-        this.subcategories = data;
+        init() {
+            this.$nextTick(() => {
+                // Apply after x-for has rendered the options
+                if (this._initialSubcategoryId) {
+                    this.selectedSubcategoryId = this._initialSubcategoryId;
+                }
 
-        // Check if vehicle by looking at selected option text
-        const sel = document.getElementById('category_select');
-        const opt = sel.options[sel.selectedIndex];
-        this.isVehicle = opt && opt.dataset.code === 'VE';
-    }
-}" 
-x-init="
-    $nextTick(() => {
-        flatpickr($el.querySelector('[name=\'bill_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'purchase_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'warranty_lapse_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'ew_date_from\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'ew_date_to\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'puc_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'fitness_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'road_tax_expiry_date\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-    });
-">
+                const fp = (name) => flatpickr(this.$el.querySelector(`[name='${name}']`), {
+                    dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true
+                });
+                fp('bill_date'); fp('purchase_date'); fp('warranty_lapse_date');
+                fp('ew_date_from'); fp('ew_date_to');
+                fp('puc_expiry_date'); fp('fitness_expiry_date'); fp('road_tax_expiry_date');
+            });
+        },
+
+        loadSubcategories(catId) {
+            this.categoryId = catId;
+            this.selectedSubcategoryId = null;
+            if (!catId) { this.subcategories = []; this.isVehicle = false; return; }
+            fetch('/api/subcategories?category_id=' + catId)
+                .then(r => r.json())
+                .then(data => {
+                    this.subcategories = data;
+                    const sel = document.getElementById('category_select');
+                    const opt = sel.options[sel.selectedIndex];
+                    this.isVehicle = opt && opt.dataset.code === 'VE';
+                });
+        }
+    }));
+});
+</script>
+
+<div class="space-y-6" x-data="assetForm">
 
     {{-- Section: Basic Info --}}
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
@@ -88,13 +99,11 @@ x-init="
             {{-- Subcategory --}}
             <flux:field>
                 <flux:label>Subcategory</flux:label>
-                <select name="asset_subcategory_id"
+                <select name="asset_subcategory_id" x-model="selectedSubcategoryId"
                     class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
                     <option value="">— None —</option>
                     <template x-for="sub in subcategories" :key="sub.id">
-                        <option :value="sub.id"
-                            :selected="sub.id == '{{ old('asset_subcategory_id', $isEdit ? ($asset->asset_subcategory_id ?? '') : '') }}'"
-                            x-text="sub.name"></option>
+                        <option :value="sub.id" x-text="sub.name"></option>
                     </template>
                 </select>
                 <flux:error name="asset_subcategory_id" />

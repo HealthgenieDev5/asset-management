@@ -26,6 +26,7 @@
                     <th class="px-4 py-3">Asset Name</th>
                     <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3">Serial No.</th>
+                    <th class="px-4 py-3">Reg. No.</th>
                     <th class="px-4 py-3">Location</th>
                     <th class="px-4 py-3">Department</th>
                     <th class="px-4 py-3">Custodian</th>
@@ -54,6 +55,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-2.5 font-mono text-xs text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->serial_number ?: '—' }}</td>
+                        <td class="px-4 py-2.5 font-mono text-xs uppercase text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->registration_number ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->location ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->department ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->custodian ?: '—' }}</td>
@@ -68,7 +70,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="11" class="px-4 py-12 text-center text-zinc-500">No assets found matching the selected filters.</td></tr>
+                    <tr><td colspan="12" class="px-4 py-12 text-center text-zinc-500">No assets found matching the selected filters.</td></tr>
                 @endforelse
             </tbody>
         </table>

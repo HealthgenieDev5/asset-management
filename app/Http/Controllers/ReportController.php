@@ -86,6 +86,7 @@ class ReportController extends Controller
                     ->orWhere('serial_number', 'like', "%{$v}%")
                     ->orWhere('manufacturer', 'like', "%{$v}%")
                     ->orWhere('location', 'like', "%{$v}%")
+                    ->orWhere('registration_number', 'like', "%{$v}%")
                 )
             )
             ->orderBy('asset_code')
@@ -107,6 +108,7 @@ class ReportController extends Controller
                     ->orWhere('serial_number', 'like', "%{$v}%")
                     ->orWhere('manufacturer', 'like', "%{$v}%")
                     ->orWhere('location', 'like', "%{$v}%")
+                    ->orWhere('registration_number', 'like', "%{$v}%")
                 )
             )
             ->orderBy('asset_code')->get()
@@ -116,6 +118,7 @@ class ReportController extends Controller
                 $a->category?->name,
                 $a->subcategory?->name,
                 $a->serial_number,
+                $a->registration_number,
                 $a->manufacturer,
                 $a->model,
                 $a->location,
@@ -128,7 +131,7 @@ class ReportController extends Controller
 
         return $this->csvResponse('asset-register-' . today()->format('Y-m-d') . '.csv', [
             'Asset Code', 'Asset Name', 'Category', 'Sub-Category', 'Serial No.',
-            'Manufacturer', 'Model', 'Location', 'Department', 'Custodian',
+            'Reg. No.', 'Manufacturer', 'Model', 'Location', 'Department', 'Custodian',
             'Purchase Date', 'Bill Amount (₹)', 'Status',
         ], $rows);
     }
@@ -696,6 +699,11 @@ class ReportController extends Controller
             ->when($request->department, fn($q, $v) => $q->where('department', 'like', "%{$v}%"))
             ->when($request->custodian,  fn($q, $v) => $q->where('custodian', 'like', "%{$v}%"))
             ->when($request->status,     fn($q, $v) => $q->where('status', $v))
+            ->when($request->search,     fn($q, $v) => $q->where(fn($q2) => $q2
+                ->where('asset_code', 'like', "%{$v}%")
+                ->orWhere('asset_name', 'like', "%{$v}%")
+                ->orWhere('registration_number', 'like', "%{$v}%")
+            ))
             ->orderBy('asset_code')
             ->paginate(50)->withQueryString();
         return view('reports.vehicle-depreciation', array_merge($this->filterOptions(), compact('assets')));
@@ -708,10 +716,15 @@ class ReportController extends Controller
             ->when($request->department, fn($q, $v) => $q->where('department', 'like', "%{$v}%"))
             ->when($request->custodian,  fn($q, $v) => $q->where('custodian', 'like', "%{$v}%"))
             ->when($request->status,     fn($q, $v) => $q->where('status', $v))
+            ->when($request->search,     fn($q, $v) => $q->where(fn($q2) => $q2
+                ->where('asset_code', 'like', "%{$v}%")
+                ->orWhere('asset_name', 'like', "%{$v}%")
+                ->orWhere('registration_number', 'like', "%{$v}%")
+            ))
             ->orderBy('asset_code')->get()
             ->map(fn($a) => [
-                $a->asset_code, $a->asset_name, $a->category?->name,
-                $a->department, $a->custodian,
+                $a->asset_code, $a->asset_name, $a->registration_number ?: '',
+                $a->category?->name, $a->department, $a->custodian,
                 $a->purchase_date?->format('d/m/Y'),
                 $a->vehicle_obv ? number_format($a->vehicle_obv, 2) : '',
                 $a->vehicle_depreciation_percent,
@@ -719,7 +732,7 @@ class ReportController extends Controller
                 $this->statusLabel($a->status),
             ]);
         return $this->csvResponse('vehicle-depreciation-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Custodian',
+            'Asset Code', 'Asset Name', 'Reg. No.', 'Category', 'Department', 'Custodian',
             'Purchase Date', 'OBV (₹)', 'Dep %', 'Book Value (₹)', 'Status',
         ], $rows);
     }
