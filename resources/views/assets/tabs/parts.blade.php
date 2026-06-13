@@ -24,11 +24,11 @@
     @if ($asset->services->isEmpty())
         <div x-show="!showForm" class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:icon.puzzle-piece class="mx-auto size-10 text-zinc-600" />
-            <flux:heading class="mt-4 text-zinc-400">No Service Records Yet</flux:heading>
-            <flux:text class="mt-1 text-sm text-zinc-600">Add a service record first, then log parts replaced during that service.</flux:text>
+            <flux:heading class="mt-4 text-zinc-400">No Servicing Records Yet</flux:heading>
+            <flux:text class="mt-1 text-sm text-zinc-600">Add a servicing record first, then log parts replaced during that service.</flux:text>
             <div class="mt-4">
                 <flux:button href="{{ route('assets.show', [$asset, 'tab' => 'services']) }}" wire:navigate variant="ghost" size="sm">
-                    Go to Services Tab
+                    Go to Servicing Tab
                 </flux:button>
             </div>
         </div>

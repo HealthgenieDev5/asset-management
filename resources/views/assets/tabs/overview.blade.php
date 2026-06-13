@@ -70,6 +70,26 @@
                 </div>
             @endforeach
         </dl>
+
+        @php $purchaseBills = $asset->documents->where('document_type', 'purchase_bill')->values(); @endphp
+        @if ($purchaseBills->isNotEmpty())
+            <div class="mt-4 space-y-1.5 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                <p class="mb-2 text-xs font-medium text-zinc-500">Purchase Bill</p>
+                @foreach ($purchaseBills as $doc)
+                    <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
+                        @if ($doc->isImage())
+                            <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                        @else
+                            <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                        @endif
+                        <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                        <span class="text-xs text-zinc-500">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($doc->file_path) }}" target="_blank"
+                           class="text-xs text-accent hover:underline">View</a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     {{-- Original Warranty --}}

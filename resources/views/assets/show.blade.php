@@ -32,14 +32,14 @@
     @php
         $tabs = [
             'overview'  => ['label' => 'Overview',          'icon' => 'information-circle'],
-            'documents' => ['label' => 'Documents',          'icon' => 'paper-clip'],
+            'reminders' => ['label' => 'Reminders',          'icon' => 'bell-alert'],
             'warranty'  => ['label' => 'Warranty',           'icon' => 'shield-check'],
             'ext-warranty' => ['label' => 'Ext. Warranty',   'icon' => 'shield-exclamation'],
-            'amc'       => ['label' => 'AMC',                'icon' => 'wrench-screwdriver'],
-            'insurance' => ['label' => 'Insurance',          'icon' => 'building-library'],
-            'reminders' => ['label' => 'Reminders',          'icon' => 'bell-alert'],
-            'services'  => ['label' => 'Services',           'icon' => 'cog-6-tooth'],
+            'services'  => ['label' => 'Servicing',          'icon' => 'cog-6-tooth'],
             'parts'     => ['label' => 'Parts',              'icon' => 'puzzle-piece'],
+            'documents' => ['label' => 'Documents',          'icon' => 'paper-clip'],  
+            'amc'       => ['label' => 'AMC',                'icon' => 'wrench-screwdriver'],
+            'insurance' => ['label' => 'Insurance',          'icon' => 'building-library'],    
         ];
     @endphp
 

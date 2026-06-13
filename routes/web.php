@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AssetAmcContractController;
+use App\Http\Controllers\AssetExtendedWarrantyController;
+use App\Http\Controllers\AssetWarrantyController;
 use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
@@ -38,6 +40,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('assets/{asset}/amc', [AssetAmcContractController::class, 'store'])->name('assets.amc.store');
     Route::put('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'update'])->name('assets.amc.update');
     Route::delete('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'destroy'])->name('assets.amc.destroy');
+
+    // Extended Warranty (nested under asset)
+    Route::post('assets/{asset}/extended-warranty', [AssetExtendedWarrantyController::class, 'store'])->name('assets.ext-warranty.store');
+    Route::put('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'update'])->name('assets.ext-warranty.update');
+    Route::delete('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'destroy'])->name('assets.ext-warranty.destroy');
+
+    // Original Warranty (fields on asset, documents as AssetDocument)
+    Route::put('assets/{asset}/warranty', [AssetWarrantyController::class, 'update'])->name('assets.warranty.update');
+    Route::delete('assets/{asset}/warranty/documents/{document}', [AssetWarrantyController::class, 'destroyDocument'])->name('assets.warranty.documents.destroy');
 
     // Insurance Policies (nested under asset)
     Route::post('assets/{asset}/insurance', [AssetInsurancePolicyController::class, 'store'])->name('assets.insurance.store');

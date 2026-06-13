@@ -6,7 +6,6 @@ use App\Exports\AssetFullExport;
 use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\AssetDocument;
-use App\Models\AssetExtendedWarranty;
 use App\Models\AssetSubcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -83,8 +82,22 @@ class AssetController extends Controller
 
         $asset = Asset::create($validated);
 
-        $this->storeWarrantyDocuments($request, $asset);
-        $this->saveExtendedWarranty($request, $asset);
+        if ($request->hasFile('purchase_bill_file')) {
+            $file = $request->file('purchase_bill_file');
+            $path = $file->store("assets/{$asset->id}/documents", 'public');
+            AssetDocument::create([
+                'asset_id'           => $asset->id,
+                'documentable_type'  => Asset::class,
+                'documentable_id'    => $asset->id,
+                'document_type'      => 'purchase_bill',
+                'document_title'     => 'Purchase Bill',
+                'file_path'          => $path,
+                'file_original_name' => $file->getClientOriginalName(),
+                'file_mime_type'     => $file->getClientMimeType(),
+                'file_size'          => $file->getSize(),
+                'uploaded_by'        => auth()->id(),
+            ]);
+        }
 
         return redirect()->route('assets.show', $asset)
             ->with('success', 'Asset created successfully.');
@@ -140,8 +153,22 @@ class AssetController extends Controller
 
         $asset->update($validated);
 
-        $this->storeWarrantyDocuments($request, $asset);
-        $this->saveExtendedWarranty($request, $asset);
+        if ($request->hasFile('purchase_bill_file')) {
+            $file = $request->file('purchase_bill_file');
+            $path = $file->store("assets/{$asset->id}/documents", 'public');
+            AssetDocument::create([
+                'asset_id'           => $asset->id,
+                'documentable_type'  => Asset::class,
+                'documentable_id'    => $asset->id,
+                'document_type'      => 'purchase_bill',
+                'document_title'     => 'Purchase Bill',
+                'file_path'          => $path,
+                'file_original_name' => $file->getClientOriginalName(),
+                'file_mime_type'     => $file->getClientMimeType(),
+                'file_size'          => $file->getSize(),
+                'uploaded_by'        => auth()->id(),
+            ]);
+        }
 
         return redirect()->route('assets.show', $asset)
             ->with('success', 'Asset updated successfully.');
@@ -174,9 +201,6 @@ class AssetController extends Controller
             'bill_amount'                  => ['nullable', 'numeric', 'min:0'],
             'bill_date'                    => ['nullable', 'date'],
             'purchase_date'                => ['nullable', 'date'],
-            'warranty_details'             => ['nullable', 'string'],
-            'warranty_lapse_date'          => ['nullable', 'date'],
-            'warranty_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'maintenance_schedule_type'    => ['required', 'in:date_based,hours_based,mileage_based,custom,none'],
             'maintenance_interval_value'   => ['nullable', 'integer', 'min:1'],
             'maintenance_interval_unit'    => ['nullable', 'in:days,weeks,months,years,operating_hours,miles,kilometers'],
@@ -185,6 +209,7 @@ class AssetController extends Controller
             'inspection_frequency_unit'    => ['nullable', 'in:days,weeks,months,years'],
             'status'                       => ['required', 'in:active,under_repair,disposed,scrapped,inactive'],
             'remarks'                      => ['nullable', 'string'],
+            'purchase_bill_file'           => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ];
 
         if ($isVehicle) {
@@ -200,21 +225,6 @@ class AssetController extends Controller
             $rules['vehicle_depreciation_book_value'] = ['nullable', 'numeric', 'min:0'];
         }
 
-        $rules['warranty_card']             = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'];
-        $rules['warranty_activation_image'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'];
-
-        // Extended warranty fields
-        $rules['ew_vendor']        = ['nullable', 'string', 'max:255'];
-        $rules['ew_date_from']     = ['nullable', 'date'];
-        $rules['ew_date_to']       = ['nullable', 'date', 'after_or_equal:ew_date_from'];
-        $rules['ew_bill_no']       = ['nullable', 'string', 'max:255'];
-        $rules['ew_amount']        = ['nullable', 'numeric', 'min:0'];
-        $rules['ew_terms']         = ['nullable', 'string'];
-        $rules['ew_reminder_days'] = ['nullable', 'integer', 'min:1', 'max:365'];
-        $rules['ew_remarks']       = ['nullable', 'string'];
-        $rules['ew_bill_image']    = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'];
-        $rules['ew_activation_image'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'];
-
         // Validate subcategory belongs to selected category
         if (request('asset_subcategory_id') && request('asset_category_id')) {
             $rules['asset_subcategory_id'][] = function ($attr, $value, $fail) {
@@ -226,96 +236,6 @@ class AssetController extends Controller
         }
 
         return $rules;
-    }
-
-    private function saveExtendedWarranty(Request $request, Asset $asset): void
-    {
-        // Only proceed if any ew_ field has a value
-        $hasData = $request->filled('ew_vendor')
-            || $request->filled('ew_date_from')
-            || $request->filled('ew_date_to')
-            || $request->filled('ew_bill_no')
-            || $request->filled('ew_amount')
-            || $request->hasFile('ew_bill_image')
-            || $request->hasFile('ew_activation_image');
-
-        if (! $hasData) {
-            return;
-        }
-
-        // On edit, update the first existing record; otherwise create a new one
-        $ew = $asset->extendedWarranties()->first()
-            ?? new AssetExtendedWarranty(['asset_id' => $asset->id]);
-
-        $ew->fill([
-            'asset_id'                    => $asset->id,
-            'extended_warranty_vendor'    => $request->input('ew_vendor'),
-            'extended_warranty_date_from' => $request->input('ew_date_from') ?: null,
-            'extended_warranty_date_to'   => $request->input('ew_date_to') ?: null,
-            'extended_warranty_bill_no'   => $request->input('ew_bill_no'),
-            'extended_warranty_amount'    => $request->input('ew_amount') ?: null,
-            'extended_warranty_terms'     => $request->input('ew_terms'),
-            'reminder_before_days'        => $request->input('ew_reminder_days') ?: null,
-            'remarks'                     => $request->input('ew_remarks'),
-        ])->save();
-
-        // Store uploaded files
-        $ewFiles = [
-            'ew_bill_image'       => 'extended_warranty_bill',
-            'ew_activation_image' => 'extended_warranty_image',
-        ];
-
-        foreach ($ewFiles as $field => $docType) {
-            if (! $request->hasFile($field)) {
-                continue;
-            }
-
-            $file = $request->file($field);
-            $path = $file->store("assets/{$asset->id}/extended-warranty", 'public');
-
-            AssetDocument::create([
-                'asset_id'           => $asset->id,
-                'documentable_type'  => AssetExtendedWarranty::class,
-                'documentable_id'    => $ew->id,
-                'document_type'      => $docType,
-                'document_title'     => $docType === 'extended_warranty_bill' ? 'Extended Warranty Bill' : 'Extended Warranty Activation Image',
-                'file_path'          => $path,
-                'file_original_name' => $file->getClientOriginalName(),
-                'file_mime_type'     => $file->getClientMimeType(),
-                'file_size'          => $file->getSize(),
-                'uploaded_by'        => auth()->id(),
-            ]);
-        }
-    }
-
-    private function storeWarrantyDocuments(Request $request, Asset $asset): void
-    {
-        $uploads = [
-            'warranty_card'             => 'warranty_card',
-            'warranty_activation_image' => 'warranty_activation_image',
-        ];
-
-        foreach ($uploads as $field => $docType) {
-            if (! $request->hasFile($field)) {
-                continue;
-            }
-
-            $file = $request->file($field);
-            $path = $file->store("assets/{$asset->id}/warranty", 'public');
-
-            AssetDocument::create([
-                'asset_id'            => $asset->id,
-                'documentable_type'   => Asset::class,
-                'documentable_id'     => $asset->id,
-                'document_type'       => $docType,
-                'document_title'      => $docType === 'warranty_card' ? 'Warranty Card' : 'Warranty Activation Image',
-                'file_path'           => $path,
-                'file_original_name'  => $file->getClientOriginalName(),
-                'file_mime_type'      => $file->getClientMimeType(),
-                'file_size'           => $file->getSize(),
-                'uploaded_by'         => auth()->id(),
-            ]);
-        }
     }
 
     private function isVehicleCategory(?string $categoryId): bool

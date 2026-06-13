@@ -113,7 +113,7 @@
 
     {{-- Document List --}}
     @if ($allDocs->isEmpty())
-        <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-14 text-center dark:border-zinc-700 dark:bg-zinc-900">
+        <div x-show="!showUpload" class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-14 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:icon.paper-clip class="mx-auto size-10 text-zinc-600" />
             <flux:heading class="mt-4 text-zinc-400">No documents yet</flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">

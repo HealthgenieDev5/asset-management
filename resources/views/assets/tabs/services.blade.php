@@ -5,7 +5,7 @@
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
-            <flux:heading class="font-semibold text-zinc-200">Service History</flux:heading>
+            <flux:heading class="font-semibold text-zinc-200">Servicing History</flux:heading>
             <flux:text class="text-xs text-zinc-500 mt-0.5">
                 {{ $asset->services->count() }} {{ Str::plural('record', $asset->services->count()) }}
                 @if ($asset->services->sum('service_cost') > 0)
@@ -14,14 +14,14 @@
             </flux:text>
         </div>
         <flux:button variant="primary" size="sm" icon="plus" @click="showForm = !showForm; editId = null">
-            Add Service
+            Add Servicing
         </flux:button>
     </div>
 
     {{-- Add Form --}}
     <div x-show="showForm && editId === null" x-transition x-cloak
          class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-        <flux:heading class="mb-4 font-semibold text-zinc-800 dark:text-zinc-300">New Service Record</flux:heading>
+        <flux:heading class="mb-4 font-semibold text-zinc-800 dark:text-zinc-300">New Servicing Record</flux:heading>
 
         <form method="POST" action="{{ route('assets.services.store', $asset) }}"
               enctype="multipart/form-data" class="space-y-4">
@@ -41,7 +41,7 @@
     @if ($asset->services->isEmpty())
         <div x-show="!showForm" class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <flux:icon.cog-6-tooth class="mx-auto size-10 text-zinc-600" />
-            <flux:heading class="mt-4 text-zinc-400">No Service Records</flux:heading>
+            <flux:heading class="mt-4 text-zinc-400">No Servicing Records</flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">Log preventive maintenance, repairs, inspections, and compliance checks here.</flux:text>
             <div class="mt-4">
                 <flux:button variant="ghost" size="sm" icon="plus" @click="showForm = true; editId = null">Add First Record</flux:button>
@@ -249,7 +249,7 @@
                     {{-- Inline Edit Form --}}
                     <div x-show="editId === {{ $svc->id }}" x-transition x-cloak
                          class="border-t border-zinc-200 bg-zinc-50/80 px-5 py-5 dark:border-zinc-800 dark:bg-zinc-950/40">
-                        <flux:heading class="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-300">Edit Service Record</flux:heading>
+                        <flux:heading class="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-300">Edit Servicing Record</flux:heading>
                         <form method="POST" action="{{ route('assets.services.update', [$asset, $svc]) }}"
                               enctype="multipart/form-data" class="space-y-4">
                             @csrf @method('PUT')

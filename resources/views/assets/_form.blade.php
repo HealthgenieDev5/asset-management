@@ -26,8 +26,7 @@ document.addEventListener('alpine:init', () => {
                 const fp = (name) => flatpickr(this.$el.querySelector(`[name='${name}']`), {
                     dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true
                 });
-                fp('bill_date'); fp('purchase_date'); fp('warranty_lapse_date');
-                fp('ew_date_from'); fp('ew_date_to');
+                fp('bill_date'); fp('purchase_date');
                 fp('puc_expiry_date'); fp('fitness_expiry_date'); fp('road_tax_expiry_date');
             });
         },
@@ -238,222 +237,33 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 <flux:error name="purchase_date" />
             </div>
         </div>
-    </div>
 
-    {{-- Section: Warranty --}}
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Original Warranty</flux:heading>
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div class="lg:col-span-2">
-                <div class="relative">
-                    <textarea name="warranty_details" id="warranty_details" rows="2"
-                        placeholder=" "
-                        class="{{ $textareaCls }}">{{ $old('warranty_details') }}</textarea>
-                    <label for="warranty_details" class="{{ $labelCls }}">Warranty Details</label>
+        {{-- Purchase Bill Photo --}}
+        <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <p class="mb-1.5 text-xs font-medium text-zinc-500">Purchase Bill Photo / PDF
+                <span class="ml-1 font-normal">(PDF, JPG, PNG, WEBP — max 5 MB)</span>
+            </p>
+            @if ($isEdit && $asset->documents->where('document_type', 'purchase_bill')->isNotEmpty())
+                @php $existingBill = $asset->documents->where('document_type', 'purchase_bill')->first(); @endphp
+                <div class="mb-2 flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
+                    @if ($existingBill->isImage())
+                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                    @else
+                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                    @endif
+                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $existingBill->file_original_name }}</span>
+                    <a href="{{ Storage::url($existingBill->file_path) }}" target="_blank"
+                       class="text-xs text-accent hover:underline">View</a>
                 </div>
-                <flux:error name="warranty_details" />
-            </div>
-
-            <div>
-                <x-date-picker name="warranty_lapse_date" label="Warranty Lapse Date" value="{{ $old('warranty_lapse_date') }}" />
-                <flux:error name="warranty_lapse_date" />
-            </div>
-
-            <div class="relative">
-                <input type="number" name="warranty_reminder_before_days" id="warranty_reminder_before_days"
-                    value="{{ $old('warranty_reminder_before_days', 30) }}" placeholder=" "
-                    min="1" max="365"
-                    class="{{ $inputCls }}" />
-                <label for="warranty_reminder_before_days" class="{{ $labelCls }}">Remind Before (days)</label>
-                <p class="mt-1 text-xs text-zinc-500">Days before warranty expiry to send reminder</p>
-                <flux:error name="warranty_reminder_before_days" />
-            </div>
-        </div>
-
-        {{-- Warranty document uploads --}}
-        <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
-            {{-- Warranty Card --}}
-            <div>
-                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Card
-                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
-                </p>
-                @if ($isEdit && ($warrantyCard = $asset->documents->where('document_type', 'warranty_card')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
-                        <a href="{{ Storage::url($warrantyCard->file_path) }}" target="_blank"
-                           class="flex-1 truncate text-accent hover:underline">
-                            {{ $warrantyCard->file_original_name }}
-                        </a>
-                        <span class="shrink-0 text-xs text-zinc-500">
-                            {{ number_format($warrantyCard->file_size / 1024, 0) }} KB
-                        </span>
-                    </div>
-                    <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
-                @endif
-                <input type="file" name="warranty_card" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
-                @error('warranty_card')
-                    <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Warranty Activation Image --}}
-            <div>
-                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Activation Image
-                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
-                </p>
-                @if ($isEdit && ($activationImg = $asset->documents->where('document_type', 'warranty_activation_image')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
-                        <a href="{{ Storage::url($activationImg->file_path) }}" target="_blank"
-                           class="flex-1 truncate text-accent hover:underline">
-                            {{ $activationImg->file_original_name }}
-                        </a>
-                        <span class="shrink-0 text-xs text-zinc-500">
-                            {{ number_format($activationImg->file_size / 1024, 0) }} KB
-                        </span>
-                    </div>
-                    <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
-                @endif
-                <input type="file" name="warranty_activation_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
-                @error('warranty_activation_image')
-                    <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-        </div>
-    </div>
-
-    {{-- Section: Extended Warranty --}}
-    @php
-        $ew = $isEdit ? $asset->extendedWarranties->first() : null;
-        $ewOld = fn(string $field, $default = '') => old($field, $ew?->$field ?? $default);
-    @endphp
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <flux:heading class="mb-1 font-semibold text-zinc-800 dark:text-zinc-200">Extended Warranty</flux:heading>
-        <flux:text class="mb-5 text-xs text-zinc-500">Optional — fill only if an extended warranty was purchased separately from the original.</flux:text>
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div class="relative">
-                <input type="text" name="ew_vendor" id="ew_vendor"
-                    value="{{ $ewOld('extended_warranty_vendor') }}" placeholder=" "
-                    class="{{ $inputCls }}" />
-                <label for="ew_vendor" class="{{ $labelCls }}">Vendor / Provider</label>
-                <flux:error name="ew_vendor" />
-            </div>
-
-            <div>
-                <x-date-picker name="ew_date_from" label="Warranty From"
-                    value="{{ $ew?->extended_warranty_date_from ? old('ew_date_from', $ew->extended_warranty_date_from->format('Y-m-d')) : old('ew_date_from') }}" />
-                <flux:error name="ew_date_from" />
-            </div>
-
-            <div>
-                <x-date-picker name="ew_date_to" label="Warranty Lapse Date"
-                    value="{{ $ew?->extended_warranty_date_to ? old('ew_date_to', $ew->extended_warranty_date_to->format('Y-m-d')) : old('ew_date_to') }}" />
-                <flux:error name="ew_date_to" />
-            </div>
-
-            <div class="relative">
-                <input type="text" name="ew_bill_no" id="ew_bill_no"
-                    value="{{ $ewOld('extended_warranty_bill_no') }}" placeholder=" "
-                    class="{{ $inputCls }}" />
-                <label for="ew_bill_no" class="{{ $labelCls }}">Bill Number</label>
-                <flux:error name="ew_bill_no" />
-            </div>
-
-            <div class="relative">
-                <input type="number" name="ew_amount" id="ew_amount"
-                    value="{{ $ewOld('extended_warranty_amount') }}" placeholder=" "
-                    min="0" step="0.01"
-                    class="{{ $inputCls }}" />
-                <label for="ew_amount" class="{{ $labelCls }}">Bill Amount (₹)</label>
-                <flux:error name="ew_amount" />
-            </div>
-
-            <div class="relative">
-                <input type="number" name="ew_reminder_days" id="ew_reminder_days"
-                    value="{{ $ewOld('reminder_before_days', 30) }}" placeholder=" "
-                    min="1" max="365"
-                    class="{{ $inputCls }}" />
-                <label for="ew_reminder_days" class="{{ $labelCls }}">Remind Before (days)</label>
-                <p class="mt-1 text-xs text-zinc-500">Days before extended warranty expiry to send reminder</p>
-                <flux:error name="ew_reminder_days" />
-            </div>
-
-            <div class="sm:col-span-2 lg:col-span-2">
-                <div class="relative">
-                    <textarea name="ew_terms" id="ew_terms" rows="2"
-                        placeholder=" "
-                        class="{{ $textareaCls }}">{{ $ewOld('extended_warranty_terms') }}</textarea>
-                    <label for="ew_terms" class="{{ $labelCls }}">Warranty Terms</label>
-                </div>
-                <flux:error name="ew_terms" />
-            </div>
-
-            <div class="relative">
-                <textarea name="ew_remarks" id="ew_remarks" rows="2"
-                    placeholder=" "
-                    class="{{ $textareaCls }}">{{ $ewOld('remarks') }}</textarea>
-                <label for="ew_remarks" class="{{ $labelCls }}">Remarks</label>
-                <flux:error name="ew_remarks" />
-            </div>
-        </div>
-
-        {{-- Extended Warranty Document Uploads --}}
-        <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
-            <div>
-                <p class="mb-1.5 text-xs font-medium text-zinc-500">Extended Warranty Bill
-                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
-                </p>
-                @if ($ew && ($ewBill = $ew->documents->where('document_type', 'extended_warranty_bill')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
-                        <a href="{{ Storage::url($ewBill->file_path) }}" target="_blank"
-                           class="flex-1 truncate text-accent hover:underline">{{ $ewBill->file_original_name }}</a>
-                        <span class="shrink-0 text-xs text-zinc-500">{{ number_format($ewBill->file_size / 1024, 0) }} KB</span>
-                    </div>
-                    <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace.</p>
-                @endif
-                <input type="file" name="ew_bill_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
-                @error('ew_bill_image')
-                    <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div>
-                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Activation Image
-                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
-                </p>
-                @if ($ew && ($ewActivation = $ew->documents->where('document_type', 'extended_warranty_image')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
-                        <a href="{{ Storage::url($ewActivation->file_path) }}" target="_blank"
-                           class="flex-1 truncate text-accent hover:underline">{{ $ewActivation->file_original_name }}</a>
-                        <span class="shrink-0 text-xs text-zinc-500">{{ number_format($ewActivation->file_size / 1024, 0) }} KB</span>
-                    </div>
-                    <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace.</p>
-                @endif
-                <input type="file" name="ew_activation_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                           file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                           focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                           dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
-                @error('ew_activation_image')
-                    <p class="mt-1 text-xs text-red-400">{{ $message }}</p>
-                @enderror
-            </div>
+                <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
+            @endif
+            <input type="file" name="purchase_bill_file"
+                   accept=".pdf,.jpg,.jpeg,.png,.webp"
+                   class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
+                          file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                          focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                          dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
+            <flux:error name="purchase_bill_file" />
         </div>
     </div>
 
@@ -636,7 +446,7 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
     {{-- Form Actions --}}
     <div class="flex items-center gap-3 pt-2">
         <flux:button type="submit" variant="primary" icon="check">
-            {{ $isEdit ? 'Update Asset' : 'Create Asset' }}
+            {{ $isEdit ? 'Update Asset and Continue' : 'Create Asset and Continue' }}
         </flux:button>
         <flux:button href="{{ $isEdit ? route('assets.show', $asset) : route('assets.index') }}" wire:navigate variant="ghost">
             Cancel
