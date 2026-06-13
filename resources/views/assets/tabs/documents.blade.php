@@ -46,6 +46,14 @@
          class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:heading class="mb-4 font-semibold text-zinc-800 dark:text-zinc-300">Upload New Document</flux:heading>
 
+        @php
+        $inputCls    = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+        $selectCls   = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+        $labelCls    = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-zinc-500 dark:text-zinc-400 dark:peer-focus:text-zinc-400';
+        $labelSelCls = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+        $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+        @endphp
+
         <form method="POST"
               action="{{ route('assets.documents.store', $asset) }}"
               enctype="multipart/form-data"
@@ -53,54 +61,44 @@
             @csrf
 
             <div class="grid gap-4 sm:grid-cols-2">
-                <flux:field>
-                    <flux:label>Document Type <span class="text-red-400">*</span></flux:label>
-                    <flux:select name="document_type" required>
-                        <flux:select.option value="">— Select type —</flux:select.option>
+                <div class="relative">
+                    <select name="document_type" id="document_type" required class="{{ $selectCls }}">
+                        <option value=""></option>
                         @foreach ($docTypes as $value => $label)
-                            <flux:select.option value="{{ $value }}" :selected="old('document_type') === $value">
-                                {{ $label }}
-                            </flux:select.option>
+                            <option value="{{ $value }}" @selected(old('document_type') === $value)>{{ $label }}</option>
                         @endforeach
-                    </flux:select>
-                    @error('document_type')
-                        <flux:error>{{ $message }}</flux:error>
-                    @enderror
-                </flux:field>
+                    </select>
+                    <label for="document_type" class="{{ $labelSelCls }}">Document Type <span class="text-red-400">*</span></label>
+                    @error('document_type') <flux:error>{{ $message }}</flux:error> @enderror
+                </div>
 
-                <flux:field>
-                    <flux:label>Title / Description</flux:label>
-                    <flux:input name="document_title" value="{{ old('document_title') }}"
-                                placeholder="e.g. Invoice #INV-2024-001" />
-                    @error('document_title')
-                        <flux:error>{{ $message }}</flux:error>
-                    @enderror
-                </flux:field>
+                <div class="relative">
+                    <input type="text" name="document_title" id="document_title"
+                        value="{{ old('document_title') }}" placeholder=" "
+                        class="{{ $inputCls }}" />
+                    <label for="document_title" class="{{ $labelCls }}">Title / Description</label>
+                    @error('document_title') <flux:error>{{ $message }}</flux:error> @enderror
+                </div>
             </div>
 
-            <flux:field>
-                <flux:label>File <span class="text-red-400">*</span></flux:label>
+            <div>
+                <p class="mb-1.5 text-xs font-medium text-zinc-500">File <span class="text-red-400">*</span>
+                    <span class="ml-1 font-normal">(PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX — max 10 MB)</span>
+                </p>
                 <input type="file" name="file" required
                        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
                        class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                              file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-1
-                              file:text-xs file:font-medium file:text-zinc-700 hover:file:bg-zinc-200
-                              focus:outline-none focus:ring-1 focus:ring-accent
-                              dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600" />
-                <flux:description>PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX — max 10 MB</flux:description>
-                @error('file')
-                    <flux:error>{{ $message }}</flux:error>
-                @enderror
-            </flux:field>
+                              file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
+                              focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
+                              dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
+                @error('file') <flux:error>{{ $message }}</flux:error> @enderror
+            </div>
 
-            <flux:field>
-                <flux:label>Remarks</flux:label>
-                <flux:textarea name="remarks" rows="2"
-                               placeholder="Optional notes about this document">{{ old('remarks') }}</flux:textarea>
-                @error('remarks')
-                    <flux:error>{{ $message }}</flux:error>
-                @enderror
-            </flux:field>
+            <div class="relative">
+                <textarea name="remarks" id="doc_remarks" rows="2" placeholder=" " class="{{ $textareaCls }}">{{ old('remarks') }}</textarea>
+                <label for="doc_remarks" class="{{ $labelCls }}">Remarks</label>
+                @error('remarks') <flux:error>{{ $message }}</flux:error> @enderror
+            </div>
 
             <div class="flex items-center gap-3 pt-1">
                 <flux:button type="submit" variant="primary" size="sm" icon="arrow-up-tray">

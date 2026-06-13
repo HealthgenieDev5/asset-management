@@ -3,7 +3,7 @@
     {{-- Page Header --}}
     <div class="mb-6">
         <flux:heading size="xl" class="font-extrabold">
-            Asset Management <span class="text-accent">Dashboard</span>
+            Asset and Maintenance Management <span class="text-accent">Dashboard</span>
         </flux:heading>
         <flux:text class="mt-1 text-zinc-500 dark:text-zinc-400">Overview of your company's fixed assets and upcoming reminders.</flux:text>
     </div>

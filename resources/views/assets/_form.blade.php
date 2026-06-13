@@ -49,6 +49,15 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 
+@php
+// Reusable floating-label classes
+$inputCls  = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+$selectCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+$labelCls  = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-accent dark:text-zinc-400 dark:peer-focus:text-accent';
+$labelSelCls = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+$textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+@endphp
+
 <div class="space-y-6" x-data="assetForm">
 
     {{-- Section: Basic Info --}}
@@ -58,31 +67,32 @@ document.addEventListener('alpine:init', () => {
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {{-- Asset Name --}}
             <div class="lg:col-span-2">
-                <flux:field>
-                    <flux:label>Asset Name <span class="text-red-400">*</span></flux:label>
-                    <flux:input name="asset_name" value="{{ $old('asset_name') }}" placeholder="e.g. Honda City Car" required />
-                    <flux:error name="asset_name" />
-                </flux:field>
+                <div class="relative">
+                    <input type="text" name="asset_name" id="asset_name"
+                        value="{{ $old('asset_name') }}" placeholder=" " required
+                        class="{{ $inputCls }}" />
+                    <label for="asset_name" class="{{ $labelCls }}">Asset Name <span class="text-red-400">*</span></label>
+                </div>
+                <flux:error name="asset_name" />
             </div>
 
             {{-- Status --}}
-            <flux:field>
-                <flux:label>Status <span class="text-red-400">*</span></flux:label>
-                <flux:select name="status">
+            <div class="relative">
+                <select name="status" id="status" class="{{ $selectCls }}">
                     <option value="active" @selected($old('status', 'active') === 'active')>Active</option>
                     <option value="under_repair" @selected($old('status') === 'under_repair')>Under Repair</option>
                     <option value="disposed" @selected($old('status') === 'disposed')>Disposed</option>
                     <option value="scrapped" @selected($old('status') === 'scrapped')>Scrapped</option>
                     <option value="inactive" @selected($old('status') === 'inactive')>Inactive</option>
-                </flux:select>
+                </select>
+                <label for="status" class="{{ $labelSelCls }}">Status <span class="text-red-400">*</span></label>
                 <flux:error name="status" />
-            </flux:field>
+            </div>
 
             {{-- Category --}}
-            <flux:field>
-                <flux:label>Category <span class="text-red-400">*</span></flux:label>
+            <div class="relative">
                 <select id="category_select" name="asset_category_id"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                    class="{{ $selectCls }}"
                     x-on:change="loadSubcategories($event.target.value)"
                     required>
                     <option value="">Select Category</option>
@@ -93,29 +103,33 @@ document.addEventListener('alpine:init', () => {
                         </option>
                     @endforeach
                 </select>
+                <label for="category_select" class="{{ $labelSelCls }}">Category <span class="text-red-400">*</span></label>
                 <flux:error name="asset_category_id" />
-            </flux:field>
+            </div>
 
             {{-- Subcategory --}}
-            <flux:field>
-                <flux:label>Subcategory</flux:label>
-                <select name="asset_subcategory_id" x-model="selectedSubcategoryId"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
+            <div class="relative">
+                <select name="asset_subcategory_id" id="asset_subcategory_id"
+                    x-model="selectedSubcategoryId"
+                    class="{{ $selectCls }}">
                     <option value="">— None —</option>
                     <template x-for="sub in subcategories" :key="sub.id">
                         <option :value="sub.id" x-text="sub.name"></option>
                     </template>
                 </select>
+                <label for="asset_subcategory_id" class="{{ $labelSelCls }}">Subcategory</label>
                 <flux:error name="asset_subcategory_id" />
-            </flux:field>
+            </div>
 
             {{-- Description --}}
             <div class="lg:col-span-3">
-                <flux:field>
-                    <flux:label>Description</flux:label>
-                    <flux:textarea name="asset_description" rows="2" placeholder="Brief description of the asset">{{ $old('asset_description') }}</flux:textarea>
-                    <flux:error name="asset_description" />
-                </flux:field>
+                <div class="relative">
+                    <textarea name="asset_description" id="asset_description" rows="2"
+                        placeholder=" "
+                        class="{{ $textareaCls }}">{{ $old('asset_description') }}</textarea>
+                    <label for="asset_description" class="{{ $labelCls }}">Description</label>
+                </div>
+                <flux:error name="asset_description" />
             </div>
         </div>
     </div>
@@ -125,53 +139,70 @@ document.addEventListener('alpine:init', () => {
         <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Identification & Location</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <flux:field>
-                <flux:label>Manufacturer</flux:label>
-                <flux:input name="manufacturer" value="{{ $old('manufacturer') }}" placeholder="e.g. Honda" />
+            <div class="relative">
+                <input type="text" name="manufacturer" id="manufacturer"
+                    value="{{ $old('manufacturer') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="manufacturer" class="{{ $labelCls }}">Manufacturer</label>
                 <flux:error name="manufacturer" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Model</flux:label>
-                <flux:input name="model" value="{{ $old('model') }}" placeholder="e.g. City 1.5 VX" />
+            <div class="relative">
+                <input type="text" name="model" id="model"
+                    value="{{ $old('model') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="model" class="{{ $labelCls }}">Model</label>
                 <flux:error name="model" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Model Year</flux:label>
-                <flux:input type="number" name="model_year" value="{{ $old('model_year') }}" placeholder="e.g. 2022" min="1900" max="{{ date('Y') + 1 }}" />
+            <div class="relative">
+                <input type="number" name="model_year" id="model_year"
+                    value="{{ $old('model_year') }}" placeholder=" "
+                    min="1900" max="{{ date('Y') + 1 }}"
+                    class="{{ $inputCls }}" />
+                <label for="model_year" class="{{ $labelCls }}">Model Year</label>
                 <flux:error name="model_year" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Serial Number</flux:label>
-                <flux:input name="serial_number" value="{{ $old('serial_number') }}" placeholder="Manufacturer serial" />
+            <div class="relative">
+                <input type="text" name="serial_number" id="serial_number"
+                    value="{{ $old('serial_number') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="serial_number" class="{{ $labelCls }}">Serial Number</label>
                 <flux:error name="serial_number" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Location</flux:label>
-                <flux:input name="location" value="{{ $old('location') }}" placeholder="e.g. Head Office, Warehouse B" />
+            <div class="relative">
+                <input type="text" name="location" id="location"
+                    value="{{ $old('location') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="location" class="{{ $labelCls }}">Location</label>
                 <flux:error name="location" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Department</flux:label>
-                <flux:input name="department" value="{{ $old('department') }}" placeholder="e.g. Operations" />
+            <div class="relative">
+                <input type="text" name="department" id="department"
+                    value="{{ $old('department') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="department" class="{{ $labelCls }}">Department</label>
                 <flux:error name="department" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Custodian</flux:label>
-                <flux:input name="custodian" value="{{ $old('custodian') }}" placeholder="Person responsible" />
+            <div class="relative">
+                <input type="text" name="custodian" id="custodian"
+                    value="{{ $old('custodian') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="custodian" class="{{ $labelCls }}">Custodian</label>
                 <flux:error name="custodian" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Vendor / Supplier</flux:label>
-                <flux:input name="vendor_supplier" value="{{ $old('vendor_supplier') }}" placeholder="Supplier name" />
+            <div class="relative">
+                <input type="text" name="vendor_supplier" id="vendor_supplier"
+                    value="{{ $old('vendor_supplier') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="vendor_supplier" class="{{ $labelCls }}">Vendor / Supplier</label>
                 <flux:error name="vendor_supplier" />
-            </flux:field>
+            </div>
         </div>
     </div>
 
@@ -180,29 +211,32 @@ document.addEventListener('alpine:init', () => {
         <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Purchase & Bill Details</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <flux:field>
-                <flux:label>Bill Number</flux:label>
-                <flux:input name="bill_no" value="{{ $old('bill_no') }}" placeholder="Invoice / bill no." />
+            <div class="relative">
+                <input type="text" name="bill_no" id="bill_no"
+                    value="{{ $old('bill_no') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="bill_no" class="{{ $labelCls }}">Bill Number</label>
                 <flux:error name="bill_no" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Bill Amount (₹)</flux:label>
-                <flux:input type="number" name="bill_amount" value="{{ $old('bill_amount') }}" placeholder="0.00" min="0" step="0.01" />
+            <div class="relative">
+                <input type="number" name="bill_amount" id="bill_amount"
+                    value="{{ $old('bill_amount') }}" placeholder=" "
+                    min="0" step="0.01"
+                    class="{{ $inputCls }}" />
+                <label for="bill_amount" class="{{ $labelCls }}">Bill Amount (₹)</label>
                 <flux:error name="bill_amount" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Bill Date</flux:label>
-                <x-date-picker name="bill_date" value="{{ $old('bill_date') }}" />
+            <div>
+                <x-date-picker name="bill_date" label="Bill Date" value="{{ $old('bill_date') }}" />
                 <flux:error name="bill_date" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Purchase Date</flux:label>
-                <x-date-picker name="purchase_date" value="{{ $old('purchase_date') }}" />
+            <div>
+                <x-date-picker name="purchase_date" label="Purchase Date" value="{{ $old('purchase_date') }}" />
                 <flux:error name="purchase_date" />
-            </flux:field>
+            </div>
         </div>
     </div>
 
@@ -212,34 +246,38 @@ document.addEventListener('alpine:init', () => {
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="lg:col-span-2">
-                <flux:field>
-                    <flux:label>Warranty Details</flux:label>
-                    <flux:textarea name="warranty_details" rows="2" placeholder="e.g. 2 year on-site warranty from Honda">{{ $old('warranty_details') }}</flux:textarea>
-                    <flux:error name="warranty_details" />
-                </flux:field>
+                <div class="relative">
+                    <textarea name="warranty_details" id="warranty_details" rows="2"
+                        placeholder=" "
+                        class="{{ $textareaCls }}">{{ $old('warranty_details') }}</textarea>
+                    <label for="warranty_details" class="{{ $labelCls }}">Warranty Details</label>
+                </div>
+                <flux:error name="warranty_details" />
             </div>
 
-            <flux:field>
-                <flux:label>Warranty Lapse Date</flux:label>
-                <x-date-picker name="warranty_lapse_date" value="{{ $old('warranty_lapse_date') }}" />
+            <div>
+                <x-date-picker name="warranty_lapse_date" label="Warranty Lapse Date" value="{{ $old('warranty_lapse_date') }}" />
                 <flux:error name="warranty_lapse_date" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Remind Before (days)</flux:label>
-                <flux:input type="number" name="warranty_reminder_before_days" value="{{ $old('warranty_reminder_before_days', 30) }}" min="1" max="365" />
-                <flux:description>Days before warranty expiry to send reminder</flux:description>
+            <div class="relative">
+                <input type="number" name="warranty_reminder_before_days" id="warranty_reminder_before_days"
+                    value="{{ $old('warranty_reminder_before_days', 30) }}" placeholder=" "
+                    min="1" max="365"
+                    class="{{ $inputCls }}" />
+                <label for="warranty_reminder_before_days" class="{{ $labelCls }}">Remind Before (days)</label>
+                <p class="mt-1 text-xs text-zinc-500">Days before warranty expiry to send reminder</p>
                 <flux:error name="warranty_reminder_before_days" />
-            </flux:field>
+            </div>
         </div>
 
         {{-- Warranty document uploads --}}
         <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
             {{-- Warranty Card --}}
             <div>
-                <flux:label class="mb-1.5 block">Warranty Card
-                    <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
-                </flux:label>
+                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Card
+                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
+                </p>
                 @if ($isEdit && ($warrantyCard = $asset->documents->where('document_type', 'warranty_card')->last()))
                     <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
@@ -265,9 +303,9 @@ document.addEventListener('alpine:init', () => {
 
             {{-- Warranty Activation Image --}}
             <div>
-                <flux:label class="mb-1.5 block">Warranty Activation Image
-                    <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
-                </flux:label>
+                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Activation Image
+                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
+                </p>
                 @if ($isEdit && ($activationImg = $asset->documents->where('document_type', 'warranty_activation_image')->last()))
                     <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 text-zinc-400 shrink-0" />
@@ -303,73 +341,78 @@ document.addEventListener('alpine:init', () => {
         <flux:text class="mb-5 text-xs text-zinc-500">Optional — fill only if an extended warranty was purchased separately from the original.</flux:text>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {{-- Vendor --}}
-            <flux:field>
-                <flux:label>Vendor / Provider</flux:label>
-                <flux:input name="ew_vendor" value="{{ $ewOld('extended_warranty_vendor') }}" placeholder="e.g. Honda Extended Care" />
+            <div class="relative">
+                <input type="text" name="ew_vendor" id="ew_vendor"
+                    value="{{ $ewOld('extended_warranty_vendor') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="ew_vendor" class="{{ $labelCls }}">Vendor / Provider</label>
                 <flux:error name="ew_vendor" />
-            </flux:field>
-
-            {{-- Date From --}}
-            <flux:field>
-                <flux:label>Warranty From</flux:label>
-                <x-date-picker name="ew_date_from" value="{{ $ew?->extended_warranty_date_from ? old('ew_date_from', $ew->extended_warranty_date_from->format('Y-m-d')) : old('ew_date_from') }}" />
-                <flux:error name="ew_date_from" />
-            </flux:field>
-
-            {{-- Date To --}}
-            <flux:field>
-                <flux:label>Warranty Lapse Date</flux:label>
-                <x-date-picker name="ew_date_to" value="{{ $ew?->extended_warranty_date_to ? old('ew_date_to', $ew->extended_warranty_date_to->format('Y-m-d')) : old('ew_date_to') }}" />
-                <flux:error name="ew_date_to" />
-            </flux:field>
-
-            {{-- Bill No --}}
-            <flux:field>
-                <flux:label>Bill Number</flux:label>
-                <flux:input name="ew_bill_no" value="{{ $ewOld('extended_warranty_bill_no') }}" placeholder="Invoice / bill no." />
-                <flux:error name="ew_bill_no" />
-            </flux:field>
-
-            {{-- Bill Amount --}}
-            <flux:field>
-                <flux:label>Bill Amount (₹)</flux:label>
-                <flux:input type="number" name="ew_amount" value="{{ $ewOld('extended_warranty_amount') }}" placeholder="0.00" min="0" step="0.01" />
-                <flux:error name="ew_amount" />
-            </flux:field>
-
-            {{-- Reminder Before Days --}}
-            <flux:field>
-                <flux:label>Remind Before (days)</flux:label>
-                <flux:input type="number" name="ew_reminder_days" value="{{ $ewOld('reminder_before_days', 30) }}" min="1" max="365" />
-                <flux:description>Days before extended warranty expiry to send reminder</flux:description>
-                <flux:error name="ew_reminder_days" />
-            </flux:field>
-
-            {{-- Terms --}}
-            <div class="sm:col-span-2 lg:col-span-2">
-                <flux:field>
-                    <flux:label>Warranty Terms</flux:label>
-                    <flux:textarea name="ew_terms" rows="2" placeholder="Coverage details, exclusions, etc.">{{ $ewOld('extended_warranty_terms') }}</flux:textarea>
-                    <flux:error name="ew_terms" />
-                </flux:field>
             </div>
 
-            {{-- Remarks --}}
-            <flux:field>
-                <flux:label>Remarks</flux:label>
-                <flux:textarea name="ew_remarks" rows="2" placeholder="Any additional notes">{{ $ewOld('remarks') }}</flux:textarea>
+            <div>
+                <x-date-picker name="ew_date_from" label="Warranty From"
+                    value="{{ $ew?->extended_warranty_date_from ? old('ew_date_from', $ew->extended_warranty_date_from->format('Y-m-d')) : old('ew_date_from') }}" />
+                <flux:error name="ew_date_from" />
+            </div>
+
+            <div>
+                <x-date-picker name="ew_date_to" label="Warranty Lapse Date"
+                    value="{{ $ew?->extended_warranty_date_to ? old('ew_date_to', $ew->extended_warranty_date_to->format('Y-m-d')) : old('ew_date_to') }}" />
+                <flux:error name="ew_date_to" />
+            </div>
+
+            <div class="relative">
+                <input type="text" name="ew_bill_no" id="ew_bill_no"
+                    value="{{ $ewOld('extended_warranty_bill_no') }}" placeholder=" "
+                    class="{{ $inputCls }}" />
+                <label for="ew_bill_no" class="{{ $labelCls }}">Bill Number</label>
+                <flux:error name="ew_bill_no" />
+            </div>
+
+            <div class="relative">
+                <input type="number" name="ew_amount" id="ew_amount"
+                    value="{{ $ewOld('extended_warranty_amount') }}" placeholder=" "
+                    min="0" step="0.01"
+                    class="{{ $inputCls }}" />
+                <label for="ew_amount" class="{{ $labelCls }}">Bill Amount (₹)</label>
+                <flux:error name="ew_amount" />
+            </div>
+
+            <div class="relative">
+                <input type="number" name="ew_reminder_days" id="ew_reminder_days"
+                    value="{{ $ewOld('reminder_before_days', 30) }}" placeholder=" "
+                    min="1" max="365"
+                    class="{{ $inputCls }}" />
+                <label for="ew_reminder_days" class="{{ $labelCls }}">Remind Before (days)</label>
+                <p class="mt-1 text-xs text-zinc-500">Days before extended warranty expiry to send reminder</p>
+                <flux:error name="ew_reminder_days" />
+            </div>
+
+            <div class="sm:col-span-2 lg:col-span-2">
+                <div class="relative">
+                    <textarea name="ew_terms" id="ew_terms" rows="2"
+                        placeholder=" "
+                        class="{{ $textareaCls }}">{{ $ewOld('extended_warranty_terms') }}</textarea>
+                    <label for="ew_terms" class="{{ $labelCls }}">Warranty Terms</label>
+                </div>
+                <flux:error name="ew_terms" />
+            </div>
+
+            <div class="relative">
+                <textarea name="ew_remarks" id="ew_remarks" rows="2"
+                    placeholder=" "
+                    class="{{ $textareaCls }}">{{ $ewOld('remarks') }}</textarea>
+                <label for="ew_remarks" class="{{ $labelCls }}">Remarks</label>
                 <flux:error name="ew_remarks" />
-            </flux:field>
+            </div>
         </div>
 
         {{-- Extended Warranty Document Uploads --}}
         <div class="mt-5 grid gap-4 border-t border-zinc-200 pt-5 sm:grid-cols-2 dark:border-zinc-800">
-            {{-- Bill Image --}}
             <div>
-                <flux:label class="mb-1.5 block">Extended Warranty Bill
-                    <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
-                </flux:label>
+                <p class="mb-1.5 text-xs font-medium text-zinc-500">Extended Warranty Bill
+                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
+                </p>
                 @if ($ew && ($ewBill = $ew->documents->where('document_type', 'extended_warranty_bill')->last()))
                     <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
@@ -389,11 +432,10 @@ document.addEventListener('alpine:init', () => {
                 @enderror
             </div>
 
-            {{-- Activation Image --}}
             <div>
-                <flux:label class="mb-1.5 block">Warranty Activation Image
-                    <span class="ml-1 text-xs font-normal text-zinc-500">(PDF / image, max 5 MB)</span>
-                </flux:label>
+                <p class="mb-1.5 text-xs font-medium text-zinc-500">Warranty Activation Image
+                    <span class="ml-1 font-normal">(PDF / image, max 5 MB)</span>
+                </p>
                 @if ($ew && ($ewActivation = $ew->documents->where('document_type', 'extended_warranty_image')->last()))
                     <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
@@ -420,27 +462,32 @@ document.addEventListener('alpine:init', () => {
         <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Maintenance Schedule</flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <flux:field>
-                <flux:label>Schedule Type</flux:label>
-                <flux:select name="maintenance_schedule_type" x-model="maintenanceType">
+            <div class="relative">
+                <select name="maintenance_schedule_type" id="maintenance_schedule_type"
+                    class="{{ $selectCls }}"
+                    x-model="maintenanceType">
                     <option value="none" @selected($old('maintenance_schedule_type', 'none') === 'none')>None</option>
                     <option value="date_based" @selected($old('maintenance_schedule_type') === 'date_based')>Date Based</option>
                     <option value="hours_based" @selected($old('maintenance_schedule_type') === 'hours_based')>Hours Based</option>
                     <option value="mileage_based" @selected($old('maintenance_schedule_type') === 'mileage_based')>Mileage Based</option>
                     <option value="custom" @selected($old('maintenance_schedule_type') === 'custom')>Custom</option>
-                </flux:select>
+                </select>
+                <label for="maintenance_schedule_type" class="{{ $labelSelCls }}">Schedule Type</label>
                 <flux:error name="maintenance_schedule_type" />
-            </flux:field>
+            </div>
 
-            <flux:field x-show="maintenanceType !== 'none'">
-                <flux:label>Interval Value</flux:label>
-                <flux:input type="number" name="maintenance_interval_value" value="{{ $old('maintenance_interval_value') }}" min="1" placeholder="e.g. 3" />
+            <div class="relative" x-show="maintenanceType !== 'none'">
+                <input type="number" name="maintenance_interval_value" id="maintenance_interval_value"
+                    value="{{ $old('maintenance_interval_value') }}" placeholder=" "
+                    min="1"
+                    class="{{ $inputCls }}" />
+                <label for="maintenance_interval_value" class="{{ $labelCls }}">Interval Value</label>
                 <flux:error name="maintenance_interval_value" />
-            </flux:field>
+            </div>
 
-            <flux:field x-show="maintenanceType !== 'none'">
-                <flux:label>Interval Unit</flux:label>
-                <flux:select name="maintenance_interval_unit">
+            <div class="relative" x-show="maintenanceType !== 'none'">
+                <select name="maintenance_interval_unit" id="maintenance_interval_unit"
+                    class="{{ $selectCls }}">
                     <option value="">Select Unit</option>
                     <option value="days" @selected($old('maintenance_interval_unit') === 'days')>Days</option>
                     <option value="weeks" @selected($old('maintenance_interval_unit') === 'weeks')>Weeks</option>
@@ -449,9 +496,10 @@ document.addEventListener('alpine:init', () => {
                     <option value="operating_hours" @selected($old('maintenance_interval_unit') === 'operating_hours')>Operating Hours</option>
                     <option value="miles" @selected($old('maintenance_interval_unit') === 'miles')>Miles</option>
                     <option value="kilometers" @selected($old('maintenance_interval_unit') === 'kilometers')>Kilometers</option>
-                </flux:select>
+                </select>
+                <label for="maintenance_interval_unit" class="{{ $labelSelCls }}">Interval Unit</label>
                 <flux:error name="maintenance_interval_unit" />
-            </flux:field>
+            </div>
         </div>
 
         {{-- Inspection --}}
@@ -465,23 +513,27 @@ document.addEventListener('alpine:init', () => {
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2" x-show="inspectionRequired">
-                <flux:field>
-                    <flux:label>Inspection Frequency</flux:label>
-                    <flux:input type="number" name="inspection_frequency_value" value="{{ $old('inspection_frequency_value') }}" min="1" placeholder="e.g. 6" />
+                <div class="relative">
+                    <input type="number" name="inspection_frequency_value" id="inspection_frequency_value"
+                        value="{{ $old('inspection_frequency_value') }}" placeholder=" "
+                        min="1"
+                        class="{{ $inputCls }}" />
+                    <label for="inspection_frequency_value" class="{{ $labelCls }}">Inspection Frequency</label>
                     <flux:error name="inspection_frequency_value" />
-                </flux:field>
+                </div>
 
-                <flux:field>
-                    <flux:label>Frequency Unit</flux:label>
-                    <flux:select name="inspection_frequency_unit">
+                <div class="relative">
+                    <select name="inspection_frequency_unit" id="inspection_frequency_unit"
+                        class="{{ $selectCls }}">
                         <option value="">Select Unit</option>
                         <option value="days" @selected($old('inspection_frequency_unit') === 'days')>Days</option>
                         <option value="weeks" @selected($old('inspection_frequency_unit') === 'weeks')>Weeks</option>
                         <option value="months" @selected($old('inspection_frequency_unit') === 'months')>Months</option>
                         <option value="years" @selected($old('inspection_frequency_unit') === 'years')>Years</option>
-                    </flux:select>
+                    </select>
+                    <label for="inspection_frequency_unit" class="{{ $labelSelCls }}">Frequency Unit</label>
                     <flux:error name="inspection_frequency_unit" />
-                </flux:field>
+                </div>
             </div>
         </div>
     </div>
@@ -494,73 +546,90 @@ document.addEventListener('alpine:init', () => {
         </flux:heading>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <flux:field>
-                <flux:label>Registration Number</flux:label>
-                <flux:input name="registration_number" value="{{ $old('registration_number') }}" placeholder="e.g. MH12AB1234" class="uppercase" />
+            <div class="relative">
+                <input type="text" name="registration_number" id="registration_number"
+                    value="{{ $old('registration_number') }}" placeholder=" "
+                    class="{{ $inputCls }} uppercase" />
+                <label for="registration_number" class="{{ $labelCls }}">Registration Number</label>
                 <flux:error name="registration_number" />
-            </flux:field>
+            </div>
 
             <div class="lg:col-span-2"></div>{{-- spacer --}}
 
-            <flux:field>
-                <flux:label>PUC Expiry Date</flux:label>
-                <x-date-picker name="puc_expiry_date" value="{{ $old('puc_expiry_date') }}" />
+            <div>
+                <x-date-picker name="puc_expiry_date" label="PUC Expiry Date" value="{{ $old('puc_expiry_date') }}" />
                 <flux:error name="puc_expiry_date" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>PUC Reminder (days before)</flux:label>
-                <flux:input type="number" name="puc_reminder_before_days" value="{{ $old('puc_reminder_before_days') }}" min="1" max="365" placeholder="e.g. 30" />
+            <div class="relative">
+                <input type="number" name="puc_reminder_before_days" id="puc_reminder_before_days"
+                    value="{{ $old('puc_reminder_before_days') }}" placeholder=" "
+                    min="1" max="365"
+                    class="{{ $inputCls }}" />
+                <label for="puc_reminder_before_days" class="{{ $labelCls }}">PUC Reminder (days before)</label>
                 <flux:error name="puc_reminder_before_days" />
-            </flux:field>
+            </div>
 
             <div></div>{{-- spacer --}}
 
-            <flux:field>
-                <flux:label>Fitness Expiry Date</flux:label>
-                <x-date-picker name="fitness_expiry_date" value="{{ $old('fitness_expiry_date') }}" />
+            <div>
+                <x-date-picker name="fitness_expiry_date" label="Fitness Expiry Date" value="{{ $old('fitness_expiry_date') }}" />
                 <flux:error name="fitness_expiry_date" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Fitness Reminder (days before)</flux:label>
-                <flux:input type="number" name="fitness_reminder_before_days" value="{{ $old('fitness_reminder_before_days') }}" min="1" max="365" placeholder="e.g. 30" />
+            <div class="relative">
+                <input type="number" name="fitness_reminder_before_days" id="fitness_reminder_before_days"
+                    value="{{ $old('fitness_reminder_before_days') }}" placeholder=" "
+                    min="1" max="365"
+                    class="{{ $inputCls }}" />
+                <label for="fitness_reminder_before_days" class="{{ $labelCls }}">Fitness Reminder (days before)</label>
                 <flux:error name="fitness_reminder_before_days" />
-            </flux:field>
+            </div>
 
             <div></div>{{-- spacer --}}
 
-            <flux:field>
-                <flux:label>Road Tax Expiry Date</flux:label>
-                <x-date-picker name="road_tax_expiry_date" value="{{ $old('road_tax_expiry_date') }}" />
+            <div>
+                <x-date-picker name="road_tax_expiry_date" label="Road Tax Expiry Date" value="{{ $old('road_tax_expiry_date') }}" />
                 <flux:error name="road_tax_expiry_date" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Road Tax Reminder (days before)</flux:label>
-                <flux:input type="number" name="road_tax_reminder_before_days" value="{{ $old('road_tax_reminder_before_days') }}" min="1" max="365" placeholder="e.g. 30" />
+            <div class="relative">
+                <input type="number" name="road_tax_reminder_before_days" id="road_tax_reminder_before_days"
+                    value="{{ $old('road_tax_reminder_before_days') }}" placeholder=" "
+                    min="1" max="365"
+                    class="{{ $inputCls }}" />
+                <label for="road_tax_reminder_before_days" class="{{ $labelCls }}">Road Tax Reminder (days before)</label>
                 <flux:error name="road_tax_reminder_before_days" />
-            </flux:field>
+            </div>
 
             <div></div>{{-- spacer --}}
 
-            <flux:field>
-                <flux:label>OBV (₹)</flux:label>
-                <flux:input type="number" name="vehicle_obv" value="{{ $old('vehicle_obv') }}" min="0" step="0.01" placeholder="Original Book Value" />
+            <div class="relative">
+                <input type="number" name="vehicle_obv" id="vehicle_obv"
+                    value="{{ $old('vehicle_obv') }}" placeholder=" "
+                    min="0" step="0.01"
+                    class="{{ $inputCls }}" />
+                <label for="vehicle_obv" class="{{ $labelCls }}">OBV (₹)</label>
                 <flux:error name="vehicle_obv" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Depreciation %</flux:label>
-                <flux:input type="number" name="vehicle_depreciation_percent" value="{{ $old('vehicle_depreciation_percent') }}" min="0" max="100" step="0.01" placeholder="e.g. 15.00" />
+            <div class="relative">
+                <input type="number" name="vehicle_depreciation_percent" id="vehicle_depreciation_percent"
+                    value="{{ $old('vehicle_depreciation_percent') }}" placeholder=" "
+                    min="0" max="100" step="0.01"
+                    class="{{ $inputCls }}" />
+                <label for="vehicle_depreciation_percent" class="{{ $labelCls }}">Depreciation %</label>
                 <flux:error name="vehicle_depreciation_percent" />
-            </flux:field>
+            </div>
 
-            <flux:field>
-                <flux:label>Depreciation Book Value (₹)</flux:label>
-                <flux:input type="number" name="vehicle_depreciation_book_value" value="{{ $old('vehicle_depreciation_book_value') }}" min="0" step="0.01" />
+            <div class="relative">
+                <input type="number" name="vehicle_depreciation_book_value" id="vehicle_depreciation_book_value"
+                    value="{{ $old('vehicle_depreciation_book_value') }}" placeholder=" "
+                    min="0" step="0.01"
+                    class="{{ $inputCls }}" />
+                <label for="vehicle_depreciation_book_value" class="{{ $labelCls }}">Depreciation Book Value (₹)</label>
                 <flux:error name="vehicle_depreciation_book_value" />
-            </flux:field>
+            </div>
         </div>
     </div>
 
@@ -574,4 +643,3 @@ document.addEventListener('alpine:init', () => {
         </flux:button>
     </div>
 </div>
-
