@@ -51,6 +51,72 @@
         </form>
     </x-modal>
 
+    {{-- View Modal --}}
+    @if ($hasWarranty)
+        <x-modal name="view-warranty" title="Original Warranty Details">
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        <flux:icon.shield-check class="size-4 shrink-0 text-zinc-400" />
+                        <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">Original Warranty</h3>
+                    </div>
+                    @if ($expired)
+                        <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
+                    @elseif ($soon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
+                    @elseif ($days !== null)
+                        <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
+                    @endif
+                </div>
+
+                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
+                        <dd class="mt-0.5 text-sm {{ $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $asset->warranty_lapse_date?->format('d M Y') ?: '--' }}
+                            @if ($expired) <span class="text-xs font-normal">(Expired)</span>
+                            @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $asset->warranty_reminder_before_days ? $asset->warranty_reminder_before_days . ' days' : '--' }}
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Warranty Details</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $asset->warranty_details ?: '--' }}</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
+                    @if ($warrantyDocs->isNotEmpty())
+                        <div class="space-y-1.5">
+                            @foreach ($warrantyDocs as $doc)
+                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    @if ($doc->isImage())
+                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                                    @else
+                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                                    @endif
+                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                       class="text-xs text-accent hover:underline">Open</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No documents attached.</p>
+                    @endif
+                </div>
+            </div>
+        </x-modal>
+    @endif
+
     {{-- Content --}}
     <div class="grid grid-cols-3 gap-4">
         @if ($hasWarranty)
@@ -70,6 +136,13 @@
                         @elseif ($days !== null)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-view-warranty')"
+                                aria-label="View warranty"
+                                title="View warranty"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.eye class="size-3.5" />
+                        </button>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-warranty')"
                                 aria-label="Edit warranty"

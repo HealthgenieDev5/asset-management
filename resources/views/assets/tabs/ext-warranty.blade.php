@@ -82,6 +82,104 @@
             </form>
         </x-modal>
 
+        {{-- View Modal --}}
+        @php
+            $expired     = $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
+            $days        = $ew->extended_warranty_date_to ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false) : null;
+            $soon        = ! $expired && $days !== null && $days <= 30;
+        @endphp
+        <x-modal name="view-ext-warranty" title="Extended Warranty Details">
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.shield-check class="size-4 shrink-0 text-zinc-400" />
+                            <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {{ $ew->extended_warranty_vendor ?: 'Extended Warranty' }}
+                            </h3>
+                        </div>
+                        @if ($ew->extended_warranty_bill_no)
+                            <p class="mt-1 font-mono text-xs text-zinc-500">{{ $ew->extended_warranty_bill_no }}</p>
+                        @endif
+                    </div>
+                    @if ($expired)
+                        <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
+                    @elseif ($soon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
+                    @elseif ($days !== null)
+                        <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
+                    @endif
+                </div>
+
+                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Vendor / Provider</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_vendor ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">From</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_date_from?->format('d M Y') ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
+                        <dd class="mt-0.5 text-sm {{ $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $ew->extended_warranty_date_to?->format('d M Y') ?: '--' }}
+                            @if ($expired) <span class="text-xs font-normal">(Expired)</span>
+                            @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Bill Number</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_bill_no ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Amount</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $ew->extended_warranty_amount ? 'Rs. ' . number_format($ew->extended_warranty_amount, 2) : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $ew->reminder_before_days ? $ew->reminder_before_days . ' days' : '--' }}
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Warranty Terms</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_terms ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->remarks ?: '--' }}</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
+                    @if ($ew->documents->isNotEmpty())
+                        <div class="space-y-1.5">
+                            @foreach ($ew->documents as $doc)
+                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    @if ($doc->isImage())
+                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                                    @else
+                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                                    @endif
+                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                       class="text-xs text-accent hover:underline">Open</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No documents attached.</p>
+                    @endif
+                </div>
+            </div>
+        </x-modal>
+
         {{-- EW Card --}}
         <div class="grid grid-cols-3 gap-4">
         @php
@@ -111,6 +209,13 @@
                     @elseif ($days !== null)
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
+                    <button type="button"
+                            x-on:click="$dispatch('open-modal-view-ext-warranty')"
+                            aria-label="View extended warranty"
+                            title="View extended warranty"
+                            class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                        <flux:icon.eye class="size-3.5" />
+                    </button>
                     <button type="button"
                             x-on:click="$dispatch('open-modal-edit-ext-warranty')"
                             aria-label="Edit extended warranty"

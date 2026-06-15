@@ -70,6 +70,180 @@
         </x-modal>
     @endforeach
 
+    {{-- View Modals (one per service record) --}}
+    @foreach ($asset->services->sortByDesc('service_date') as $svc)
+        @php
+            $viewNextDays    = $svc->daysUntilNextService();
+            $viewNextOverdue = $svc->isNextServiceOverdue();
+            $viewCertDays    = $svc->daysUntilCertificationExpiry();
+            $viewCertExpired = $svc->isCertificationExpired();
+            $viewPartsCost   = $svc->totalPartsCost();
+        @endphp
+        <x-modal name="view-service-{{ $svc->id }}" title="Servicing Record Details">
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $svc->service_type_color }}">
+                                {{ $svc->service_type_label }}
+                            </span>
+                            <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $svc->service_date->format('d M Y') }}</h3>
+                        </div>
+                        @if ($svc->service_agency)
+                            <p class="mt-1 text-xs text-zinc-500">{{ $svc->service_agency }}</p>
+                        @endif
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-1.5">
+                        @if ($viewNextOverdue)
+                            <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Service Overdue</span>
+                        @elseif ($viewNextDays !== null && $viewNextDays <= 30)
+                            <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Due in {{ $viewNextDays }}d</span>
+                        @endif
+                        @if ($viewCertExpired)
+                            <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Cert Expired</span>
+                        @elseif ($viewCertDays !== null && $viewCertDays <= 30)
+                            <span class="rounded-full bg-orange-400/10 px-2 py-0.5 text-xs font-medium text-orange-400">Cert in {{ $viewCertDays }}d</span>
+                        @endif
+                    </div>
+                </div>
+
+                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Technician</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->technician_name ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Condition</dt>
+                        <dd class="mt-0.5 text-sm font-medium {{ $svc->condition_rating ? $svc->condition_rating_color : 'text-zinc-800 dark:text-zinc-100' }}">{{ $svc->condition_rating ? $svc->condition_rating_label : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Service Cost</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->service_cost ? 'Rs. ' . number_format($svc->service_cost, 2) : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Parts Cost</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $viewPartsCost > 0 ? 'Rs. ' . number_format($viewPartsCost, 2) : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Grand Total</dt>
+                        <dd class="mt-0.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $svc->grandTotalCost() > 0 ? 'Rs. ' . number_format($svc->grandTotalCost(), 2) : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Bill No</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->bill_no ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Bill Date</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->bill_date?->format('d M Y') ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Next Service Due</dt>
+                        <dd class="mt-0.5 text-sm {{ $viewNextOverdue ? 'text-red-400 font-semibold' : ($viewNextDays !== null && $viewNextDays <= 30 ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $svc->next_service_date?->format('d M Y') ?: '--' }}
+                            @if ($viewNextOverdue) <span class="text-xs font-normal">(Overdue)</span>
+                            @elseif ($viewNextDays !== null && $viewNextDays <= 30) <span class="text-xs">({{ $viewNextDays }}d)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Interval</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $svc->service_interval_value && $svc->service_interval_unit ? 'Every ' . $svc->service_interval_value . ' ' . $svc->service_interval_unit : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Meter / Op. Hours</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->meter_reading ? number_format($svc->meter_reading) : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Odometer (km)</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->mileage_reading ? number_format($svc->mileage_reading) : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Downtime</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->downtime_hours ? $svc->downtime_hours . ' hrs' : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Certification Expiry</dt>
+                        <dd class="mt-0.5 text-sm {{ $viewCertExpired ? 'text-red-400 font-semibold' : ($viewCertDays !== null && $viewCertDays <= 30 ? 'text-orange-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $svc->certification_expiry?->format('d M Y') ?: '--' }}
+                            @if ($viewCertExpired) <span class="text-xs font-normal">(Expired)</span>
+                            @elseif ($viewCertDays !== null && $viewCertDays <= 30) <span class="text-xs">({{ $viewCertDays }}d left)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Certification Reminder</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->certification_reminder_before_days ? $svc->certification_reminder_before_days . ' days' : '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Next Service Reminder</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->next_service_reminder_before_days ? $svc->next_service_reminder_before_days . ' days' : '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Work Done</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->work_done ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Safety Notes</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->safety_notes ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->remarks ?: '--' }}</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Parts</p>
+                    @if ($svc->parts->isNotEmpty())
+                        <div class="divide-y divide-zinc-200/60 overflow-hidden rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
+                            @foreach ($svc->parts as $part)
+                                @php $lineTotal = $part->part_cost !== null ? (float) $part->part_cost * $part->quantity : null; @endphp
+                                <div class="px-3 py-2">
+                                    <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">{{ $part->part_name }}</p>
+                                    <p class="mt-0.5 text-[11px] text-zinc-500">
+                                        Qty: {{ $part->quantity }}
+                                        @if ($part->part_cost !== null)
+                                            &middot; Rs. {{ number_format($part->part_cost, 2) }}
+                                            @if ($part->quantity > 1 && $lineTotal !== null) = Rs. {{ number_format($lineTotal, 2) }} @endif
+                                        @endif
+                                        @if ($part->purchased_from) &middot; {{ $part->purchased_from }} @endif
+                                    </p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No parts recorded.</p>
+                    @endif
+                </div>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
+                    @if ($svc->documents->isNotEmpty())
+                        <div class="space-y-1.5">
+                            @foreach ($svc->documents as $doc)
+                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    @if ($doc->isImage())
+                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                                    @else
+                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                                    @endif
+                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                       class="text-xs text-accent hover:underline">Open</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No documents attached.</p>
+                    @endif
+                </div>
+            </div>
+        </x-modal>
+    @endforeach
+
     {{-- Add Part Modals (one per service record) --}}
     @foreach ($asset->services as $svc)
         <x-modal name="add-part-{{ $svc->id }}" title="Add Part" :dismissible="false"
@@ -134,6 +308,13 @@
                         @elseif ($certDays !== null && $certDays <= 30)
                             <span class="rounded-full bg-orange-400/10 px-2 py-0.5 text-xs font-medium text-orange-400">Cert in {{ $certDays }}d</span>
                         @endif
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-view-service-{{ $svc->id }}')"
+                                aria-label="View service record"
+                                title="View service record"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.eye class="size-3.5" />
+                        </button>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-service-{{ $svc->id }}')"
                                 aria-label="Edit service record"

@@ -77,6 +77,64 @@
                         </div>
                     </form>
                 </x-modal>
+
+                <x-modal name="view-part-{{ $part->id }}" title="Part Replacement Details">
+                    @php $lineTotal = $part->part_cost !== null ? (float) $part->part_cost * $part->quantity : null; @endphp
+                    <div class="space-y-5">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <flux:icon.puzzle-piece class="size-4 shrink-0 text-zinc-400" />
+                                    <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $part->part_name }}</h3>
+                                </div>
+                                <p class="mt-1 text-xs text-zinc-500">
+                                    {{ $svc->service_type_label }} - {{ $svc->service_date->format('d M Y') }}
+                                    @if ($svc->service_agency) - {{ $svc->service_agency }} @endif
+                                </p>
+                            </div>
+                            @if ($part->warranty_till)
+                                @php $partWarrantyExpired = $part->warranty_till->lt(now()->startOfDay()); @endphp
+                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $partWarrantyExpired ? 'bg-red-400/10 text-red-400' : 'bg-green-400/10 text-green-400' }}">
+                                    {{ $partWarrantyExpired ? 'Warranty Expired' : 'Under Warranty' }}
+                                </span>
+                            @endif
+                        </div>
+
+                        <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Quantity</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->quantity }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Unit Cost</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_cost !== null ? 'Rs. ' . number_format($part->part_cost, 2) : '--' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Line Total</dt>
+                                <dd class="mt-0.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $lineTotal !== null ? 'Rs. ' . number_format($lineTotal, 2) : '--' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Purchased From</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->purchased_from ?: '--' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Warranty Till</dt>
+                                <dd class="mt-0.5 text-sm {{ $part->warranty_till && $part->warranty_till->lt(now()->startOfDay()) ? 'text-red-400 font-semibold' : 'text-zinc-800 dark:text-zinc-100' }}">
+                                    {{ $part->warranty_till?->format('d M Y') ?: '--' }}
+                                    @if ($part->warranty_till && $part->warranty_till->lt(now()->startOfDay())) <span class="text-xs font-normal">(Expired)</span> @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Service Cost</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->service_cost ? 'Rs. ' . number_format($svc->service_cost, 2) : '--' }}</dd>
+                            </div>
+                            <div class="sm:col-span-2 lg:col-span-3">
+                                <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->remarks ?: '--' }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </x-modal>
             @endforeach
         @endforeach
 
@@ -148,6 +206,13 @@
                                             @endif
                                         </div>
                                         <div class="flex shrink-0 items-center gap-1.5">
+                                            <button type="button"
+                                                    x-on:click="$dispatch('open-modal-view-part-{{ $part->id }}')"
+                                                    aria-label="View part record"
+                                                    title="View part record"
+                                                    class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                                                <flux:icon.eye class="size-3" />
+                                            </button>
                                             <button type="button"
                                                     x-on:click="$dispatch('open-modal-edit-part-{{ $part->id }}')"
                                                     aria-label="Edit part record"

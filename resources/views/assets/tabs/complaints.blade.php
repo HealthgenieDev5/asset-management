@@ -64,6 +64,146 @@
         </x-modal>
     @endforeach
 
+    {{-- View Modals (one per complaint) --}}
+    @foreach ($asset->complaints->sortByDesc('created_at') as $cmp)
+        @php
+            $viewVideosBefore = $cmp->documents->where('document_type', 'complaint_video_before');
+            $viewVideosAfter  = $cmp->documents->where('document_type', 'complaint_video_after');
+            $viewComments     = $cmp->comments->sortByDesc('created_at')->values();
+        @endphp
+        <x-modal name="view-complaint-{{ $cmp->id }}" title="Complaint Details">
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $cmp->priority_color }}">
+                                {{ $cmp->priority_label }}
+                            </span>
+                            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold {{ $cmp->status_color }}">
+                                {{ $cmp->status_label }}
+                            </span>
+                        </div>
+                        <h3 class="mt-2 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $cmp->title }}</h3>
+                        <p class="mt-1 text-xs text-zinc-500">Reported {{ $cmp->created_at->format('d M Y, H:i') }}</p>
+                    </div>
+                    @if ($cmp->resolved_at)
+                        <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Resolved {{ $cmp->resolved_at->format('d M Y') }}</span>
+                    @endif
+                </div>
+
+                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Location</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->location ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Department</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->department ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Category</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->category?->name ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Reporter</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->reported_by_name ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Email</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->reported_by_email ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Phone</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->reported_by_phone ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Description</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->description ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Resolution</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->resolution_summary ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $cmp->remarks ?: '--' }}</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Linked Service Record</p>
+                    @if ($cmp->service)
+                        <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                            <flux:icon.cog-6-tooth class="size-4 shrink-0 text-zinc-400" />
+                            <span class="text-sm text-zinc-700 dark:text-zinc-300">
+                                {{ $cmp->service->service_type_label }} - {{ $cmp->service->service_date->format('d M Y') }}
+                                @if ($cmp->service->service_agency) ({{ $cmp->service->service_agency }}) @endif
+                            </span>
+                            <a href="{{ route('assets.show', [$asset, 'tab' => 'services']) }}"
+                               class="ml-auto text-xs text-accent hover:underline">Open</a>
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No service record linked.</p>
+                    @endif
+                </div>
+
+                @if ($viewVideosBefore->isNotEmpty() || $viewVideosAfter->isNotEmpty())
+                    <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                        <p class="mb-2 text-xs font-medium text-zinc-500">Videos</p>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            @foreach ($viewVideosBefore as $vid)
+                                <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    <p class="mb-2 text-xs font-medium text-zinc-500">Before Repair</p>
+                                    @if ($vid->isVideo())
+                                        <video controls class="max-h-48 w-full rounded" preload="metadata">
+                                            <source src="{{ Storage::url($vid->file_path) }}" type="{{ $vid->file_mime_type }}">
+                                        </video>
+                                    @endif
+                                    <a href="{{ Storage::url($vid->file_path) }}" target="_blank"
+                                       class="mt-1 block text-xs text-accent hover:underline">{{ $vid->file_original_name }}</a>
+                                </div>
+                            @endforeach
+                            @foreach ($viewVideosAfter as $vid)
+                                <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    <p class="mb-2 text-xs font-medium text-zinc-500">After Repair</p>
+                                    @if ($vid->isVideo())
+                                        <video controls class="max-h-48 w-full rounded" preload="metadata">
+                                            <source src="{{ Storage::url($vid->file_path) }}" type="{{ $vid->file_mime_type }}">
+                                        </video>
+                                    @endif
+                                    <a href="{{ Storage::url($vid->file_path) }}" target="_blank"
+                                       class="mt-1 block text-xs text-accent hover:underline">{{ $vid->file_original_name }}</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Conversation</p>
+                    @if ($viewComments->isNotEmpty())
+                        <div class="divide-y divide-zinc-200/60 overflow-hidden rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
+                            @foreach ($viewComments->take(5) as $comment)
+                                <div class="px-3 py-2 {{ $comment->is_internal ? 'bg-yellow-400/5' : 'bg-white dark:bg-zinc-900' }}">
+                                    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                        <span class="text-[11px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-300">{{ $comment->user?->name ?? 'Unknown' }}</span>
+                                        @if ($comment->is_internal)
+                                            <span class="rounded-full bg-yellow-400/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-400 leading-none">Staff Note</span>
+                                        @endif
+                                        <span class="ml-auto text-[10px] text-zinc-400">{{ $comment->created_at->format('d M Y, H:i') }}</span>
+                                    </div>
+                                    <p class="mt-0.5 whitespace-pre-line text-[13px] leading-5 text-zinc-800 dark:text-zinc-100">{{ $comment->comment }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No conversation yet.</p>
+                    @endif
+                </div>
+            </div>
+        </x-modal>
+    @endforeach
+
     {{-- Cards Grid --}}
     <div class="grid grid-cols-3 gap-4">
         @foreach ($asset->complaints->sortByDesc('created_at') as $cmp)
@@ -92,6 +232,13 @@
                         <span class="text-xs text-zinc-500">{{ $cmp->created_at->format('d M Y') }}</span>
                     </div>
                     <div class="flex shrink-0 items-center gap-1.5">
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-view-complaint-{{ $cmp->id }}')"
+                                aria-label="View complaint"
+                                title="View complaint"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.eye class="size-3.5" />
+                        </button>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-complaint-{{ $cmp->id }}')"
                                 aria-label="Edit complaint"

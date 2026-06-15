@@ -60,6 +60,125 @@
         </x-modal>
     @endforeach
 
+    {{-- View Modals (one per policy) --}}
+    @foreach ($asset->insurancePolicies->sortByDesc('created_at') as $policy)
+        @php
+            $viewDays    = $policy->daysUntilExpiry();
+            $viewExpired = $policy->isExpired();
+            $viewSoon    = ! $viewExpired && $viewDays !== null && $viewDays <= 30;
+            $viewExpiryClass = $viewExpired ? 'text-red-400 font-semibold' : ($viewSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100');
+        @endphp
+        <x-modal name="view-insurance-{{ $policy->id }}" title="Insurance Policy Details">
+            <div class="space-y-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <flux:icon.building-library class="size-4 shrink-0 text-zinc-400" />
+                            <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {{ $policy->insurer_name ?: 'Insurance Policy' }}
+                            </h3>
+                        </div>
+                        @if ($policy->policy_number)
+                            <p class="mt-1 font-mono text-xs text-zinc-500">{{ $policy->policy_number }}</p>
+                        @endif
+                    </div>
+                    @if ($viewExpired)
+                        <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
+                    @elseif ($viewSoon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $viewDays }}d</span>
+                    @elseif ($viewDays !== null)
+                        <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
+                    @endif
+                </div>
+
+                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Policy Type</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->policy_type ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">From</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->policy_date_from?->format('d M Y') ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Expiry Date</dt>
+                        <dd class="mt-0.5 text-sm {{ $viewExpiryClass }}">
+                            {{ $policy->policy_date_to?->format('d M Y') ?: '--' }}
+                            @if ($viewExpired) <span class="text-xs font-normal">(Expired)</span>
+                            @elseif ($viewSoon) <span class="text-xs">({{ $viewDays }}d left)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Premium Amount</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $policy->premium_amount ? 'Rs. ' . number_format($policy->premium_amount, 2) : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Sum Insured</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $policy->sum_insured ? 'Rs. ' . number_format($policy->sum_insured, 2) : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $policy->reminder_before_days ? $policy->reminder_before_days . ' days' : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Bill No</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->bill_no ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Contact Person</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_contact_person ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Phone</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_phone ?: '--' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Email</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_email ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Coverage Details</dt>
+                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->coverage_details ?: '--' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->remarks ?: '--' }}</dd>
+                    </div>
+                </dl>
+
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
+                    @if ($policy->documents->isNotEmpty())
+                        <div class="space-y-1.5">
+                            @foreach ($policy->documents as $doc)
+                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
+                                    @if ($doc->isImage())
+                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
+                                    @else
+                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                                    @endif
+                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                       class="text-xs text-accent hover:underline">Open</a>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-zinc-500">No documents attached.</p>
+                    @endif
+                </div>
+            </div>
+        </x-modal>
+    @endforeach
+
     {{-- Policy Grid --}}
     <div class="grid grid-cols-3 gap-4">
         @foreach ($asset->insurancePolicies->sortByDesc('created_at') as $policy)
@@ -90,6 +209,13 @@
                         @elseif ($days !== null)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-view-insurance-{{ $policy->id }}')"
+                                aria-label="View insurance policy"
+                                title="View insurance policy"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.eye class="size-3.5" />
+                        </button>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-insurance-{{ $policy->id }}')"
                                 aria-label="Edit insurance policy"
