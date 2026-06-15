@@ -34,7 +34,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="coverage_type" class="{{ $lbs }}">Coverage Type</label>
                 @error('coverage_type')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })">
+            <div x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: $el.closest('dialog'), static: true, position: 'auto right' })">
                 <div class="relative w-full">
                     <input type="text" inputmode="none" name="amc_date_from" id="amc_date_from" value="{{ $amc?->amc_date_from?->format('Y-m-d') ?? old('amc_date_from') }}" placeholder=" " autocomplete="off" class="{{ $inp }} pr-9" />
                     <label for="amc_date_from" class="{{ $lbl }}">AMC From</label>
@@ -42,7 +42,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 </div>
                 @error('amc_date_from')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })">
+            <div x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: $el.closest('dialog'), static: true, position: 'auto right' })">
                 <div class="relative w-full">
                     <input type="text" inputmode="none" name="amc_date_to" id="amc_date_to" value="{{ $amc?->amc_date_to?->format('Y-m-d') ?? old('amc_date_to') }}" placeholder=" " autocomplete="off" class="{{ $inp }} pr-9" />
                     <label for="amc_date_to" class="{{ $lbl }}">AMC Lapse Date</label>
@@ -72,8 +72,8 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="amc_bill_no" class="{{ $lbl }}">Bill Number</label>
                 @error('amc_bill_no')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="relative"
-            x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })">
+            <div 
+            x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: $el.closest('ui-modal'), static: true, position: 'auto right' })">
                 <div class="relative w-full">
                     <input type="text" inputmode="none" name="amc_bill_date" id="amc_bill_date" value="{{ $amc?->amc_bill_date?->format('Y-m-d') ?? old('amc_bill_date') }}" placeholder=" " autocomplete="off" class="{{ $inp }} pr-9" />
                     <label for="amc_bill_date" class="{{ $lbl }}">Bill Date</label>

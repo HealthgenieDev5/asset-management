@@ -77,8 +77,7 @@ select:focus[data-flux-control] {
     background-color: rgba(0, 0, 0, 0.75);
 }
 
-/* flatpickr inside native <dialog> — calendar must stay in top-layer */
-dialog .flatpickr-calendar {
-    position: absolute;
-    z-index: 9999;
+/* flatpickr appends to body by default — must sit above div-based modals (z-50) */
+.flatpickr-calendar {
+    z-index: 9999 !important;
 }

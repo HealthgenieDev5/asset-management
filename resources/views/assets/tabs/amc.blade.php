@@ -11,17 +11,18 @@
                 {{ $asset->amcContracts->count() }} {{ Str::plural('contract', $asset->amcContracts->count()) }}
             </flux:text>
         </div>
-        <flux:modal.trigger name="add-amc">
-            <flux:button variant="primary" size="sm" icon="plus">Add AMC</flux:button>
-        </flux:modal.trigger>
+        <button type="button" x-on:click="$dispatch('open-modal-add-amc')"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+            Add AMC
+        </button>
     </div>
 
     {{-- Add Modal --}}
-    <flux:modal name="add-amc" :show="$errors->any() && old('_form') === 'amc' && !old('_amc_id')" focusable :dismissible="false">
-        <flux:heading class="font-semibold">New AMC Contract</flux:heading>
-
+    <x-modal name="add-amc" title="New AMC Contract" :dismissible="false"
+        :auto-open="$errors->any() && old('_form') === 'amc' && !old('_amc_id')">
         <form method="POST" action="{{ route('assets.amc.store', $asset) }}"
-              enctype="multipart/form-data" class="mt-4 space-y-4">
+              enctype="multipart/form-data" class="space-y-4">
             @csrf
             <input type="hidden" name="_form" value="amc">
 
@@ -29,22 +30,20 @@
 
             <div class="flex items-center gap-3 pt-1">
                 <flux:button type="submit" variant="primary" size="sm" icon="check">Save Contract</flux:button>
-                <flux:modal.close>
-                    <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                </flux:modal.close>
+                <button type="button" x-on:click="$dispatch('close-modal-add-amc')"
+                    class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                    Cancel
+                </button>
             </div>
         </form>
-    </flux:modal>
+    </x-modal>
 
     {{-- Edit Modals (one per contract) --}}
     @foreach ($asset->amcContracts->sortByDesc('created_at') as $amc)
-        <flux:modal name="edit-amc-{{ $amc->id }}"
-                    :show="$errors->any() && old('_form') === 'amc' && (int) old('_amc_id') === $amc->id"
-                    focusable :dismissible="false">
-            <flux:heading class="font-semibold">Edit AMC Contract</flux:heading>
-
+        <x-modal name="edit-amc-{{ $amc->id }}" title="Edit AMC Contract" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'amc' && (int) old('_amc_id') === $amc->id">
             <form method="POST" action="{{ route('assets.amc.update', [$asset, $amc]) }}"
-                  enctype="multipart/form-data" class="mt-4 space-y-4">
+                  enctype="multipart/form-data" class="space-y-4">
                 @csrf @method('PUT')
                 <input type="hidden" name="_form" value="amc">
                 <input type="hidden" name="_amc_id" value="{{ $amc->id }}">
@@ -53,12 +52,13 @@
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
-                    <flux:modal.close>
-                        <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                    </flux:modal.close>
+                    <button type="button" x-on:click="$dispatch('close-modal-edit-amc-{{ $amc->id }}')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </form>
-        </flux:modal>
+        </x-modal>
     @endforeach
 
     {{-- Contract List --}}
@@ -91,12 +91,11 @@
                         @elseif ($days !== null)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
-                        <flux:modal.trigger name="edit-amc-{{ $amc->id }}">
-                            <button type="button"
-                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                                Edit
-                            </button>
-                        </flux:modal.trigger>
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-edit-amc-{{ $amc->id }}')"
+                                class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
+                            Edit
+                        </button>
                         <form method="POST" action="{{ route('assets.amc.destroy', [$asset, $amc]) }}"
                               onsubmit="return confirm('Delete this AMC contract?')">
                             @csrf @method('DELETE')
@@ -196,11 +195,11 @@
             </flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">Add an Annual Maintenance Contract to track coverage and renewal dates.</flux:text>
             <div class="mt-4">
-                <flux:modal.trigger name="add-amc">
-                    <flux:button variant="ghost" size="sm" icon="plus">
-                        {{ $asset->amcContracts->isEmpty() ? 'Add First Contract' : 'Add AMC Contract' }}
-                    </flux:button>
-                </flux:modal.trigger>
+                <button type="button" x-on:click="$dispatch('open-modal-add-amc')"
+                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                    {{ $asset->amcContracts->isEmpty() ? 'Add First Contract' : 'Add AMC Contract' }}
+                </button>
             </div>
         </div>
     </div>

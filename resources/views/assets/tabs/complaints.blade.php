@@ -14,17 +14,18 @@
                 @endif
             </flux:text>
         </div>
-        <flux:modal.trigger name="add-complaint">
-            <flux:button variant="primary" size="sm" icon="plus">Log Complaint</flux:button>
-        </flux:modal.trigger>
+        <button type="button" x-on:click="$dispatch('open-modal-add-complaint')"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+            Log Complaint
+        </button>
     </div>
 
     {{-- Add Modal --}}
-    <flux:modal name="add-complaint" :show="$errors->any() && old('_form') === 'complaint' && !old('_complaint_id')" focusable :dismissible="false">
-        <flux:heading class="font-semibold">New Complaint</flux:heading>
-
+    <x-modal name="add-complaint" title="New Complaint" :dismissible="false"
+        :auto-open="$errors->any() && old('_form') === 'complaint' && !old('_complaint_id')">
         <form method="POST" action="{{ route('assets.complaints.store', $asset) }}"
-              enctype="multipart/form-data" class="mt-4 space-y-4">
+              enctype="multipart/form-data" class="space-y-4">
             @csrf
             <input type="hidden" name="_form" value="complaint">
 
@@ -32,22 +33,20 @@
 
             <div class="flex items-center gap-3 pt-1">
                 <flux:button type="submit" variant="primary" size="sm" icon="check">Submit Complaint</flux:button>
-                <flux:modal.close>
-                    <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                </flux:modal.close>
+                <button type="button" x-on:click="$dispatch('close-modal-add-complaint')"
+                    class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                    Cancel
+                </button>
             </div>
         </form>
-    </flux:modal>
+    </x-modal>
 
     {{-- Edit Modals (one per complaint) --}}
     @foreach ($asset->complaints->sortByDesc('created_at') as $cmp)
-        <flux:modal name="edit-complaint-{{ $cmp->id }}"
-                    :show="$errors->any() && old('_form') === 'complaint' && (int) old('_complaint_id') === $cmp->id"
-                    focusable :dismissible="false">
-            <flux:heading class="font-semibold">Edit Complaint</flux:heading>
-
+        <x-modal name="edit-complaint-{{ $cmp->id }}" title="Edit Complaint" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'complaint' && (int) old('_complaint_id') === $cmp->id">
             <form method="POST" action="{{ route('assets.complaints.update', [$asset, $cmp]) }}"
-                  enctype="multipart/form-data" class="mt-4 space-y-4">
+                  enctype="multipart/form-data" class="space-y-4">
                 @csrf @method('PUT')
                 <input type="hidden" name="_form" value="complaint">
                 <input type="hidden" name="_complaint_id" value="{{ $cmp->id }}">
@@ -56,12 +55,13 @@
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
-                    <flux:modal.close>
-                        <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                    </flux:modal.close>
+                    <button type="button" x-on:click="$dispatch('close-modal-edit-complaint-{{ $cmp->id }}')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </form>
-        </flux:modal>
+        </x-modal>
     @endforeach
 
     {{-- Cards Grid --}}
@@ -92,12 +92,10 @@
                         <span class="text-xs text-zinc-500">{{ $cmp->created_at->format('d M Y') }}</span>
                     </div>
                     <div class="flex shrink-0 items-center gap-2">
-                        <flux:modal.trigger name="edit-complaint-{{ $cmp->id }}">
-                            <button type="button"
-                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                                Edit
-                            </button>
-                        </flux:modal.trigger>
+                        <button type="button" x-on:click="$dispatch('open-modal-edit-complaint-{{ $cmp->id }}')"
+                                class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
+                            Edit
+                        </button>
                         <form method="POST" action="{{ route('assets.complaints.destroy', [$asset, $cmp]) }}"
                               onsubmit="return confirm('Delete this complaint and all its comments?')">
                             @csrf @method('DELETE')
@@ -383,11 +381,11 @@
             </flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">Log asset problems, breakdowns, or performance issues here.</flux:text>
             <div class="mt-4">
-                <flux:modal.trigger name="add-complaint">
-                    <flux:button variant="ghost" size="sm" icon="plus">
-                        {{ $asset->complaints->isEmpty() ? 'Log First Complaint' : 'Log Complaint' }}
-                    </flux:button>
-                </flux:modal.trigger>
+                <button type="button" x-on:click="$dispatch('open-modal-add-complaint')"
+                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                    {{ $asset->complaints->isEmpty() ? 'Log First Complaint' : 'Log Complaint' }}
+                </button>
             </div>
         </div>
     </div>

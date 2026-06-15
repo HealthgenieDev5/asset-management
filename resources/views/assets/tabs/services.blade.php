@@ -14,15 +14,16 @@
                 @endif
             </flux:text>
         </div>
-        <flux:modal.trigger name="add-service">
-            <flux:button variant="primary" size="sm" icon="plus">Add Servicing</flux:button>
-        </flux:modal.trigger>
+        <button type="button" x-on:click="$dispatch('open-modal-add-service')"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+            Add Servicing
+        </button>
     </div>
 
     {{-- Add Modal --}}
-    <flux:modal name="add-service" :show="$errors->any() && old('_form') === 'service' && !old('_service_id')" focusable :dismissible="false">
-        <flux:heading class="font-semibold">New Servicing Record</flux:heading>
-
+    <x-modal name="add-service" title="New Servicing Record" :dismissible="false"
+        :auto-open="$errors->any() && old('_form') === 'service' && !old('_service_id')">
         <form method="POST" action="{{ route('assets.services.store', $asset) }}"
               enctype="multipart/form-data" class="mt-4 space-y-4">
             @csrf
@@ -31,22 +32,22 @@
             @include('assets.tabs._service-form', ['service' => null])
 
             <div class="flex items-center gap-3 pt-1">
-                <flux:button type="submit" variant="primary" size="sm" icon="check">Save Record</flux:button>
-                <flux:modal.close>
-                    <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                </flux:modal.close>
+                <button type="submit"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+                    Save Record
+                </button>
+                <button type="button" x-on:click="$dispatch('close-modal-add-service')"
+                    class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                    Cancel
+                </button>
             </div>
         </form>
-    </flux:modal>
+    </x-modal>
 
     {{-- Edit Modals (one per service record) --}}
     @foreach ($asset->services->sortByDesc('service_date') as $svc)
-        <flux:modal name="edit-service-{{ $svc->id }}"
-                    :show="$errors->any() && old('_form') === 'service' && (int) old('_service_id') === $svc->id"
-                    :dismissible="false"
-                    focusable>
-            <flux:heading class="font-semibold">Edit Servicing Record</flux:heading>
-
+        <x-modal name="edit-service-{{ $svc->id }}" title="Edit Servicing Record" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'service' && (int) old('_service_id') === $svc->id">
             <form method="POST" action="{{ route('assets.services.update', [$asset, $svc]) }}"
                   enctype="multipart/form-data" class="mt-4 space-y-4">
                 @csrf @method('PUT')
@@ -56,23 +57,23 @@
                 @include('assets.tabs._service-form', ['service' => $svc])
 
                 <div class="flex items-center gap-3 pt-1">
-                    <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
-                    <flux:modal.close>
-                        <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                    </flux:modal.close>
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+                        Save Changes
+                    </button>
+                    <button type="button" x-on:click="$dispatch('close-modal-edit-service-{{ $svc->id }}')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </form>
-        </flux:modal>
+        </x-modal>
     @endforeach
 
     {{-- Add Part Modals (one per service record) --}}
     @foreach ($asset->services as $svc)
-        <flux:modal name="add-part-{{ $svc->id }}"
-                    :show="$errors->any() && old('_form') === 'part' && (int) old('_service_id') === $svc->id"
-                    :dismissible="false"
-                    focusable>
-            <flux:heading class="font-semibold">Add Part</flux:heading>
-
+        <x-modal name="add-part-{{ $svc->id }}" title="Add Part" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'part' && (int) old('_service_id') === $svc->id">
             <form method="POST" action="{{ route('assets.services.parts.store', [$asset, $svc]) }}"
                   class="mt-4 space-y-4">
                 @csrf
@@ -82,13 +83,17 @@
                 @include('assets.tabs._part-form', ['part' => null])
 
                 <div class="flex items-center gap-3 pt-1">
-                    <flux:button type="submit" variant="primary" size="sm" icon="check">Save Part</flux:button>
-                    <flux:modal.close>
-                        <flux:button type="button" variant="ghost" size="sm">Cancel</flux:button>
-                    </flux:modal.close>
+                    <button type="submit"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+                        Save Part
+                    </button>
+                    <button type="button" x-on:click="$dispatch('close-modal-add-part-{{ $svc->id }}')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </form>
-        </flux:modal>
+        </x-modal>
     @endforeach
 
     {{-- Records List --}}
@@ -129,12 +134,10 @@
                         @elseif ($certDays !== null && $certDays <= 30)
                             <span class="rounded-full bg-orange-400/10 px-2 py-0.5 text-xs font-medium text-orange-400">Cert in {{ $certDays }}d</span>
                         @endif
-                        <flux:modal.trigger name="edit-service-{{ $svc->id }}">
-                            <button type="button"
-                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                                Edit
-                            </button>
-                        </flux:modal.trigger>
+                        <button type="button" x-on:click="$dispatch('open-modal-edit-service-{{ $svc->id }}')"
+                                class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
+                            Edit
+                        </button>
                         <form method="POST" action="{{ route('assets.services.destroy', [$asset, $svc]) }}"
                               onsubmit="return confirm('Delete this service record?')">
                             @csrf @method('DELETE')
@@ -291,13 +294,11 @@
                     <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                         <div class="flex items-center justify-between">
                             <p class="text-xs font-medium text-zinc-500">Parts ({{ $svc->parts->count() }})</p>
-                            <flux:modal.trigger name="add-part-{{ $svc->id }}">
-                                <button type="button"
-                                        class="inline-flex items-center gap-1 rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 transition hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
-                                    <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                    Add Part
-                                </button>
-                            </flux:modal.trigger>
+                            <button type="button" x-on:click="$dispatch('open-modal-add-part-{{ $svc->id }}')"
+                                    class="inline-flex items-center gap-1 rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 transition hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                                <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                Add Part
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -312,11 +313,11 @@
             </flux:heading>
             <flux:text class="mt-1 text-sm text-zinc-600">Log preventive maintenance, repairs, inspections, and compliance checks here.</flux:text>
             <div class="mt-4">
-                <flux:modal.trigger name="add-service">
-                    <flux:button variant="ghost" size="sm" icon="plus">
-                        {{ $asset->services->isEmpty() ? 'Add First Record' : 'Add Servicing Record' }}
-                    </flux:button>
-                </flux:modal.trigger>
+                <button type="button" x-on:click="$dispatch('open-modal-add-service')"
+                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                    {{ $asset->services->isEmpty() ? 'Add First Record' : 'Add Servicing Record' }}
+                </button>
             </div>
         </div>
     </div>

@@ -44,7 +44,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
             </div>
             <div class="relative">
                 <textarea name="description" id="description" rows="3" placeholder=" " class="{{ $txa }}">{{ $v('description') }}</textarea>
-                <label for="description" class="{{ $lbl }}">Description <span class="text-red-400">*</span></label>
+                <label for="description" class="{{ $lbl }}">Description/Remmarks <span class="text-red-400">*</span></label>
                 @error('description')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
             <div class="relative w-full sm:w-48">
@@ -103,10 +103,4 @@ $err = 'mt-0.5 text-[11px] text-red-400';
         </div>
     </div>
 
-    {{-- ── Remarks ── --}}
-    <div class="relative">
-        <textarea name="remarks" id="remarks" rows="2" placeholder=" " class="{{ $txa }}">{{ $v('remarks') }}</textarea>
-        <label for="remarks" class="{{ $lbl }}">Remarks</label>
-        @error('remarks')<p class="{{ $err }}">{{ $message }}</p>@enderror
-    </div>
 </div>
