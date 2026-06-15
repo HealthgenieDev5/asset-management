@@ -3,8 +3,7 @@
     $ew = $asset->extendedWarranties->first();
 @endphp
 
-<div class="space-y-5"
-     x-data="{ showForm: {{ ($errors->any() && old('_form') === 'ext-warranty') ? 'true' : 'false' }} }">
+<div class="space-y-5">
 
     {{-- Header --}}
     <div class="flex items-center justify-between">
@@ -15,18 +14,18 @@
             </flux:text>
         </div>
         @if (! $ew)
-            <flux:button variant="primary" size="sm" icon="plus" @click="showForm = !showForm">
+            <button type="button" x-on:click="$dispatch('open-modal-add-ext-warranty')"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
                 Add Extended Warranty
-            </flux:button>
+            </button>
         @endif
     </div>
 
-    {{-- Add Form (only when no existing EW) --}}
+    {{-- Add Modal (only when no existing EW) --}}
     @if (! $ew)
-        <div x-show="showForm" x-transition x-cloak
-             class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:heading class="mb-4 font-semibold text-zinc-800 dark:text-zinc-300">New Extended Warranty</flux:heading>
-
+        <x-modal name="add-ext-warranty" title="New Extended Warranty" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'ext-warranty' && !old('_ew_id')">
             <form method="POST" action="{{ route('assets.ext-warranty.store', $asset) }}"
                   enctype="multipart/form-data" class="space-y-4">
                 @csrf
@@ -36,31 +35,59 @@
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Save Warranty</flux:button>
-                    <flux:button type="button" variant="ghost" size="sm" @click="showForm = false">Cancel</flux:button>
+                    <button type="button" x-on:click="$dispatch('close-modal-add-ext-warranty')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
                 </div>
             </form>
-        </div>
+        </x-modal>
 
-        {{-- Empty state --}}
-        <div x-show="!showForm"
-             class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:icon.shield-exclamation class="mx-auto size-10 text-zinc-600" />
-            <flux:heading class="mt-4 text-zinc-400">No Extended Warranty</flux:heading>
-            <flux:text class="mt-1 text-sm text-zinc-600">No extended warranty has been recorded for this asset.</flux:text>
-            <div class="mt-4">
-                <flux:button variant="ghost" size="sm" icon="plus" @click="showForm = true">
-                    Add Extended Warranty
-                </flux:button>
+        {{-- Empty state in grid --}}
+        <div class="grid grid-cols-3 gap-4">
+            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                <flux:icon.shield-exclamation class="mx-auto size-10 text-zinc-600" />
+                <flux:heading class="mt-4 text-zinc-400">No Extended Warranty</flux:heading>
+                <flux:text class="mt-1 text-sm text-zinc-600">No extended warranty has been recorded for this asset.</flux:text>
+                <div class="mt-4">
+                    <button type="button" x-on:click="$dispatch('open-modal-add-ext-warranty')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                        Add Extended Warranty
+                    </button>
+                </div>
             </div>
         </div>
     @endif
 
-    {{-- Existing EW card --}}
+    {{-- Edit Modal --}}
     @if ($ew)
+        <x-modal name="edit-ext-warranty" title="Edit Extended Warranty" :dismissible="false"
+            :auto-open="$errors->any() && old('_form') === 'ext-warranty' && (int) old('_ew_id') === $ew->id">
+            <form method="POST" action="{{ route('assets.ext-warranty.update', [$asset, $ew]) }}"
+                  enctype="multipart/form-data" class="space-y-4">
+                @csrf @method('PUT')
+                <input type="hidden" name="_form" value="ext-warranty">
+                <input type="hidden" name="_ew_id" value="{{ $ew->id }}">
+
+                @include('assets.tabs._ext-warranty-form', ['ew' => $ew])
+
+                <div class="flex items-center gap-3 pt-1">
+                    <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
+                    <button type="button" x-on:click="$dispatch('close-modal-edit-ext-warranty')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </x-modal>
+
+        {{-- EW Card --}}
+        <div class="grid grid-cols-3 gap-4">
         @php
-            $expired = $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
-            $days    = $ew->extended_warranty_date_to ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false) : null;
-            $soon    = ! $expired && $days !== null && $days <= 30;
+            $expired     = $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
+            $days        = $ew->extended_warranty_date_to ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false) : null;
+            $soon        = ! $expired && $days !== null && $days <= 30;
             $expiryClass = $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-200');
         @endphp
 
@@ -85,7 +112,7 @@
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
                     <button type="button"
-                            @click="showForm = !showForm"
+                            x-on:click="$dispatch('open-modal-edit-ext-warranty')"
                             class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
                         Edit
                     </button>
@@ -170,24 +197,8 @@
                     </div>
                 @endif
             </div>
-
-            {{-- Inline edit form --}}
-            <div x-show="showForm" x-transition x-cloak
-                 class="border-t border-zinc-200 bg-zinc-50/80 px-5 py-5 dark:border-zinc-800 dark:bg-zinc-950/40">
-                <flux:heading class="mb-4 text-sm font-semibold text-zinc-800 dark:text-zinc-300">Edit Extended Warranty</flux:heading>
-                <form method="POST" action="{{ route('assets.ext-warranty.update', [$asset, $ew]) }}"
-                      enctype="multipart/form-data" class="space-y-4">
-                    @csrf @method('PUT')
-                    <input type="hidden" name="_form" value="ext-warranty">
-
-                    @include('assets.tabs._ext-warranty-form', ['ew' => $ew])
-
-                    <div class="flex items-center gap-3 pt-1">
-                        <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
-                        <flux:button type="button" variant="ghost" size="sm" @click="showForm = false">Cancel</flux:button>
-                    </div>
-                </form>
-            </div>
         </div>
+        </div>{{-- /grid --}}
     @endif
+
 </div>
