@@ -44,13 +44,21 @@
         ];
     @endphp
 
-    <div class="flex gap-6 lg:flex-row flex-col" x-data="{ tab: '{{ $tab }}' }">
+    <div class="flex gap-6 lg:flex-row flex-col" x-data="{
+        tab: '{{ $tab }}',
+        setTab(key) {
+            this.tab = key;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', key);
+            history.pushState(null, '', url.toString());
+        }
+    }" @popstate.window="tab = new URLSearchParams(window.location.search).get('tab') || 'overview'">
         {{-- Vertical Tab List --}}
         <nav class="lg:w-48 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible shrink-0
                     border-b lg:border-b-0 lg:border-r border-zinc-200 pb-2 lg:pb-0 lg:pr-2 dark:border-zinc-800">
             @foreach ($tabs as $key => $tabInfo)
                 <button type="button"
-                        @click="tab = '{{ $key }}'"
+                        @click="setTab('{{ $key }}')"
                         :class="tab === '{{ $key }}'
                             ? 'bg-accent/10 text-accent border-l-2 border-accent lg:rounded-l-none'
                             : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'"
