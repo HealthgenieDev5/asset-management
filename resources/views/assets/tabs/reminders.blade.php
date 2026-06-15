@@ -56,6 +56,20 @@
         }
     }
 
+    // Part warranties
+    foreach ($asset->services->flatMap->parts as $part) {
+        if ($part->warranty_till) {
+            $items->push([
+                'type'     => 'Part Warranty',
+                'icon'     => 'puzzle-piece',
+                'expiry'   => $part->warranty_till,
+                'reminder' => null,
+                'detail'   => $part->part_name . ($part->purchased_from ? ' — ' . $part->purchased_from : ''),
+                'edit_tab' => 'parts',
+            ]);
+        }
+    }
+
     // Sort: expired first by most recently expired, then upcoming soonest first
     $items = $items->sortBy(fn($i) => $i['expiry']->timestamp)->values();
 @endphp
@@ -94,7 +108,8 @@
                 <tbody class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                     @foreach ($items as $item)
                         @php
-                            $days    = (int) now()->startOfDay()->diffInDays($item['expiry']->copy()->startOfDay(), false);
+                            $expStart = $item['expiry']->copy()->startOfDay();
+                            $days    = (int) ($expStart->diffInDays(now()->startOfDay()) * ($expStart->gte(now()->startOfDay()) ? 1 : -1));
                             $expired = $days < 0;
                             $soon    = ! $expired && $days <= ($item['reminder'] ?? 30);
 

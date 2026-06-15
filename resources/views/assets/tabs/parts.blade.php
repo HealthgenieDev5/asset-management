@@ -150,16 +150,20 @@
                                         <div class="flex shrink-0 items-center gap-1.5">
                                             <button type="button"
                                                     x-on:click="$dispatch('open-modal-edit-part-{{ $part->id }}')"
-                                                    class="rounded border border-zinc-300 px-2 py-0.5 text-[11px] font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                                                Edit
+                                                    aria-label="Edit part record"
+                                                    title="Edit part record"
+                                                    class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                                                <flux:icon.pencil class="size-3" />
                                             </button>
                                             <form method="POST"
                                                   action="{{ route('assets.services.parts.destroy', [$asset, $svc, $part]) }}"
                                                   onsubmit="return confirm('Delete this part record?')">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
-                                                        class="rounded border border-zinc-300 px-2 py-0.5 text-[11px] font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors dark:border-zinc-700">
-                                                    Del
+                                                        aria-label="Delete part record"
+                                                        title="Delete part record"
+                                                        class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                                    <flux:icon.trash class="size-3" />
                                                 </button>
                                             </form>
                                         </div>

@@ -184,8 +184,11 @@
                                               action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
                                               onsubmit="return confirm('Delete this document? This cannot be undone.')">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="text-xs text-zinc-500 hover:text-red-400 transition-colors">
-                                                Delete
+                                            <button type="submit"
+                                                    aria-label="Delete document"
+                                                    title="Delete document"
+                                                    class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                                <flux:icon.trash class="size-3" />
                                             </button>
                                         </form>
                                     </div>

@@ -91,17 +91,22 @@
                         <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{{ $cmp->title }}</span>
                         <span class="text-xs text-zinc-500">{{ $cmp->created_at->format('d M Y') }}</span>
                     </div>
-                    <div class="flex shrink-0 items-center gap-2">
-                        <button type="button" x-on:click="$dispatch('open-modal-edit-complaint-{{ $cmp->id }}')"
-                                class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                            Edit
+                    <div class="flex shrink-0 items-center gap-1.5">
+                        <button type="button"
+                                x-on:click="$dispatch('open-modal-edit-complaint-{{ $cmp->id }}')"
+                                aria-label="Edit complaint"
+                                title="Edit complaint"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.pencil class="size-3.5" />
                         </button>
                         <form method="POST" action="{{ route('assets.complaints.destroy', [$asset, $cmp]) }}"
                               onsubmit="return confirm('Delete this complaint and all its comments?')">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors dark:border-zinc-700">
-                                Delete
+                                    aria-label="Delete complaint"
+                                    title="Delete complaint"
+                                    class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                <flux:icon.trash class="size-3.5" />
                             </button>
                         </form>
                     </div>
@@ -321,52 +326,101 @@
                         @endif
                     </div>
 
-                    {{-- Comments --}}
-                    <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                        <p class="mb-3 text-xs font-medium text-zinc-500">
-                            Conversation History ({{ $cmp->comments->count() }})
-                        </p>
+                    {{-- Conversation History --}}
+                    @php
+                        $allComments   = $cmp->comments->sortByDesc('created_at')->values();
+                        $totalComments = $allComments->count();
+                        $initialShow   = 3;
+                        $hasMore       = $totalComments > $initialShow;
+                        $hiddenCount   = $totalComments - $initialShow;
+                        // Newest-first thread: show the latest comments first, then load older below.
+                        $recentComments = $allComments->take($initialShow);
+                        $olderComments = $hasMore ? $allComments->slice($initialShow)->values() : collect();
+                    @endphp
+                    <div class="mt-4 border-t border-zinc-200 dark:border-zinc-800" x-data="{ expanded: false }">
 
-                        @if ($cmp->comments->isNotEmpty())
-                            <div class="space-y-2 mb-3">
-                                @foreach ($cmp->comments as $comment)
-                                    <div class="rounded-lg border px-3 py-2.5 {{ $comment->is_internal ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/30' }}">
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                                                {{ $comment->user?->name ?? 'Unknown' }}
-                                            </span>
-                                            @if ($comment->is_internal)
-                                                <span class="rounded-full bg-yellow-400/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-400">Staff Note</span>
-                                            @endif
-                                            <span class="ml-auto text-[10px] text-zinc-400">
-                                                {{ $comment->created_at->format('d M Y, H:i') }}
-                                            </span>
-                                            <form method="POST" action="{{ route('assets.complaints.comments.destroy', [$asset, $cmp, $comment]) }}"
-                                                  onsubmit="return confirm('Delete this comment?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="text-[10px] text-zinc-400 hover:text-red-400 transition-colors">Remove</button>
-                                            </form>
-                                        </div>
-                                        <p class="text-sm text-zinc-800 whitespace-pre-line dark:text-zinc-200">{{ $comment->comment }}</p>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
+                        {{-- Thread header --}}
+                        <div class="flex items-center gap-2 py-3">
+                            <flux:icon.chat-bubble-left-right class="size-3.5 text-zinc-400" />
+                            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Conversation</span>
+                            @if ($totalComments)
+                                <span class="rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                                    {{ $totalComments }}
+                                </span>
+                            @endif
+                        </div>
 
+                        {{-- Reply form --}}
                         <form method="POST" action="{{ route('assets.complaints.comments.store', [$asset, $cmp]) }}"
-                              class="space-y-2">
+                              class="rounded-xl border border-zinc-200 bg-zinc-50 p-3 space-y-2.5 dark:border-zinc-800 dark:bg-zinc-800/30 mb-3">
                             @csrf
                             <textarea name="comment" rows="2" placeholder="Add a comment or note…"
-                                      class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"></textarea>
-                            <div class="flex items-center gap-3">
-                                <flux:button type="submit" variant="filled" size="sm">Add Comment</flux:button>
+                                      class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 resize-none"></textarea>
+                            <div class="flex items-center justify-between gap-3">
                                 <label class="flex items-center gap-1.5 cursor-pointer">
                                     <input type="checkbox" name="is_internal" value="1"
                                            class="rounded border-zinc-400 text-yellow-400 focus:ring-yellow-400" />
                                     <span class="text-xs text-zinc-500">Staff note only</span>
                                 </label>
+                                <flux:button type="submit" variant="filled" size="sm" icon="paper-airplane">Send</flux:button>
                             </div>
                         </form>
+
+                        {{-- Thread messages --}}
+                        @if ($allComments->isNotEmpty())
+                            <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+
+                                {{-- Latest N comments --}}
+                                @foreach ($recentComments as $comment)
+                                    @php $isInternal = $comment->is_internal; @endphp
+                                    <div class="px-3 py-3 {{ $isInternal ? 'bg-yellow-400/5' : 'bg-white dark:bg-zinc-900' }}">
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1">
+                                                <span class="text-[11px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-300">{{ $comment->user?->name ?? 'Unknown' }}</span>
+                                                @if ($isInternal)
+                                                    <span class="rounded-full bg-yellow-400/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-400 leading-none">Staff Note</span>
+                                                @endif
+                                                <span class="ml-auto text-[10px] text-zinc-400 shrink-0">{{ $comment->created_at->format('d M Y, H:i') }}</span>
+                                            </div>
+                                            <p class="mt-0.5 text-[13px] font-normal text-zinc-800 whitespace-pre-line leading-5 dark:text-zinc-100">{{ $comment->comment }}</p>
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                                {{-- Older comments behind "load more" --}}
+                                @if ($hasMore)
+                                    <div x-show="!expanded" class="bg-zinc-50 dark:bg-zinc-800/30 px-3 py-2 text-center">
+                                        <button type="button" @click="expanded = true"
+                                                class="text-xs font-medium text-accent hover:underline">
+                                            Load {{ $hiddenCount }} older {{ Str::plural('message', $hiddenCount) }}
+                                        </button>
+                                    </div>
+                                    <div x-show="expanded" x-cloak class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                                        @foreach ($olderComments as $comment)
+                                            @php $isInternal = $comment->is_internal; @endphp
+                                            <div class="px-3 py-3 {{ $isInternal ? 'bg-yellow-400/5' : 'bg-white dark:bg-zinc-900' }}">
+                                                <div class="min-w-0">
+                                                    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1">
+                                                        <span class="text-[11px] font-bold uppercase tracking-wide text-sky-600 dark:text-sky-300">{{ $comment->user?->name ?? 'Unknown' }}</span>
+                                                        @if ($isInternal)
+                                                            <span class="rounded-full bg-yellow-400/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-400 leading-none">Staff Note</span>
+                                                        @endif
+                                                        <span class="ml-auto text-[10px] text-zinc-400 shrink-0">{{ $comment->created_at->format('d M Y, H:i') }}</span>
+                                                    </div>
+                                                    <p class="mt-0.5 text-[13px] font-normal text-zinc-800 whitespace-pre-line leading-5 dark:text-zinc-100">{{ $comment->comment }}</p>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                        <div class="bg-zinc-50 dark:bg-zinc-800/30 px-3 py-2 text-center">
+                                            <button type="button" @click="expanded = false"
+                                                    class="text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:underline">
+                                                Show less
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
 
                 </div>

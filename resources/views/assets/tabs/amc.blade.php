@@ -83,7 +83,7 @@
                             <span class="font-mono text-xs text-zinc-500 dark:text-zinc-500">{{ $amc->contract_number }}</span>
                         @endif
                     </div>
-                    <div class="flex shrink-0 items-center gap-2">
+                    <div class="flex shrink-0 items-center gap-1.5">
                         @if ($expired)
                             <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
                         @elseif ($soon)
@@ -93,15 +93,19 @@
                         @endif
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-amc-{{ $amc->id }}')"
-                                class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
-                            Edit
+                                aria-label="Edit AMC contract"
+                                title="Edit AMC contract"
+                                class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
+                            <flux:icon.pencil class="size-3.5" />
                         </button>
                         <form method="POST" action="{{ route('assets.amc.destroy', [$asset, $amc]) }}"
                               onsubmit="return confirm('Delete this AMC contract?')">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                    class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors dark:border-zinc-700">
-                                Delete
+                                    aria-label="Delete AMC contract"
+                                    title="Delete AMC contract"
+                                    class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                <flux:icon.trash class="size-3.5" />
                             </button>
                         </form>
                     </div>

@@ -8,6 +8,7 @@ use App\Models\AssetAmcContract;
 use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetService;
+use App\Models\AssetServicePart;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
@@ -43,6 +44,7 @@ class SendAssetReminderEmails extends Command
         $this->processRoadTaxExpiry($dryRun, $daysOverride);
         $this->processNextServiceDates($dryRun, $daysOverride);
         $this->processCertificationExpiry($dryRun, $daysOverride);
+        $this->processPartWarranties($dryRun, $daysOverride);
 
         $verb = $dryRun ? 'would be sent' : 'sent';
         $this->newLine();
@@ -251,6 +253,28 @@ class SendAssetReminderEmails extends Command
             });
     }
 
+    private function processPartWarranties(bool $dryRun, ?int $daysOverride): void
+    {
+        AssetServicePart::whereNotNull('warranty_till')->with('asset.createdBy')->get()
+            ->each(function (AssetServicePart $part) use ($dryRun, $daysOverride) {
+                $this->maybeNotify(
+                    recipient:   $part->asset?->createdBy,
+                    daysWindow:  $daysOverride ?? 30,
+                    expiryDate:  $part->warranty_till,
+                    reminderKey: "part-warranty:{$part->id}",
+                    payload: [
+                        'asset_code' => $part->asset?->asset_code,
+                        'asset_name' => $part->asset?->asset_name,
+                        'type'       => 'Part Warranty',
+                        'detail'     => $part->part_name . ($part->purchased_from ? ' — ' . $part->purchased_from : ''),
+                        'tab'        => 'parts',
+                        'asset'      => $part->asset,
+                    ],
+                    dryRun: $dryRun,
+                );
+            });
+    }
+
     // ── Core send logic with duplicate guard ─────────────────────────────────
 
     private function maybeNotify(
@@ -269,7 +293,7 @@ class SendAssetReminderEmails extends Command
             return;
         }
 
-        $daysLeft = (int) now()->startOfDay()->diffInDays($expiryDate->copy()->startOfDay(), false);
+        $daysLeft = (int) ($expiryDate->copy()->startOfDay()->diffInDays(now()->startOfDay()) * ($expiryDate->gte(now()->startOfDay()) ? 1 : -1));
 
         if ($daysLeft > $daysWindow) {
             $this->skipped++;
