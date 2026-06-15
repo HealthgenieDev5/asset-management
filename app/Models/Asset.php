@@ -14,6 +14,7 @@ class Asset extends Model
     protected static function booted(): void
     {
         static::deleting(function (Asset $asset) {
+            $asset->complaints()->each(fn ($c) => $c->delete());
             $asset->services()->each(fn ($s) => $s->delete());
             $asset->amcContracts()->delete();
             $asset->insurancePolicies()->delete();
@@ -115,6 +116,11 @@ class Asset extends Model
     public function services(): HasMany
     {
         return $this->hasMany(AssetService::class);
+    }
+
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(AssetComplaint::class);
     }
 
     public function createdBy(): BelongsTo

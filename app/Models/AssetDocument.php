@@ -42,6 +42,11 @@ class AssetDocument extends Model
         return str_starts_with($this->file_mime_type ?? '', 'image/');
     }
 
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->file_mime_type ?? '', 'video/');
+    }
+
     public function getDocumentTypeLabelAttribute(): string
     {
         return match ($this->document_type) {
@@ -64,6 +69,8 @@ class AssetDocument extends Model
             'compliance_certificate'     => 'Compliance Certificate',
             'vehicle_document'           => 'Vehicle Document',
             'asset_photo'                => 'Asset Photo',
+            'complaint_video_before'     => 'Before-Repair Video',
+            'complaint_video_after'      => 'After-Repair Video',
             'other'                      => 'Other',
             default                      => ucwords(str_replace('_', ' ', $this->document_type)),
         };

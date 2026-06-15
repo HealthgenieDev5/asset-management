@@ -9,14 +9,7 @@ $sec = 'mb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 d
 $err = 'mt-0.5 text-[11px] text-red-400';
 @endphp
 
-<div x-data x-init="
-    $nextTick(() => {
-        flatpickr($el.querySelector('[name=\'service_date\']'),         { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'next_service_date\']'),    { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'bill_date\']'),            { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'certification_expiry\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-    });
-" class="space-y-4">
+<div class="space-y-4">
 
     {{-- ── Service Info ── --}}
     <div>
@@ -46,11 +39,19 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="technician_name" class="{{ $lbl }}">Technician</label>
                 @error('technician_name')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div x-init="
+                const el = $el.querySelector('[data-datepicker]'), dialog = $el.closest('dialog');
+                const init = () => { if (el._flatpickr) el._flatpickr.destroy(); flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog }); };
+                document.addEventListener('modal-show', () => $nextTick(init)); $nextTick(init);
+            ">
                 <x-date-picker name="service_date" label="Service Date" value="{{ $service?->service_date?->format('Y-m-d') ?? old('service_date') }}" />
                 @error('service_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div x-init="
+                const el = $el.querySelector('[data-datepicker]'), dialog = $el.closest('dialog');
+                const init = () => { if (el._flatpickr) el._flatpickr.destroy(); flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog }); };
+                document.addEventListener('modal-show', () => $nextTick(init)); $nextTick(init);
+            ">
                 <x-date-picker name="next_service_date" label="Next Service Date" value="{{ $service?->next_service_date?->format('Y-m-d') ?? old('next_service_date') }}" />
                 @error('next_service_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
@@ -76,7 +77,11 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="bill_no" class="{{ $lbl }}">Bill Number</label>
                 @error('bill_no')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div x-init="
+                const el = $el.querySelector('[data-datepicker]'), dialog = $el.closest('dialog');
+                const init = () => { if (el._flatpickr) el._flatpickr.destroy(); flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog }); };
+                document.addEventListener('modal-show', () => $nextTick(init)); $nextTick(init);
+            ">
                 <x-date-picker name="bill_date" label="Bill Date" value="{{ $service?->bill_date?->format('Y-m-d') ?? old('bill_date') }}" />
                 @error('bill_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
@@ -129,7 +134,11 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="next_service_reminder_before_days" class="{{ $lbl }}">Reminder (days)</label>
                 @error('next_service_reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div x-init="
+                const el = $el.querySelector('[data-datepicker]'), dialog = $el.closest('dialog');
+                const init = () => { if (el._flatpickr) el._flatpickr.destroy(); flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog }); };
+                document.addEventListener('modal-show', () => $nextTick(init)); $nextTick(init);
+            ">
                 <x-date-picker name="certification_expiry" label="Certification Expiry" value="{{ $service?->certification_expiry?->format('Y-m-d') ?? old('certification_expiry') }}" />
                 @error('certification_expiry')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
@@ -184,4 +193,4 @@ $err = 'mt-0.5 text-[11px] text-red-400';
         @error('service_bill')<p class="{{ $err }}">{{ $message }}</p>@enderror
     </div>
 
-</div>{{-- end x-data wrapper --}}
+</div>

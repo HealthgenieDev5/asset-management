@@ -53,7 +53,7 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply  mb-0! leading-tight!;
 }
 
 input:focus[data-flux-control],
@@ -67,3 +67,18 @@ select:focus[data-flux-control] {
 } */
 
 [x-cloak] { display: none !important; }
+
+/* flux:modal overrides — width + backdrop for all modals project-wide */
+[data-flux-modal] > dialog {
+    max-width: min(64rem, 95vw);
+    width: min(64rem, 95vw);
+}
+[data-flux-modal] > dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+/* flatpickr inside native <dialog> — calendar must stay in top-layer */
+dialog .flatpickr-calendar {
+    position: absolute;
+    z-index: 9999;
+}

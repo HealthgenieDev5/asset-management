@@ -35,11 +35,12 @@
             'reminders' => ['label' => 'Reminders',          'icon' => 'bell-alert'],
             'warranty'  => ['label' => 'Warranty',           'icon' => 'shield-check'],
             'ext-warranty' => ['label' => 'Ext. Warranty',   'icon' => 'shield-exclamation'],
-            'services'  => ['label' => 'Servicing',          'icon' => 'cog-6-tooth'],
-            'parts'     => ['label' => 'Parts',              'icon' => 'puzzle-piece'],
-            'documents' => ['label' => 'Documents',          'icon' => 'paper-clip'],  
-            'amc'       => ['label' => 'AMC',                'icon' => 'wrench-screwdriver'],
-            'insurance' => ['label' => 'Insurance',          'icon' => 'building-library'],    
+            'services'   => ['label' => 'Servicing',   'icon' => 'cog-6-tooth'],
+            'parts'      => ['label' => 'Parts',        'icon' => 'puzzle-piece'],
+            'complaints' => ['label' => 'Complaints',   'icon' => 'exclamation-triangle'],
+            'documents'  => ['label' => 'Documents',    'icon' => 'paper-clip'],
+            'amc'        => ['label' => 'AMC',          'icon' => 'wrench-screwdriver'],
+            'insurance'  => ['label' => 'Insurance',    'icon' => 'building-library'],
         ];
     @endphp
 

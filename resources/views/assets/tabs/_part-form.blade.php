@@ -5,11 +5,19 @@ $lbl = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-z
 $err = 'mt-0.5 text-[11px] text-red-400';
 @endphp
 
-<div x-data x-init="
-    $nextTick(() => {
-        flatpickr($el.querySelector('[name=\'warranty_till\']'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-    });
-">
+<div x-data="{
+    initPickers() {
+        const dialog = this.$el.closest('dialog');
+        const el = this.$el.querySelector('[name=\'warranty_till\']');
+        if (!el) return;
+        if (el._flatpickr) el._flatpickr.destroy();
+        flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog });
+    },
+    init() {
+        document.addEventListener('modal-show', () => this.$nextTick(() => this.initPickers()));
+        this.$nextTick(() => this.initPickers());
+    }
+}">
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-6">
         {{-- Part Name --}}
         <div class="relative col-span-2 sm:col-span-2">

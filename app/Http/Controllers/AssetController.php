@@ -113,6 +113,9 @@ class AssetController extends Controller
             'insurancePolicies.documents',
             'services.documents',
             'services.parts',
+            'complaints.comments.user',
+            'complaints.documents',
+            'complaints.service',
         ]);
         $tab = request('tab', 'overview');
 

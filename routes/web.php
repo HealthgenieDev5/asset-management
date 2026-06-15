@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AssetAmcContractController;
+use App\Http\Controllers\AssetComplaintCommentController;
+use App\Http\Controllers\AssetComplaintController;
 use App\Http\Controllers\AssetExtendedWarrantyController;
 use App\Http\Controllers\AssetWarrantyController;
 use App\Http\Controllers\AssetCategoryController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\AssetReminderController;
 use App\Http\Controllers\AssetServiceController;
 use App\Http\Controllers\AssetServicePartController;
 use App\Http\Controllers\AssetSubcategoryController;
+use App\Http\Controllers\ComplaintEscalationRuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +67,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('assets/{asset}/services/{service}/parts', [AssetServicePartController::class, 'store'])->name('assets.services.parts.store');
     Route::put('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'update'])->name('assets.services.parts.update');
     Route::delete('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'destroy'])->name('assets.services.parts.destroy');
+
+    // Complaints (nested under asset)
+    Route::post('assets/{asset}/complaints', [AssetComplaintController::class, 'store'])->name('assets.complaints.store');
+    Route::put('assets/{asset}/complaints/{complaint}', [AssetComplaintController::class, 'update'])->name('assets.complaints.update');
+    Route::delete('assets/{asset}/complaints/{complaint}', [AssetComplaintController::class, 'destroy'])->name('assets.complaints.destroy');
+    Route::post('assets/{asset}/complaints/{complaint}/link-service', [AssetComplaintController::class, 'linkService'])->name('assets.complaints.link-service');
+    Route::patch('assets/{asset}/complaints/{complaint}/field', [AssetComplaintController::class, 'patchField'])->name('assets.complaints.patch-field');
+
+    // Complaint Comments
+    Route::post('assets/{asset}/complaints/{complaint}/comments', [AssetComplaintCommentController::class, 'store'])->name('assets.complaints.comments.store');
+    Route::delete('assets/{asset}/complaints/{complaint}/comments/{comment}', [AssetComplaintCommentController::class, 'destroy'])->name('assets.complaints.comments.destroy');
+
+    // Complaint Escalation Rules
+    Route::get('complaint-escalation-rules', [ComplaintEscalationRuleController::class, 'index'])->name('complaint-escalation-rules.index');
+    Route::post('complaint-escalation-rules', [ComplaintEscalationRuleController::class, 'store'])->name('complaint-escalation-rules.store');
+    Route::put('complaint-escalation-rules/{complaintEscalationRule}', [ComplaintEscalationRuleController::class, 'update'])->name('complaint-escalation-rules.update');
+    Route::delete('complaint-escalation-rules/{complaintEscalationRule}', [ComplaintEscalationRuleController::class, 'destroy'])->name('complaint-escalation-rules.destroy');
 
     Route::resource('asset-reminders', AssetReminderController::class);
 

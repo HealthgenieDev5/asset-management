@@ -9,13 +9,21 @@ $sec = 'mb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 d
 $err = 'mt-0.5 text-[11px] text-red-400';
 @endphp
 
-<div x-data x-init="
-    $nextTick(() => {
-        flatpickr($el.querySelector('[name=\'amc_date_from\']'),  { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'amc_date_to\']'),    { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-        flatpickr($el.querySelector('[name=\'amc_bill_date\']'),  { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true });
-    });
-" class="space-y-4">
+<div x-data="{
+    initPickers() {
+        const dialog = this.$el.closest('dialog');
+        ['amc_date_from', 'amc_date_to', 'amc_bill_date'].forEach(n => {
+            const el = this.$el.querySelector('[name=\'' + n + '\']');
+            if (!el) return;
+            if (el._flatpickr) el._flatpickr.destroy();
+            flatpickr(el, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true, appendTo: dialog || document.body, static: !!dialog });
+        });
+    },
+    init() {
+        document.addEventListener('modal-show', () => this.$nextTick(() => this.initPickers()));
+        this.$nextTick(() => this.initPickers());
+    }
+}" class="space-y-4">
 
     {{-- ── Contract ── --}}
     <div>

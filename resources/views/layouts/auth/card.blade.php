@@ -42,7 +42,7 @@
             </a>
 
             {{-- Card --}}
-            <div class="w-full max-w-sm rounded-2xl border border-white/[0.06] bg-zinc-900/80 shadow-2xl backdrop-blur-sm">
+            <div class="w-full max-w-sm rounded-2xl border border-white/6 bg-zinc-900/80 shadow-2xl backdrop-blur-sm">
                 <div class="px-8 py-8">
                     {{ $slot }}
                 </div>
