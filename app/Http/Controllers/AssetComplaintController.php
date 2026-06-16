@@ -29,6 +29,7 @@ class AssetComplaintController extends Controller
 
         $this->storeComplaintVideo($request, $asset, $complaint, 'video_before', 'complaint_video_before');
         $this->storeComplaintVideo($request, $asset, $complaint, 'video_after', 'complaint_video_after');
+        $this->storeComplaintDetails($request, $complaint);
 
         $this->triggerComplaintEscalation($asset, $complaint);
 
@@ -46,8 +47,8 @@ class AssetComplaintController extends Controller
             'resolution_summary' => ['nullable', 'string'],
             'resolved_at' => ['nullable', 'date'],
             'remarks' => ['nullable', 'string'],
-            'video_before' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:51200'],
-            'video_after' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:51200'],
+            'video_before' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:102400'],
+            'video_after' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:102400'],
         ]);
 
         $validated['updated_by'] = auth()->id();

@@ -130,6 +130,20 @@
                     </div>
                 </dl>
 
+                @if ($cmp->details->isNotEmpty())
+                    <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                        <p class="mb-2 text-xs font-medium text-zinc-500">Additional Data</p>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                            @foreach ($cmp->details as $detail)
+                                <div>
+                                    <dt class="text-[10px] text-zinc-500">{{ $detail->label }}</dt>
+                                    <dd class="text-xs font-medium text-zinc-700 dark:text-zinc-300">{{ $detail->value ?: '—' }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </div>
+                @endif
+
                 <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
                     <p class="mb-2 text-xs font-medium text-zinc-500">Linked Service Record</p>
                     @if ($cmp->service)
@@ -380,6 +394,21 @@
                         <p class="mb-1 text-xs font-medium text-zinc-500">Description</p>
                         <p class="text-sm text-zinc-800 whitespace-pre-line dark:text-zinc-200">{{ $cmp->description }}</p>
                     </div>
+
+                    {{-- Additional Data --}}
+                    @if ($cmp->details->isNotEmpty())
+                        <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                            <p class="mb-2 text-xs font-medium text-zinc-500">Additional Data</p>
+                            <dl class="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+                                @foreach ($cmp->details as $detail)
+                                    <div>
+                                        <dt class="text-[10px] text-zinc-500">{{ $detail->label }}</dt>
+                                        <dd class="text-xs font-medium text-zinc-700 dark:text-zinc-300">{{ $detail->value ?: '—' }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </div>
+                    @endif
 
                     {{-- Resolution --}}
                     @if ($cmp->resolution_summary)

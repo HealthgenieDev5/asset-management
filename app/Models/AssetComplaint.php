@@ -16,6 +16,7 @@ class AssetComplaint extends Model
     {
         static::deleting(function (AssetComplaint $complaint) {
             $complaint->comments()->delete();
+            $complaint->details()->delete();
             $complaint->documents->each(function ($doc) {
                 Storage::disk('public')->delete($doc->file_path);
                 $doc->delete();
@@ -86,6 +87,11 @@ class AssetComplaint extends Model
         return $this->hasMany(AssetComplaintComment::class, 'complaint_id')->orderBy('created_at');
     }
 
+    public function details(): HasMany
+    {
+        return $this->hasMany(AssetComplaintDetail::class, 'asset_complaint_id')->orderBy('sort_order');
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(AssetDocument::class, 'documentable_id')
@@ -105,48 +111,48 @@ class AssetComplaint extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'open'         => 'Open',
+            'open' => 'Open',
             'acknowledged' => 'Acknowledged',
-            'in_progress'  => 'In Progress',
-            'resolved'     => 'Resolved',
-            'closed'       => 'Closed',
-            'rejected'     => 'Rejected',
-            default        => ucfirst($this->status ?? ''),
+            'in_progress' => 'In Progress',
+            'resolved' => 'Resolved',
+            'closed' => 'Closed',
+            'rejected' => 'Rejected',
+            default => ucfirst($this->status ?? ''),
         };
     }
 
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'open'         => 'text-blue-400 bg-blue-400/10 border-blue-400/30',
+            'open' => 'text-blue-400 bg-blue-400/10 border-blue-400/30',
             'acknowledged' => 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
-            'in_progress'  => 'text-orange-400 bg-orange-400/10 border-orange-400/30',
-            'resolved'     => 'text-green-400 bg-green-400/10 border-green-400/30',
-            'closed'       => 'text-zinc-400 bg-zinc-400/10 border-zinc-400/30',
-            'rejected'     => 'text-red-400 bg-red-400/10 border-red-400/30',
-            default        => 'text-zinc-400 bg-zinc-400/10 border-zinc-400/30',
+            'in_progress' => 'text-orange-400 bg-orange-400/10 border-orange-400/30',
+            'resolved' => 'text-green-400 bg-green-400/10 border-green-400/30',
+            'closed' => 'text-zinc-400 bg-zinc-400/10 border-zinc-400/30',
+            'rejected' => 'text-red-400 bg-red-400/10 border-red-400/30',
+            default => 'text-zinc-400 bg-zinc-400/10 border-zinc-400/30',
         };
     }
 
     public function getPriorityLabelAttribute(): string
     {
         return match ($this->priority) {
-            'low'      => 'Low',
-            'medium'   => 'Medium',
-            'high'     => 'High',
+            'low' => 'Low',
+            'medium' => 'Medium',
+            'high' => 'High',
             'critical' => 'Critical',
-            default    => ucfirst($this->priority ?? ''),
+            default => ucfirst($this->priority ?? ''),
         };
     }
 
     public function getPriorityColorAttribute(): string
     {
         return match ($this->priority) {
-            'low'      => 'text-zinc-400 bg-zinc-400/10',
-            'medium'   => 'text-blue-400 bg-blue-400/10',
-            'high'     => 'text-orange-400 bg-orange-400/10',
+            'low' => 'text-zinc-400 bg-zinc-400/10',
+            'medium' => 'text-blue-400 bg-blue-400/10',
+            'high' => 'text-orange-400 bg-orange-400/10',
             'critical' => 'text-red-400 bg-red-400/10',
-            default    => 'text-zinc-400 bg-zinc-400/10',
+            default => 'text-zinc-400 bg-zinc-400/10',
         };
     }
 }

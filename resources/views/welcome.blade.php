@@ -506,6 +506,16 @@
                 <div class="feat-desc">Generate detailed reports by category, status, or expiry type and export to Excel instantly.</div>
             </div>
 
+            <div class="feature">
+                <div class="feat-icon" style="background:rgba(244,63,94,.09);">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#fb7185">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9h7.5m-7.5 3h7.5m-7.5 3h4.5M3.75 6.75A2.25 2.25 0 0 1 6 4.5h12a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25H9l-4.125 3.094a.75.75 0 0 1-1.2-.6V6.75Z" />
+                    </svg>
+                </div>
+                <div class="feat-title">Complaint Management</div>
+                <div class="feat-desc">Log and track complaints against any asset, with escalation alerts and full conversation history.</div>
+            </div>
+
         </div>
     </div>
 

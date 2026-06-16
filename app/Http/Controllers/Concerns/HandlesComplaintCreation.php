@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Mail\ComplaintEscalationMail;
 use App\Models\Asset;
 use App\Models\AssetComplaint;
+use App\Models\AssetComplaintDetail;
 use App\Models\AssetDocument;
 use App\Models\ComplaintEscalationRule;
 use Illuminate\Http\Request;
@@ -22,9 +23,33 @@ trait HandlesComplaintCreation
             'reported_by_phone' => ['nullable', 'string', 'max:30'],
             'priority' => ['required', 'in:low,medium,high,critical'],
             'remarks' => ['nullable', 'string'],
-            'video_before' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:51200'],
-            'video_after' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:51200'],
+            'video_before' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:102400'],
+            'video_after' => ['nullable', 'file', 'mimes:mp4,mov,avi,webm', 'max:102400'],
+            'detail_labels.*' => ['nullable', 'string', 'max:255'],
+            'detail_values.*' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    protected function storeComplaintDetails(Request $request, AssetComplaint $complaint): void
+    {
+        $labels = $request->input('detail_labels', []);
+        $values = $request->input('detail_values', []);
+
+        $sortOrder = 0;
+        foreach ($labels as $index => $label) {
+            $label = trim((string) $label);
+
+            if ($label === '') {
+                continue;
+            }
+
+            AssetComplaintDetail::create([
+                'asset_complaint_id' => $complaint->id,
+                'label' => $label,
+                'value' => $values[$index] ?? null,
+                'sort_order' => $sortOrder++,
+            ]);
+        }
     }
 
     protected function storeComplaintVideo(Request $request, Asset $asset, AssetComplaint $complaint, string $field, string $docType): void

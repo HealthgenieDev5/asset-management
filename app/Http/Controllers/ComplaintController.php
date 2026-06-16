@@ -59,6 +59,7 @@ class ComplaintController extends Controller
 
         $this->storeComplaintVideo($request, $asset, $complaint, 'video_before', 'complaint_video_before');
         $this->storeComplaintVideo($request, $asset, $complaint, 'video_after', 'complaint_video_after');
+        $this->storeComplaintDetails($request, $complaint);
 
         $this->triggerComplaintEscalation($asset, $complaint);
 
