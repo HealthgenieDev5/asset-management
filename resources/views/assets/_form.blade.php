@@ -28,6 +28,21 @@ document.addEventListener('alpine:init', () => {
                 });
                 fp('bill_date'); fp('purchase_date');
                 fp('puc_expiry_date'); fp('fitness_expiry_date'); fp('road_tax_expiry_date');
+
+                const billInput = this.$el.querySelector("[name='purchase_bill_file']");
+                if (billInput) {
+                    const billWrap = billInput.closest('[data-existing-bill]');
+                    const existingBillUrl  = billWrap?.dataset.existingBill;
+                    const existingBillName = billWrap?.dataset.existingBillName;
+                    initUploadPond(billInput, {
+                        acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                        files: existingBillUrl ? [{
+                            source: existingBillUrl,
+                            options: { type: 'local' },
+                        }] : undefined,
+                        fileMetaBySource: existingBillUrl ? { [existingBillUrl]: { name: existingBillName } } : undefined,
+                    });
+                }
             });
         },
 
@@ -63,71 +78,72 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Basic Information</flux:heading>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {{-- Asset Name --}}
-            <div class="lg:col-span-2">
-                <div class="relative">
-                    <input type="text" name="asset_name" id="asset_name"
-                        value="{{ $old('asset_name') }}" placeholder=" " required
-                        class="{{ $inputCls }}" />
-                    <label for="asset_name" class="{{ $labelCls }}">Asset Name <span class="text-red-400">*</span></label>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+            {{-- Left: 2x2 grid of Name/Status/Category/Subcategory --}}
+            <div class="grid gap-4 grid-cols-2">
+                {{-- Asset Name --}}
+                <div>
+                    <div class="relative">
+                        <input type="text" name="asset_name" id="asset_name"
+                            value="{{ $old('asset_name') }}" placeholder=" " required
+                            class="{{ $inputCls }}" />
+                        <label for="asset_name" class="{{ $labelCls }}">Asset Name <span class="text-red-400">*</span></label>
+                    </div>
+                    <flux:error name="asset_name" />
                 </div>
-                <flux:error name="asset_name" />
-            </div>
 
-            {{-- Status --}}
-            <div class="relative">
-                <select name="status" id="status" class="{{ $selectCls }}">
-                    <option value="active" @selected($old('status', 'active') === 'active')>Active</option>
-                    <option value="under_repair" @selected($old('status') === 'under_repair')>Under Repair</option>
-                    <option value="disposed" @selected($old('status') === 'disposed')>Disposed</option>
-                    <option value="scrapped" @selected($old('status') === 'scrapped')>Scrapped</option>
-                    <option value="inactive" @selected($old('status') === 'inactive')>Inactive</option>
-                </select>
-                <label for="status" class="{{ $labelSelCls }}">Status <span class="text-red-400">*</span></label>
-                <flux:error name="status" />
-            </div>
-
-            {{-- Category --}}
-            <div class="relative">
-                <select id="category_select" name="asset_category_id"
-                    class="{{ $selectCls }}"
-                    x-on:change="loadSubcategories($event.target.value)"
-                    required>
-                    <option value="">Select Category</option>
-                    @foreach ($categories as $cat)
-                        <option value="{{ $cat->id }}" data-code="{{ $cat->code }}"
-                            @selected($old('asset_category_id') == $cat->id)>
-                            {{ $cat->code }} — {{ $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <label for="category_select" class="{{ $labelSelCls }}">Category <span class="text-red-400">*</span></label>
-                <flux:error name="asset_category_id" />
-            </div>
-
-            {{-- Subcategory --}}
-            <div class="relative">
-                <select name="asset_subcategory_id" id="asset_subcategory_id"
-                    x-model="selectedSubcategoryId"
-                    class="{{ $selectCls }}">
-                    <option value="">— None —</option>
-                    <template x-for="sub in subcategories" :key="sub.id">
-                        <option :value="sub.id" x-text="sub.name"></option>
-                    </template>
-                </select>
-                <label for="asset_subcategory_id" class="{{ $labelSelCls }}">Subcategory</label>
-                <flux:error name="asset_subcategory_id" />
-            </div>
-
-            {{-- Description --}}
-            <div class="lg:col-span-3">
+                {{-- Status --}}
                 <div class="relative">
-                    <textarea name="asset_description" id="asset_description" rows="2"
-                        placeholder=" "
-                        class="{{ $textareaCls }}">{{ $old('asset_description') }}</textarea>
-                    <label for="asset_description" class="{{ $labelCls }}">Description</label>
+                    <select name="status" id="status" class="{{ $selectCls }}">
+                        <option value="active" @selected($old('status', 'active') === 'active')>Active</option>
+                        <option value="under_repair" @selected($old('status') === 'under_repair')>Under Repair</option>
+                        <option value="disposed" @selected($old('status') === 'disposed')>Disposed</option>
+                        <option value="scrapped" @selected($old('status') === 'scrapped')>Scrapped</option>
+                        <option value="inactive" @selected($old('status') === 'inactive')>Inactive</option>
+                    </select>
+                    <label for="status" class="{{ $labelSelCls }}">Status <span class="text-red-400">*</span></label>
+                    <flux:error name="status" />
                 </div>
+
+                {{-- Category --}}
+                <div class="relative">
+                    <select id="category_select" name="asset_category_id"
+                        class="{{ $selectCls }}"
+                        x-on:change="loadSubcategories($event.target.value)"
+                        required>
+                        <option value="">Select Category</option>
+                        @foreach ($categories as $cat)
+                            <option value="{{ $cat->id }}" data-code="{{ $cat->code }}"
+                                @selected($old('asset_category_id') == $cat->id)>
+                                {{ $cat->code }} — {{ $cat->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <label for="category_select" class="{{ $labelSelCls }}">Category <span class="text-red-400">*</span></label>
+                    <flux:error name="asset_category_id" />
+                </div>
+
+                {{-- Subcategory --}}
+                <div class="relative">
+                    <select name="asset_subcategory_id" id="asset_subcategory_id"
+                        x-model="selectedSubcategoryId"
+                        class="{{ $selectCls }}">
+                        <option value="">— None —</option>
+                        <template x-for="sub in subcategories" :key="sub.id">
+                            <option :value="sub.id" x-text="sub.name"></option>
+                        </template>
+                    </select>
+                    <label for="asset_subcategory_id" class="{{ $labelSelCls }}">Subcategory</label>
+                    <flux:error name="asset_subcategory_id" />
+                </div>
+            </div>
+
+            {{-- Right: Description spanning both rows --}}
+            <div class="relative">
+                <textarea name="asset_description" id="asset_description" rows="4"
+                    placeholder=" "
+                    class="{{ $textareaCls }} h-full">{{ $old('asset_description') }}</textarea>
+                <label for="asset_description" class="{{ $labelCls }}">Description</label>
                 <flux:error name="asset_description" />
             </div>
         </div>
@@ -137,7 +153,7 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
         <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Identification & Location</flux:heading>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="relative">
                 <input type="text" name="manufacturer" id="manufacturer"
                     value="{{ $old('manufacturer') }}" placeholder=" "
@@ -239,31 +255,20 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
         </div>
 
         {{-- Purchase Bill Photo --}}
-        <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-            <p class="mb-1.5 text-xs font-medium text-zinc-500">Purchase Bill Photo / PDF
+        @php
+            $existingBill = $isEdit ? $asset->documents->where('document_type', 'purchase_bill')->first() : null;
+        @endphp
+        <div class="mt-5 border-t border-zinc-200 pt-5 dark:border-zinc-800">
+            <p class="mb-3 text-xs font-medium text-zinc-500">Purchase Bill Photo / PDF
                 <span class="ml-1 font-normal">(PDF, JPG, PNG, WEBP — max 5 MB)</span>
             </p>
-            @if ($isEdit && $asset->documents->where('document_type', 'purchase_bill')->isNotEmpty())
-                @php $existingBill = $asset->documents->where('document_type', 'purchase_bill')->first(); @endphp
-                <div class="mb-2 flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
-                    @if ($existingBill->isImage())
-                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
-                    @else
-                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
-                    @endif
-                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $existingBill->file_original_name }}</span>
-                    <a href="{{ Storage::url($existingBill->file_path) }}" target="_blank"
-                       class="text-xs text-accent hover:underline">View</a>
-                </div>
-                <p class="mb-1.5 text-xs text-zinc-500">Upload a new file to replace the existing one.</p>
-            @endif
-            <input type="file" name="purchase_bill_file"
-                   accept=".pdf,.jpg,.jpeg,.png,.webp"
-                   class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                          file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                          focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                          dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
-            <flux:error name="purchase_bill_file" />
+            <div class="mx-auto max-w-md"
+                 data-existing-bill="{{ $existingBill ? Storage::url($existingBill->file_path) : '' }}"
+                 data-existing-bill-name="{{ $existingBill?->file_original_name }}">
+                <input type="file" name="purchase_bill_file"
+                       accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                <flux:error name="purchase_bill_file" />
+            </div>
         </div>
     </div>
 

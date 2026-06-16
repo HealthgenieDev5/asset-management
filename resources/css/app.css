@@ -85,26 +85,78 @@ select:focus[data-flux-control] {
     z-index: 9999 !important;
 }
 
-/* FilePond: hide drop label, transparent panel, match project font */
+/* FilePond: shared base, match project font */
 .filepond--root {
     font-family: inherit;
     margin-bottom: 0;
 }
-.filepond--drop-label {
+
+/* Read-only viewer (initDocImageViewer): hide drop label/panel, disable interaction */
+.filepond--root:not(.fp-upload) .filepond--drop-label {
     display: none !important;
 }
-.filepond--panel-root {
+.filepond--root:not(.fp-upload) .filepond--panel-root {
     background-color: transparent;
     border: none;
     box-shadow: none;
 }
-.filepond--item {
+.filepond--root:not(.fp-upload) .filepond--item {
     cursor: pointer;
 }
-.filepond--item .filepond--image-preview-wrapper,
-.filepond--item .filepond--image-preview,
-.filepond--item .filepond--image-preview canvas,
-.filepond--item .filepond--pdf-preview-wrapper,
-.filepond--item .filepond--pdf-preview canvas {
+.filepond--root:not(.fp-upload) .filepond--item .filepond--image-preview-wrapper,
+.filepond--root:not(.fp-upload) .filepond--item .filepond--image-preview,
+.filepond--root:not(.fp-upload) .filepond--item .filepond--image-preview canvas,
+.filepond--root:not(.fp-upload) .filepond--item .filepond--pdf-preview-wrapper,
+.filepond--root:not(.fp-upload) .filepond--item .filepond--pdf-preview canvas {
     pointer-events: none;
+}
+
+/* Upload widget (initUploadPond): stock FilePond look, just retheme accent + dark mode */
+.filepond--root.fp-upload .filepond--panel-root {
+    background-color: var(--color-zinc-50);
+    border-radius: 0.75rem;
+}
+.dark .filepond--root.fp-upload .filepond--panel-root {
+    background-color: var(--color-zinc-800);
+}
+.filepond--root.fp-upload .filepond--drop-label {
+    color: var(--color-zinc-500);
+    font-size: 0.8125rem;
+}
+.dark .filepond--root.fp-upload .filepond--drop-label {
+    color: var(--color-zinc-400);
+}
+.filepond--root.fp-upload .filepond--label-action {
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* Item card: neutral dark panel with white filename/size text, image/PDF preview visible above it */
+.filepond--root.fp-upload .filepond--item-panel {
+    background-color: var(--color-zinc-800) !important;
+    border-radius: 0.625rem;
+}
+.filepond--root.fp-upload .filepond--image-preview-wrapper,
+.filepond--root.fp-upload .filepond--pdf-preview-wrapper {
+    border-radius: 0.625rem 0.625rem 0 0;
+}
+.filepond--root.fp-upload .filepond--file-info-main,
+.filepond--root.fp-upload .filepond--file-info-sub {
+    color: white;
+}
+.filepond--root.fp-upload .filepond--file-status-main,
+.filepond--root.fp-upload .filepond--file-status-sub {
+    color: white;
+}
+
+/* Remove button: circular, overlapping the top-left corner */
+.filepond--root.fp-upload .filepond--file-action-button {
+    background-color: var(--color-zinc-900);
+    color: white;
+    opacity: 1;
+}
+.filepond--root.fp-upload [data-align*='left'].filepond--action-remove-item {
+    left: -0.5em;
+    top: -0.5em;
 }

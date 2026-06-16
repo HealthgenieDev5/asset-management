@@ -1,31 +1,35 @@
 <?php
 
 use App\Http\Controllers\AssetAmcContractController;
+use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\AssetComplaintCommentController;
 use App\Http\Controllers\AssetComplaintController;
-use App\Http\Controllers\AssetExtendedWarrantyController;
-use App\Http\Controllers\AssetWarrantyController;
-use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
+use App\Http\Controllers\AssetExtendedWarrantyController;
 use App\Http\Controllers\AssetInsurancePolicyController;
 use App\Http\Controllers\AssetReminderController;
 use App\Http\Controllers\AssetServiceController;
 use App\Http\Controllers\AssetServicePartController;
 use App\Http\Controllers\AssetSubcategoryController;
+use App\Http\Controllers\AssetWarrantyController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ComplaintEscalationRuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
+use App\Models\AssetSubcategory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
 // API-style helper for dependent dropdowns (auth required)
-Route::middleware(['auth'])->get('/api/subcategories', function (\Illuminate\Http\Request $request) {
-    $subs = \App\Models\AssetSubcategory::where('asset_category_id', $request->category_id)
+Route::middleware(['auth'])->get('/api/subcategories', function (Request $request) {
+    $subs = AssetSubcategory::where('asset_category_id', $request->category_id)
         ->where('status', 'active')
         ->orderBy('name')
         ->get(['id', 'name']);
+
     return response()->json($subs);
 });
 
@@ -79,6 +83,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('assets/{asset}/complaints/{complaint}/comments', [AssetComplaintCommentController::class, 'store'])->name('assets.complaints.comments.store');
     Route::delete('assets/{asset}/complaints/{complaint}/comments/{comment}', [AssetComplaintCommentController::class, 'destroy'])->name('assets.complaints.comments.destroy');
 
+    // Complaints (global)
+    Route::get('complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+    Route::post('complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+
     // Complaint Escalation Rules
     Route::get('complaint-escalation-rules', [ComplaintEscalationRuleController::class, 'index'])->name('complaint-escalation-rules.index');
     Route::post('complaint-escalation-rules', [ComplaintEscalationRuleController::class, 'store'])->name('complaint-escalation-rules.store');
@@ -107,21 +115,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/vehicle-depreciation', [ReportController::class, 'vehicleDepreciation'])->name('reports.vehicle-depreciation');
 
     // Report CSV exports
-    Route::get('reports/asset-register/export',          [ReportController::class, 'exportAssetRegister'])->name('reports.asset-register.export');
-    Route::get('reports/purchase-bills/export',          [ReportController::class, 'exportPurchaseBills'])->name('reports.purchase-bills.export');
-    Route::get('reports/warranty-expiry/export',         [ReportController::class, 'exportWarrantyExpiry'])->name('reports.warranty-expiry.export');
-    Route::get('reports/extended-warranty-expiry/export',[ReportController::class, 'exportExtendedWarrantyExpiry'])->name('reports.extended-warranty-expiry.export');
-    Route::get('reports/amc-expiry/export',              [ReportController::class, 'exportAmcExpiry'])->name('reports.amc-expiry.export');
-    Route::get('reports/insurance-expiry/export',        [ReportController::class, 'exportInsuranceExpiry'])->name('reports.insurance-expiry.export');
-    Route::get('reports/puc-expiry/export',              [ReportController::class, 'exportPucExpiry'])->name('reports.puc-expiry.export');
-    Route::get('reports/fitness-expiry/export',          [ReportController::class, 'exportFitnessExpiry'])->name('reports.fitness-expiry.export');
-    Route::get('reports/road-tax-expiry/export',         [ReportController::class, 'exportRoadTaxExpiry'])->name('reports.road-tax-expiry.export');
-    Route::get('reports/inspection-due/export',          [ReportController::class, 'exportInspectionDue'])->name('reports.inspection-due.export');
-    Route::get('reports/certification-expiry/export',    [ReportController::class, 'exportCertificationExpiry'])->name('reports.certification-expiry.export');
-    Route::get('reports/service-due/export',             [ReportController::class, 'exportServiceDue'])->name('reports.service-due.export');
-    Route::get('reports/service-history/export',         [ReportController::class, 'exportServiceHistory'])->name('reports.service-history.export');
-    Route::get('reports/maintenance-cost/export',        [ReportController::class, 'exportMaintenanceCost'])->name('reports.maintenance-cost.export');
-    Route::get('reports/vehicle-depreciation/export',    [ReportController::class, 'exportVehicleDepreciation'])->name('reports.vehicle-depreciation.export');
+    Route::get('reports/asset-register/export', [ReportController::class, 'exportAssetRegister'])->name('reports.asset-register.export');
+    Route::get('reports/purchase-bills/export', [ReportController::class, 'exportPurchaseBills'])->name('reports.purchase-bills.export');
+    Route::get('reports/warranty-expiry/export', [ReportController::class, 'exportWarrantyExpiry'])->name('reports.warranty-expiry.export');
+    Route::get('reports/extended-warranty-expiry/export', [ReportController::class, 'exportExtendedWarrantyExpiry'])->name('reports.extended-warranty-expiry.export');
+    Route::get('reports/amc-expiry/export', [ReportController::class, 'exportAmcExpiry'])->name('reports.amc-expiry.export');
+    Route::get('reports/insurance-expiry/export', [ReportController::class, 'exportInsuranceExpiry'])->name('reports.insurance-expiry.export');
+    Route::get('reports/puc-expiry/export', [ReportController::class, 'exportPucExpiry'])->name('reports.puc-expiry.export');
+    Route::get('reports/fitness-expiry/export', [ReportController::class, 'exportFitnessExpiry'])->name('reports.fitness-expiry.export');
+    Route::get('reports/road-tax-expiry/export', [ReportController::class, 'exportRoadTaxExpiry'])->name('reports.road-tax-expiry.export');
+    Route::get('reports/inspection-due/export', [ReportController::class, 'exportInspectionDue'])->name('reports.inspection-due.export');
+    Route::get('reports/certification-expiry/export', [ReportController::class, 'exportCertificationExpiry'])->name('reports.certification-expiry.export');
+    Route::get('reports/service-due/export', [ReportController::class, 'exportServiceDue'])->name('reports.service-due.export');
+    Route::get('reports/service-history/export', [ReportController::class, 'exportServiceHistory'])->name('reports.service-history.export');
+    Route::get('reports/maintenance-cost/export', [ReportController::class, 'exportMaintenanceCost'])->name('reports.maintenance-cost.export');
+    Route::get('reports/vehicle-depreciation/export', [ReportController::class, 'exportVehicleDepreciation'])->name('reports.vehicle-depreciation.export');
 });
 
 require __DIR__.'/settings.php';

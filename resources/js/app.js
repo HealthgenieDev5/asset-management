@@ -12,6 +12,52 @@ window.destroyDocImageViewer = function (pond) {
     }
 };
 
+window.destroyUploadPond = function (pond) {
+    if (!pond) return;
+    const root = pond.element;
+    if (root && root.parentNode) {
+        root.parentNode.removeChild(root);
+    }
+};
+
+window.initUploadPond = function (inputEl, options = {}) {
+    const pond = FilePond.create(inputEl, {
+        files:              options.files ?? undefined,
+        allowMultiple:      false,
+        allowProcess:       false,
+        allowRevert:        true,
+        allowRemove:        true,
+        allowBrowse:        true,
+        allowDrop:          true,
+        allowPaste:         true,
+        credits:            false,
+        labelIdle:          options.labelIdle ?? 'Drag & Drop your file or <span class="filepond--label-action">Browse</span>',
+        imagePreviewHeight: 220,
+        allowPdfPreview:    true,
+        pdfPreviewHeight:   220,
+        pdfComponentExtraParams: 'toolbar=0&navpanes=0&scrollbar=0',
+        stylePanelAspectRatio: null,
+        styleItemPanelAspectRatio: null,
+        acceptedFileTypes: options.acceptedFileTypes ?? undefined,
+        onaddfile: options.onaddfile ?? undefined,
+        onremovefile: options.onremovefile ?? undefined,
+        server: {
+            load: (source, load, error, progress, abort) => {
+                fetch(source)
+                    .then(r => r.blob())
+                    .then(blob => {
+                        const meta = options.fileMetaBySource?.[source];
+                        load(meta ? new File([blob], meta.name, { type: blob.type }) : blob);
+                    })
+                    .catch(error);
+                return { abort };
+            },
+        },
+    });
+    pond.element.classList.add('fp-upload');
+    return pond;
+};
+
 window.initDocImageViewer = function (inputEl, files) {
     return FilePond.create(inputEl, {
         files,

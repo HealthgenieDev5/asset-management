@@ -54,6 +54,7 @@
 
                         $assetItems = [
                             $item('clipboard-document-list', 'Asset Register',  'assets.index',               'assets.*'),
+                            $item('exclamation-triangle',    'Complaints',       'complaints.index',           'complaints.*'),
                             $item('tag',                     'Categories',       'asset-categories.index',     'asset-categories.*'),
                             $item('queue-list',              'Subcategories',    'asset-subcategories.index',  'asset-subcategories.*'),
                         ];
