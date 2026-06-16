@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import 'filepond/dist/filepond.min.css';
+@import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css';
+@import 'filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -80,4 +83,28 @@ select:focus[data-flux-control] {
 /* flatpickr appends to body by default — must sit above div-based modals (z-50) */
 .flatpickr-calendar {
     z-index: 9999 !important;
+}
+
+/* FilePond: hide drop label, transparent panel, match project font */
+.filepond--root {
+    font-family: inherit;
+    margin-bottom: 0;
+}
+.filepond--drop-label {
+    display: none !important;
+}
+.filepond--panel-root {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+.filepond--item {
+    cursor: pointer;
+}
+.filepond--item .filepond--image-preview-wrapper,
+.filepond--item .filepond--image-preview,
+.filepond--item .filepond--image-preview canvas,
+.filepond--item .filepond--pdf-preview-wrapper,
+.filepond--item .filepond--pdf-preview canvas {
+    pointer-events: none;
 }

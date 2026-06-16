@@ -146,56 +146,121 @@
                     </div>
 
                     {{-- Files --}}
-                    <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                        @foreach ($docs as $doc)
-                            <div class="flex items-start gap-3 px-4 py-3">
-                                <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                                    @if ($doc->isImage())
-                                        <flux:icon.photo class="size-4 text-accent" />
-                                    @elseif (str_contains($doc->file_mime_type ?? '', 'pdf'))
-                                        <flux:icon.document class="size-4 text-red-400" />
-                                    @else
-                                        <flux:icon.document-text class="size-4 text-zinc-400" />
-                                    @endif
-                                </div>
+                    @php
+                        $previewDocs = $docs->filter(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'))->values();
+                        $otherDocs   = $docs->reject(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'));
+                    @endphp
 
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                    {{-- Image + PDF documents: FilePond thumbnail strip --}}
+                    @if ($previewDocs->isNotEmpty())
+                        @php $pondId = 'filepond-' . Str::slug($type); @endphp
+                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1"
+                             x-data
+                             x-init="
+                                 const wrap     = document.getElementById('pond-wrap-{{ $pondId }}');
+                                 const mount    = document.getElementById('pond-mount-{{ $pondId }}');
+                                 const files    = {{ Js::from($previewDocs->map(fn($d) => ['source' => Storage::url($d->file_path), 'options' => ['type' => 'local']])) }};
+                                 const fileMeta = {{ Js::from($previewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
+                                 let pond = null;
+                                 const mountPond = () => {
+                                     if (pond) { try { destroyDocImageViewer(pond); } catch(e) {} pond = null; }
+                                     if (!mount.isConnected) return;
+                                     mount.innerHTML = '';
+                                     const input = document.createElement('input');
+                                     input.type = 'file';
+                                     mount.appendChild(input);
+                                     pond = initDocImageViewer(input, files);
+                                 };
+                                 wrap.addEventListener('click', (e) => {
+                                     if (wrap.offsetParent === null) return;
+                                     const item = e.target.closest('.filepond--item');
+                                     if (!item) return;
+                                     const idx = Array.from(wrap.querySelectorAll('.filepond--item')).indexOf(item);
+                                     if (fileMeta[idx]) $dispatch('docs-lightbox-open', fileMeta[idx]);
+                                 });
+                                 window.addEventListener('tab-visible', (e) => {
+                                     if (e.detail === 'documents') setTimeout(mountPond, 50);
+                                 });
+                                 if (document.readyState === 'complete') { setTimeout(mountPond, 50); }
+                                 else { window.addEventListener('load', () => setTimeout(mountPond, 50), { once: true }); }
+                             ">
+                            <div id="pond-mount-{{ $pondId }}"></div>
+                        </div>
+
+                        {{-- Download / Delete rows for preview docs --}}
+                        <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                            @foreach ($previewDocs as $doc)
+                                <div class="flex items-center gap-2 px-4 py-2">
+                                    <span class="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-400">
                                         {{ $doc->document_title ?: $doc->file_original_name }}
-                                    </p>
-                                    <p class="text-[11px] text-zinc-500">
-                                        {{ number_format($doc->file_size / 1024, 0) }} KB
-                                        · {{ $doc->created_at->format('d M Y') }}
-                                        @if ($doc->uploader)
-                                            · {{ $doc->uploader->name }}
+                                    </span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                       class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
+                                    <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                    <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
+                                          onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" aria-label="Delete document" title="Delete document"
+                                                class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                            <flux:icon.trash class="size-3" />
+                                        </button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    {{-- Non-image documents: original list markup --}}
+                    @if ($otherDocs->isNotEmpty())
+                        <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                            @foreach ($otherDocs as $doc)
+                                <div class="flex items-start gap-3 px-4 py-3">
+                                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                                        @if (str_contains($doc->file_mime_type ?? '', 'pdf'))
+                                            <flux:icon.document class="size-4 text-red-400" />
+                                        @else
+                                            <flux:icon.document-text class="size-4 text-zinc-400" />
                                         @endif
-                                    </p>
-                                    @if ($doc->remarks)
-                                        <p class="mt-0.5 text-[11px] text-zinc-500 italic">{{ $doc->remarks }}</p>
-                                    @endif
-                                    <div class="mt-2 flex items-center gap-2">
-                                        <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                           class="text-xs text-accent hover:underline">View</a>
-                                        <span class="text-zinc-300 dark:text-zinc-600">·</span>
-                                        <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                                           class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                                        <span class="text-zinc-300 dark:text-zinc-600">·</span>
-                                        <form method="POST"
-                                              action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                              onsubmit="return confirm('Delete this document? This cannot be undone.')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit"
-                                                    aria-label="Delete document"
-                                                    title="Delete document"
-                                                    class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
-                                                <flux:icon.trash class="size-3" />
-                                            </button>
-                                        </form>
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                                            {{ $doc->document_title ?: $doc->file_original_name }}
+                                        </p>
+                                        <p class="text-[11px] text-zinc-500">
+                                            {{ number_format($doc->file_size / 1024, 0) }} KB
+                                            · {{ $doc->created_at->format('d M Y') }}
+                                            @if ($doc->uploader)
+                                                · {{ $doc->uploader->name }}
+                                            @endif
+                                        </p>
+                                        @if ($doc->remarks)
+                                            <p class="mt-0.5 text-[11px] text-zinc-500 italic">{{ $doc->remarks }}</p>
+                                        @endif
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                               class="text-xs text-accent hover:underline">View</a>
+                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                               class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
+                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <form method="POST"
+                                                  action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
+                                                  onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit"
+                                                        aria-label="Delete document"
+                                                        title="Delete document"
+                                                        class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                                    <flux:icon.trash class="size-3" />
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @endforeach
 
@@ -219,5 +284,43 @@
             Warranty and extended warranty documents are also accessible from their respective tabs.
         </p>
     @endif
+
+    {{-- Shared image lightbox (z-[60] sits above upload modal z-50) --}}
+    <div x-data="docLightbox()"
+         x-on:docs-lightbox-open.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+         x-show="open"
+         x-cloak
+         x-on:keydown.escape.window="if (open) close()"
+         class="fixed inset-0 z-60 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/85" x-on:click="close()"></div>
+        <div class="relative z-10 flex max-w-5xl w-full flex-col rounded-xl overflow-hidden shadow-2xl" x-on:click.stop>
+            {{-- Header bar with title + close --}}
+            <div class="flex items-center justify-between bg-zinc-900 px-4 py-2 shrink-0">
+                <span x-text="title" class="truncate text-sm text-zinc-300"></span>
+                <button type="button" x-on:click="close()"
+                    class="ml-4 flex shrink-0 items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
+                    </svg>
+                    Close
+                </button>
+            </div>
+            {{-- Content --}}
+            <template x-if="!isPdf">
+                <div class="flex items-center justify-center bg-zinc-950 w-full" style="height:82vh;">
+                    <img :src="src" :alt="title"
+                         class="max-h-full max-w-full object-contain rounded-lg shadow-xl">
+                </div>
+            </template>
+            <template x-if="isPdf">
+                <object :data="src" type="application/pdf"
+                        class="w-full bg-white" style="height:82vh;">
+                    <p class="text-center p-4">
+                        <a :href="src" target="_blank" class="underline text-accent">Open PDF in new tab</a>
+                    </p>
+                </object>
+            </template>
+        </div>
+    </div>
 
 </div>

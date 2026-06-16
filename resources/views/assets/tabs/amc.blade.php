@@ -1,4 +1,7 @@
-@php use Illuminate\Support\Facades\Storage; @endphp
+@php
+    use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
+@endphp
 
 
 <div class="space-y-5">
@@ -299,21 +302,74 @@
 
                     {{-- Documents --}}
                     @if ($amc->documents->isNotEmpty())
-                        <div class="mt-4 space-y-1.5 border-t border-zinc-800 pt-4">
+                        @php
+                            $amcPreviewDocs = $amc->documents->filter(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'))->values();
+                            $amcOtherDocs   = $amc->documents->reject(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'));
+                            $amcPondId      = 'filepond-amc-' . $amc->id;
+                        @endphp
+                        <div class="mt-4 border-t border-zinc-800 pt-4">
                             <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
-                            @foreach ($amc->documents as $doc)
-                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
-                                    @if ($doc->isImage())
-                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
-                                    @else
-                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
-                                    @endif
-                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
-                                    <span class="text-xs text-zinc-600">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">View</a>
+
+                            {{-- FilePond strip for images + PDFs --}}
+                            @if ($amcPreviewDocs->isNotEmpty())
+                                <div id="pond-wrap-{{ $amcPondId }}" class="mb-2"
+                                     x-data
+                                     x-init="
+                                         const wrap  = document.getElementById('pond-wrap-{{ $amcPondId }}');
+                                         const mount = document.getElementById('{{ $amcPondId }}-mount');
+                                         const files    = {{ Js::from($amcPreviewDocs->map(fn($d) => ['source' => Storage::url($d->file_path), 'options' => ['type' => 'local']])) }};
+                                         const fileMeta = {{ Js::from($amcPreviewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
+                                         let pond = null;
+                                         const initPond = () => {
+                                             if (pond) { try { destroyDocImageViewer(pond); } catch(e) {} pond = null; }
+                                             if (!mount.isConnected) return;
+                                             mount.innerHTML = '';
+                                             const input = document.createElement('input');
+                                             input.type = 'file';
+                                             mount.appendChild(input);
+                                             pond = initDocImageViewer(input, files);
+                                         };
+                                         wrap.addEventListener('click', (e) => {
+                                             if (wrap.offsetParent === null) return;
+                                             const item = e.target.closest('.filepond--item');
+                                             if (!item) return;
+                                             const idx = Array.from(wrap.querySelectorAll('.filepond--item')).indexOf(item);
+                                             if (fileMeta[idx]) $dispatch('amc-lightbox-open', fileMeta[idx]);
+                                         });
+                                         window.addEventListener('tab-visible', (e) => {
+                                             if (e.detail === 'amc') setTimeout(initPond, 50);
+                                         });
+                                         if (document.readyState === 'complete') { setTimeout(initPond, 50); }
+                                         else { window.addEventListener('load', () => setTimeout(initPond, 50), { once: true }); }
+                                     ">
+                                    <div id="{{ $amcPondId }}-mount"></div>
                                 </div>
-                            @endforeach
+                                {{-- Download rows --}}
+                                <div class="space-y-1 mb-2">
+                                    @foreach ($amcPreviewDocs as $doc)
+                                        <div class="flex items-center gap-2 px-1 py-1">
+                                            <span class="min-w-0 flex-1 truncate text-xs text-zinc-500">{{ $doc->document_title ?: $doc->file_original_name }}</span>
+                                            <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                               class="shrink-0 text-xs text-zinc-500 hover:text-zinc-300">Download</a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            {{-- Non-previewable docs (DOC, XLS, etc.) --}}
+                            @if ($amcOtherDocs->isNotEmpty())
+                                <div class="space-y-1.5">
+                                    @foreach ($amcOtherDocs as $doc)
+                                        <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
+                                            <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
+                                            <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
+                                            <span class="text-xs text-zinc-600">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                               class="text-xs text-accent hover:underline">View</a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -335,4 +391,41 @@
             </div>
         </div>
     </div>
+
+    {{-- Shared lightbox for AMC document previews --}}
+    <div x-data="docLightbox()"
+         x-on:amc-lightbox-open.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+         x-show="open"
+         x-cloak
+         x-on:keydown.escape.window="if (open) close()"
+         class="fixed inset-0 z-60 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/85" x-on:click="close()"></div>
+        <div class="relative z-10 flex max-w-5xl w-full flex-col rounded-xl overflow-hidden shadow-2xl" x-on:click.stop>
+            <div class="flex items-center justify-between bg-zinc-900 px-4 py-2 shrink-0">
+                <span x-text="title" class="truncate text-sm text-zinc-300"></span>
+                <button type="button" x-on:click="close()"
+                    class="ml-4 flex shrink-0 items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
+                        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
+                    </svg>
+                    Close
+                </button>
+            </div>
+            <template x-if="!isPdf">
+                <div class="flex items-center justify-center bg-zinc-950 w-full" style="height:82vh;">
+                    <img :src="src" :alt="title" class="max-h-full max-w-full object-contain rounded-lg shadow-xl">
+                </div>
+            </template>
+            <template x-if="isPdf">
+                <div class="w-full bg-zinc-950 flex items-center justify-center p-4" style="height:82vh;">
+                    <object :data="src" type="application/pdf" class="w-full h-full rounded-lg shadow-inner">
+                        <p class="text-center p-4 text-zinc-400">
+                            <a :href="src" target="_blank" class="underline text-accent">Open PDF in new tab</a>
+                        </p>
+                    </object>
+                </div>
+            </template>
+        </div>
+    </div>
+
 </div>

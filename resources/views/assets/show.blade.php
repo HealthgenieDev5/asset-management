@@ -72,7 +72,8 @@
         {{-- Tab Content --}}
         <div class="flex-1 min-w-0">
             @foreach ($tabs as $key => $tabInfo)
-                <div x-show="tab === '{{ $key }}'" x-cloak>
+                <div x-show="tab === '{{ $key }}'" x-cloak
+                     x-effect="if (tab === '{{ $key }}') $nextTick(() => window.dispatchEvent(new CustomEvent('tab-visible', { detail: '{{ $key }}' })))">
                     @include('assets.tabs.' . $key)
                 </div>
             @endforeach
