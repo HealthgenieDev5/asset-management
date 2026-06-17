@@ -4,89 +4,154 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetDocument;
+use App\Models\AssetWarranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class AssetWarrantyController extends Controller
 {
-    public function update(Request $request, Asset $asset)
+    public function store(Request $request, Asset $asset)
     {
-        $validated = $request->validate([
-            'warranty_details'               => ['nullable', 'string'],
-            'warranty_tracking_mode'         => ['required', 'in:time,meter,count'],
-            'warranty_unit'                  => ['nullable', 'string', 'max:20'],
-            'warranty_meter_source'          => ['nullable', 'in:mileage,meter'],
-            'warranty_lapse_date'            => ['nullable', 'date'],
-            'warranty_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
-            'warranty_counter_limit'         => ['nullable', 'integer', 'min:1'],
-            'warranty_reminder_before_units' => ['nullable', 'integer', 'min:1'],
-            'warranty_card'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
-            'warranty_activation_image'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
-        ]);
+        $validated = $request->validate($this->rules());
+        $this->applyModeNullOut($validated);
 
-        $mode = $validated['warranty_tracking_mode'];
+        $validated['asset_id']   = $asset->id;
+        $validated['created_by'] = auth()->id();
+        $validated['status']     = 'active';
 
-        if ($mode === 'time') {
-            $validated['warranty_counter_limit']         = null;
-            $validated['warranty_reminder_before_units'] = null;
-        } else {
-            $validated['warranty_lapse_date']            = null;
-            $validated['warranty_reminder_before_days']  = null;
-        }
+        $warranty = AssetWarranty::create($validated);
 
-        $asset->update([
-            'warranty_details'               => $validated['warranty_details'] ?? null,
-            'warranty_tracking_mode'         => $mode,
-            'warranty_unit'                  => $mode !== 'time' ? ($validated['warranty_unit'] ?? null) : null,
-            'warranty_meter_source'          => $mode === 'meter' ? ($validated['warranty_meter_source'] ?? 'meter') : null,
-            'warranty_lapse_date'            => $validated['warranty_lapse_date'] ?? null,
-            'warranty_reminder_before_days'  => $validated['warranty_reminder_before_days'] ?? null,
-            'warranty_counter_limit'         => $validated['warranty_counter_limit'] ?? null,
-            'warranty_reminder_before_units' => $validated['warranty_reminder_before_units'] ?? null,
-        ]);
-
-        $this->storeDocuments($request, $asset);
+        $this->storeDocuments($request, $asset, $warranty);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
-            ->with('success', 'Warranty details updated successfully.');
+            ->with('success', 'Warranty added successfully.');
+    }
+
+    public function update(Request $request, Asset $asset, AssetWarranty $warranty)
+    {
+        abort_if($warranty->asset_id !== $asset->id, 403);
+
+        $validated = $request->validate($this->rules());
+        $this->applyModeNullOut($validated);
+        $validated['updated_by'] = auth()->id();
+
+        $warranty->update($validated);
+
+        $this->storeDocuments($request, $asset, $warranty);
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
+            ->with('success', 'Warranty updated successfully.');
+    }
+
+    public function destroy(Asset $asset, AssetWarranty $warranty)
+    {
+        abort_if($warranty->asset_id !== $asset->id, 403);
+
+        foreach ($warranty->documents as $doc) {
+            Storage::disk('public')->delete($doc->file_path);
+            $doc->delete();
+        }
+
+        $warranty->delete();
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
+            ->with('success', 'Warranty entry deleted.');
+    }
+
+    public function dispose(Request $request, Asset $asset, AssetWarranty $warranty)
+    {
+        abort_if($warranty->asset_id !== $asset->id, 403);
+
+        $validated = $request->validate([
+            'disposed_at'     => ['required', 'date'],
+            'disposed_reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $warranty->update([
+            'status'          => 'disposed',
+            'disposed_at'     => $validated['disposed_at'],
+            'disposed_reason' => $validated['disposed_reason'] ?? null,
+            'updated_by'      => auth()->id(),
+        ]);
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
+            ->with('success', 'Warranty marked as disposed.');
     }
 
     public function destroyDocument(Asset $asset, AssetDocument $document)
     {
+        abort_if($document->asset_id !== $asset->id, 403);
+
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
-            ->with('success', 'Document deleted.');
+            ->with('success', 'Document removed.');
     }
 
-    private function storeDocuments(Request $request, Asset $asset): void
+    private function rules(): array
     {
-        $uploads = [
-            'warranty_card'             => 'warranty_card',
-            'warranty_activation_image' => 'warranty_activation_image',
+        return [
+            'warranty_type'         => ['required', 'in:original,extended'],
+            'scope'                 => ['required', 'in:overall,part'],
+            'part_name'             => ['required_if:scope,part', 'nullable', 'string', 'max:100'],
+            'part_serial_number'    => ['nullable', 'string', 'max:100'],
+            'vendor'                => ['nullable', 'string', 'max:255'],
+            'bill_no'               => ['nullable', 'string', 'max:255'],
+            'bill_amount'           => ['nullable', 'numeric', 'min:0'],
+            'details'               => ['nullable', 'string'],
+            'terms'                 => ['nullable', 'string'],
+            'tracking_mode'         => ['required', 'in:time,meter,count'],
+            'unit'                  => ['nullable', 'string', 'max:20'],
+            'meter_source'          => ['nullable', 'in:mileage,meter'],
+            'date_from'             => ['nullable', 'date'],
+            'expiry_date'           => ['nullable', 'date'],
+            'reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'counter_limit'         => ['nullable', 'integer', 'min:1'],
+            'reminder_before_units' => ['nullable', 'integer', 'min:1'],
+            'remarks'               => ['nullable', 'string'],
+            'warranty_doc'          => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ];
+    }
 
-        foreach ($uploads as $field => $docType) {
-            if (! $request->hasFile($field)) {
-                continue;
+    private function applyModeNullOut(array &$validated): void
+    {
+        $mode = $validated['tracking_mode'] ?? 'time';
+
+        if ($mode === 'time') {
+            $validated['counter_limit']         = null;
+            $validated['reminder_before_units'] = null;
+            $validated['unit']                  = null;
+            $validated['meter_source']          = null;
+        } else {
+            $validated['expiry_date']           = null;
+            $validated['reminder_before_days']  = null;
+            if ($mode !== 'meter') {
+                $validated['meter_source']      = null;
             }
-
-            $file = $request->file($field);
-            $path = $file->store("assets/{$asset->id}/warranty", 'public');
-
-            AssetDocument::create([
-                'asset_id'           => $asset->id,
-                'documentable_type'  => Asset::class,
-                'documentable_id'    => $asset->id,
-                'document_type'      => $docType,
-                'document_title'     => $docType === 'warranty_card' ? 'Warranty Card' : 'Warranty Activation Image',
-                'file_path'          => $path,
-                'file_original_name' => $file->getClientOriginalName(),
-                'file_mime_type'     => $file->getClientMimeType(),
-                'file_size'          => $file->getSize(),
-                'uploaded_by'        => auth()->id(),
-            ]);
         }
+    }
+
+    private function storeDocuments(Request $request, Asset $asset, AssetWarranty $warranty): void
+    {
+        if (! $request->hasFile('warranty_doc')) {
+            return;
+        }
+
+        $file = $request->file('warranty_doc');
+        $path = $file->store("assets/{$asset->id}/warranties", 'public');
+
+        AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetWarranty::class,
+            'documentable_id'    => $warranty->id,
+            'document_type'      => 'warranty_doc',
+            'document_title'     => 'Warranty Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
+        ]);
     }
 }

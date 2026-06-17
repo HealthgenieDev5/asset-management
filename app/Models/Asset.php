@@ -19,6 +19,7 @@ class Asset extends Model
             $asset->amcContracts()->delete();
             $asset->insurancePolicies()->delete();
             $asset->extendedWarranties()->delete();
+            $asset->warranties()->delete();
             $asset->documents()->delete();
         });
     }
@@ -108,6 +109,16 @@ class Asset extends Model
     public function extendedWarranties(): HasMany
     {
         return $this->hasMany(AssetExtendedWarranty::class);
+    }
+
+    public function warranties(): HasMany
+    {
+        return $this->hasMany(AssetWarranty::class);
+    }
+
+    public function activeWarranties(): HasMany
+    {
+        return $this->hasMany(AssetWarranty::class)->where('status', 'active');
     }
 
     public function amcContracts(): HasMany

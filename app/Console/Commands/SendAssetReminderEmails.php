@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\AssetAmcContract;
 use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
+use App\Models\AssetWarranty;
 use App\Models\AssetService;
 use App\Models\AssetServicePart;
 use App\Models\User;
@@ -35,6 +36,7 @@ class SendAssetReminderEmails extends Command
 
         $this->info($dryRun ? '[DRY RUN] Scanning expiry reminders…' : 'Sending expiry reminder emails…');
 
+        $this->processWarrantyEntries($dryRun, $daysOverride);
         $this->processOriginalWarranties($dryRun, $daysOverride);
         $this->processCounterWarranties($dryRun, $daysOverride);
         $this->processExtendedWarranties($dryRun, $daysOverride);
@@ -56,6 +58,97 @@ class SendAssetReminderEmails extends Command
     }
 
     // ── Source processors ────────────────────────────────────────────────────
+
+    private function processWarrantyEntries(bool $dryRun, ?int $daysOverride): void
+    {
+        AssetWarranty::where('status', 'active')
+            ->with(['asset.createdBy', 'asset.services'])
+            ->get()
+            ->each(function (AssetWarranty $warranty) use ($dryRun, $daysOverride) {
+                $asset = $warranty->asset;
+                if (! $asset) {
+                    return;
+                }
+
+                $scopeLabel = $warranty->scope === 'part'
+                    ? ($warranty->part_name . ' — ')
+                    : '';
+                $typeLabel = $scopeLabel . $warranty->warrantyTypeLabel() . ' Warranty';
+
+                if ($warranty->isTimeBased()) {
+                    if (! $warranty->expiry_date) {
+                        return;
+                    }
+                    $this->maybeNotify(
+                        recipient:   $asset->createdBy,
+                        daysWindow:  $daysOverride ?? ($warranty->reminder_before_days ?? 30),
+                        expiryDate:  $warranty->expiry_date,
+                        reminderKey: "warranty-entry:{$warranty->id}",
+                        payload: [
+                            'asset_code' => $asset->asset_code,
+                            'asset_name' => $asset->asset_name,
+                            'type'       => $typeLabel,
+                            'detail'     => $warranty->details,
+                            'tab'        => 'warranty',
+                            'asset'      => $asset,
+                        ],
+                        dryRun: $dryRun,
+                    );
+                } else {
+                    // Counter-based warranty
+                    $current   = $warranty->latestCounter();
+                    $limit     = $warranty->counter_limit;
+                    $threshold = $warranty->reminder_before_units ?? 500;
+                    $unit      = $warranty->unitLabel();
+
+                    if ($current === null || $limit === null) {
+                        return;
+                    }
+
+                    $remaining = $limit - $current;
+
+                    if ($remaining > $threshold) {
+                        $this->skipped++;
+                        return;
+                    }
+
+                    $overrideEmail = config('mail.asset_reminder_recipient');
+                    $toEmail = $overrideEmail ?: ($asset->createdBy?->email ?? null);
+                    if (! $toEmail) {
+                        $this->skipped++;
+                        return;
+                    }
+
+                    $reminderKey = "warranty-entry:{$warranty->id}";
+                    if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                        $this->skipped++;
+                        $this->line("  ⊘ Already sent [{$reminderKey}] → {$toEmail}");
+                        return;
+                    }
+
+                    $detail = "Limit: {$limit} {$unit} · Current: {$current} {$unit} · Remaining: {$remaining} {$unit}";
+
+                    if ($dryRun) {
+                        $flag = $remaining <= 0 ? '🔴' : ($remaining <= ($threshold / 2) ? '🟡' : '🟢');
+                        $this->line("  {$flag}  [{$typeLabel}] {$asset->asset_code} — {$toEmail} — {$remaining} {$unit} left");
+                    } else {
+                        Mail::to($toEmail)->send(new AssetExpiryReminderMail([
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $typeLabel,
+                            'detail'            => $detail,
+                            'expiry_date'       => "at {$limit} {$unit}",
+                            'days_until_expiry' => $remaining,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'warranty']),
+                        ]));
+                        $this->recordSent($toEmail, $reminderKey);
+                        $this->line("  ✓ Sent [{$typeLabel}] {$asset->asset_code} → {$toEmail}");
+                    }
+
+                    $this->sent++;
+                }
+            });
+    }
 
     private function processOriginalWarranties(bool $dryRun, ?int $daysOverride): void
     {

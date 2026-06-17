@@ -53,9 +53,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'update'])->name('assets.ext-warranty.update');
     Route::delete('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'destroy'])->name('assets.ext-warranty.destroy');
 
-    // Original Warranty (fields on asset, documents as AssetDocument)
-    Route::put('assets/{asset}/warranty', [AssetWarrantyController::class, 'update'])->name('assets.warranty.update');
-    Route::delete('assets/{asset}/warranty/documents/{document}', [AssetWarrantyController::class, 'destroyDocument'])->name('assets.warranty.documents.destroy');
+    // Unified Warranty Entries
+    Route::post('assets/{asset}/warranties',                          [AssetWarrantyController::class, 'store'])          ->name('assets.warranties.store');
+    Route::put('assets/{asset}/warranties/{warranty}',                [AssetWarrantyController::class, 'update'])         ->name('assets.warranties.update');
+    Route::delete('assets/{asset}/warranties/{warranty}',             [AssetWarrantyController::class, 'destroy'])        ->name('assets.warranties.destroy');
+    Route::patch('assets/{asset}/warranties/{warranty}/dispose',      [AssetWarrantyController::class, 'dispose'])        ->name('assets.warranties.dispose');
+    Route::delete('assets/{asset}/warranties/documents/{document}',   [AssetWarrantyController::class, 'destroyDocument'])->name('assets.warranties.documents.destroy');
+
 
     // Insurance Policies (nested under asset)
     Route::post('assets/{asset}/insurance', [AssetInsurancePolicyController::class, 'store'])->name('assets.insurance.store');

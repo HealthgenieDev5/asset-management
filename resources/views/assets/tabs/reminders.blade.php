@@ -23,7 +23,7 @@
                 'expiry'   => $ew->extended_warranty_date_to,
                 'reminder' => $ew->reminder_before_days,
                 'detail'   => $ew->extended_warranty_vendor,
-                'edit_tab' => 'ext-warranty',
+                'edit_tab' => 'warranty',
             ]);
         }
     }
