@@ -13,6 +13,7 @@ class AssetExtendedWarrantyController extends Controller
     public function store(Request $request, Asset $asset)
     {
         $validated = $request->validate($this->rules());
+        $this->applyModeNullOut($validated);
 
         $validated['asset_id']   = $asset->id;
         $validated['created_by'] = auth()->id();
@@ -30,6 +31,7 @@ class AssetExtendedWarrantyController extends Controller
         abort_if($ew->asset_id !== $asset->id, 403);
 
         $validated = $request->validate($this->rules());
+        $this->applyModeNullOut($validated);
         $validated['updated_by'] = auth()->id();
 
         $ew->update($validated);
@@ -58,17 +60,40 @@ class AssetExtendedWarrantyController extends Controller
     private function rules(): array
     {
         return [
-            'extended_warranty_vendor'    => ['nullable', 'string', 'max:255'],
-            'extended_warranty_date_from' => ['nullable', 'date'],
-            'extended_warranty_date_to'   => ['nullable', 'date', 'after_or_equal:extended_warranty_date_from'],
-            'extended_warranty_bill_no'   => ['nullable', 'string', 'max:255'],
-            'extended_warranty_amount'    => ['nullable', 'numeric', 'min:0'],
-            'extended_warranty_terms'     => ['nullable', 'string'],
-            'reminder_before_days'        => ['nullable', 'integer', 'min:1', 'max:365'],
-            'remarks'                     => ['nullable', 'string'],
-            'extended_warranty_bill'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
-            'extended_warranty_image'     => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+            'extended_warranty_vendor'                => ['nullable', 'string', 'max:255'],
+            'extended_warranty_date_from'             => ['nullable', 'date'],
+            'extended_warranty_date_to'               => ['nullable', 'date', 'after_or_equal:extended_warranty_date_from'],
+            'extended_warranty_bill_no'               => ['nullable', 'string', 'max:255'],
+            'extended_warranty_amount'                => ['nullable', 'numeric', 'min:0'],
+            'extended_warranty_terms'                 => ['nullable', 'string'],
+            'reminder_before_days'                    => ['nullable', 'integer', 'min:1', 'max:365'],
+            'extended_warranty_counter_limit'         => ['nullable', 'integer', 'min:1'],
+            'extended_warranty_reminder_before_units' => ['nullable', 'integer', 'min:1'],
+            'ew_tracking_mode'                        => ['required', 'in:time,meter,count'],
+            'ew_unit'                                 => ['nullable', 'string', 'max:20'],
+            'ew_meter_source'                         => ['nullable', 'in:mileage,meter'],
+            'remarks'                                 => ['nullable', 'string'],
+            'extended_warranty_bill'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+            'extended_warranty_image'                 => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ];
+    }
+
+    private function applyModeNullOut(array &$validated): void
+    {
+        $mode = $validated['ew_tracking_mode'] ?? 'time';
+
+        if ($mode === 'time') {
+            $validated['extended_warranty_counter_limit']         = null;
+            $validated['extended_warranty_reminder_before_units'] = null;
+            $validated['ew_unit']                                 = null;
+        } else {
+            $validated['extended_warranty_date_from'] = null;
+            $validated['extended_warranty_date_to']   = null;
+            $validated['reminder_before_days']        = null;
+            if ($mode !== 'meter') {
+                $validated['ew_meter_source'] = null;
+            }
+        }
     }
 
     private function storeDocuments(Request $request, Asset $asset, AssetExtendedWarranty $ew): void

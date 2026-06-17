@@ -36,7 +36,9 @@ class SendAssetReminderEmails extends Command
         $this->info($dryRun ? '[DRY RUN] Scanning expiry reminders…' : 'Sending expiry reminder emails…');
 
         $this->processOriginalWarranties($dryRun, $daysOverride);
+        $this->processCounterWarranties($dryRun, $daysOverride);
         $this->processExtendedWarranties($dryRun, $daysOverride);
+        $this->processExtendedCounterWarranties($dryRun, $daysOverride);
         $this->processAmcContracts($dryRun, $daysOverride);
         $this->processInsurancePolicies($dryRun, $daysOverride);
         $this->processPucExpiry($dryRun, $daysOverride);
@@ -74,6 +76,119 @@ class SendAssetReminderEmails extends Command
                     ],
                     dryRun: $dryRun,
                 );
+            });
+    }
+
+    private function processCounterWarranties(bool $dryRun, ?int $daysOverride): void
+    {
+        Asset::whereNotNull('warranty_counter_limit')->with(['createdBy', 'services'])->get()
+            ->each(function (Asset $asset) use ($dryRun) {
+                $current   = $asset->latestWarrantyCounter();
+                $limit     = $asset->warranty_counter_limit;
+                $threshold = $asset->warranty_reminder_before_units ?? 500;
+                $unit      = $asset->warrantyUnitLabel();
+
+                if ($current === null || $limit === null) {
+                    return;
+                }
+
+                $remaining = $limit - $current;
+
+                if ($remaining > $threshold) {
+                    $this->skipped++;
+                    return;
+                }
+
+                $toEmail = config('mail.asset_reminder_recipient') ?: ($asset->createdBy?->email ?? null);
+                if (! $toEmail) {
+                    $this->skipped++;
+                    return;
+                }
+
+                $reminderKey = "warranty-counter:{$asset->id}";
+                if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                    $this->skipped++;
+                    $this->line("  ⊘ Already sent [{$reminderKey}] → {$toEmail}");
+                    return;
+                }
+
+                $detail = "Limit: {$limit} {$unit} · Current: {$current} {$unit} · Remaining: {$remaining} {$unit}";
+
+                if ($dryRun) {
+                    $flag = $remaining <= 0 ? '🔴' : ($remaining <= ($threshold / 2) ? '🟡' : '🟢');
+                    $this->line("  {$flag}  [Original Warranty — {$unit}] {$asset->asset_code} — {$toEmail} — {$remaining} {$unit} left");
+                } else {
+                    Mail::to($toEmail)->send(new AssetExpiryReminderMail([
+                        'asset_code'        => $asset->asset_code,
+                        'asset_name'        => $asset->asset_name,
+                        'type'              => 'Original Warranty',
+                        'detail'            => $detail,
+                        'expiry_date'       => "at {$limit} {$unit}",
+                        'days_until_expiry' => $remaining,
+                        'asset_url'         => route('assets.show', [$asset, 'tab' => 'warranty']),
+                    ]));
+                    $this->recordSent($toEmail, $reminderKey);
+                    $this->line("  ✓ Sent [Original Warranty — {$unit}] {$asset->asset_code} → {$toEmail}");
+                }
+
+                $this->sent++;
+            });
+    }
+
+    private function processExtendedCounterWarranties(bool $dryRun, ?int $daysOverride): void
+    {
+        AssetExtendedWarranty::whereNotNull('extended_warranty_counter_limit')->with(['asset.createdBy', 'asset.services'])->get()
+            ->each(function (AssetExtendedWarranty $ew) use ($dryRun) {
+                $asset     = $ew->asset;
+                $current   = $asset?->latestWarrantyCounter();
+                $limit     = $ew->extended_warranty_counter_limit;
+                $threshold = $ew->extended_warranty_reminder_before_units ?? 500;
+                $unit      = $asset?->warrantyUnitLabel() ?? 'units';
+
+                if ($current === null || $limit === null || ! $asset) {
+                    return;
+                }
+
+                $remaining = $limit - $current;
+
+                if ($remaining > $threshold) {
+                    $this->skipped++;
+                    return;
+                }
+
+                $toEmail = config('mail.asset_reminder_recipient') ?: ($asset->createdBy?->email ?? null);
+                if (! $toEmail) {
+                    $this->skipped++;
+                    return;
+                }
+
+                $reminderKey = "ext-warranty-counter:{$ew->id}";
+                if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                    $this->skipped++;
+                    $this->line("  ⊘ Already sent [{$reminderKey}] → {$toEmail}");
+                    return;
+                }
+
+                $detail = "Limit: {$limit} {$unit} · Current: {$current} {$unit} · Remaining: {$remaining} {$unit}";
+
+                if ($dryRun) {
+                    $flag = $remaining <= 0 ? '🔴' : ($remaining <= ($threshold / 2) ? '🟡' : '🟢');
+                    $this->line("  {$flag}  [Extended Warranty — {$unit}] {$asset->asset_code} — {$toEmail} — {$remaining} {$unit} left");
+                } else {
+                    Mail::to($toEmail)->send(new AssetExpiryReminderMail([
+                        'asset_code'        => $asset->asset_code,
+                        'asset_name'        => $asset->asset_name,
+                        'type'              => 'Extended Warranty',
+                        'detail'            => $detail,
+                        'expiry_date'       => "at {$limit} {$unit}",
+                        'days_until_expiry' => $remaining,
+                        'asset_url'         => route('assets.show', [$asset, 'tab' => 'ext-warranty']),
+                    ]));
+                    $this->recordSent($toEmail, $reminderKey);
+                    $this->line("  ✓ Sent [Extended Warranty — {$unit}] {$asset->asset_code} → {$toEmail}");
+                }
+
+                $this->sent++;
             });
     }
 

@@ -31,7 +31,7 @@
                 @csrf
                 <input type="hidden" name="_form" value="ext-warranty">
 
-                @include('assets.tabs._ext-warranty-form', ['ew' => null])
+                @include('assets.tabs._ext-warranty-form', ['ew' => null, 'asset' => $asset])
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Save Warranty</flux:button>
@@ -70,7 +70,7 @@
                 <input type="hidden" name="_form" value="ext-warranty">
                 <input type="hidden" name="_ew_id" value="{{ $ew->id }}">
 
-                @include('assets.tabs._ext-warranty-form', ['ew' => $ew])
+                @include('assets.tabs._ext-warranty-form', ['ew' => $ew, 'asset' => $asset])
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Save Changes</flux:button>
@@ -84,9 +84,29 @@
 
         {{-- View Modal --}}
         @php
-            $expired     = $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
-            $days        = $ew->extended_warranty_date_to ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false) : null;
-            $soon        = ! $expired && $days !== null && $days <= 30;
+            // Use the EW's own independent tracking mode
+            $ewMode  = $ew->ewTrackingMode();
+            $ewUnit  = $ew->ewUnitLabel();
+            $ewCounter = $ew->latestCounter();
+
+            $expired = $ewMode === 'time' && $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
+            $days    = $ewMode === 'time' && $ew->extended_warranty_date_to
+                         ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false)
+                         : null;
+            $soon    = ! $expired && $days !== null && $days <= 30;
+
+            $ewCounterExpired   = $ewMode !== 'time' && $ewCounter !== null && $ew->extended_warranty_counter_limit !== null
+                                   && $ewCounter >= $ew->extended_warranty_counter_limit;
+            $ewCounterRemaining = ($ewMode !== 'time' && $ew->extended_warranty_counter_limit !== null && $ewCounter !== null)
+                                   ? max(0, $ew->extended_warranty_counter_limit - $ewCounter)
+                                   : null;
+            $ewCounterSoon      = ! $ewCounterExpired && $ewCounterRemaining !== null
+                                   && $ew->extended_warranty_reminder_before_units !== null
+                                   && $ewCounterRemaining <= $ew->extended_warranty_reminder_before_units;
+
+            $ewIsExpired = $expired || $ewCounterExpired;
+            $ewIsSoon    = ! $ewIsExpired && ($soon || $ewCounterSoon);
+            $ewIsActive  = ! $ewIsExpired && ($days !== null || $ewCounterRemaining !== null);
         @endphp
         <x-modal name="view-ext-warranty" title="Extended Warranty Details">
             <div class="space-y-5">
@@ -102,11 +122,15 @@
                             <p class="mt-1 font-mono text-xs text-zinc-500">{{ $ew->extended_warranty_bill_no }}</p>
                         @endif
                     </div>
-                    @if ($expired)
+                    @if ($ewIsExpired)
                         <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
-                    @elseif ($soon)
-                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
-                    @elseif ($days !== null)
+                    @elseif ($ewIsSoon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">
+                            @if ($ewMode === 'time') Expiring in {{ $days }}d
+                            @else {{ number_format($ewCounterRemaining) }} {{ $ewUnit }} left
+                            @endif
+                        </span>
+                    @elseif ($ewIsActive)
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
                 </div>
@@ -116,6 +140,7 @@
                         <dt class="text-xs font-medium text-zinc-500">Vendor / Provider</dt>
                         <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_vendor ?: '--' }}</dd>
                     </div>
+                    @if ($ewMode === 'time')
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">From</dt>
                         <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_date_from?->format('d M Y') ?: '--' }}</dd>
@@ -130,21 +155,39 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium text-zinc-500">Bill Number</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_bill_no ?: '--' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Amount</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
-                            {{ $ew->extended_warranty_amount ? 'Rs. ' . number_format($ew->extended_warranty_amount, 2) : '--' }}
-                        </dd>
-                    </div>
-                    <div>
                         <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
                         <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
                             {{ $ew->reminder_before_days ? $ew->reminder_before_days . ' days' : '--' }}
                         </dd>
                     </div>
+                    @else
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Warranty Limit</dt>
+                        <dd class="mt-0.5 text-sm {{ $ewCounterExpired ? 'text-red-400 font-semibold' : ($ewCounterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $ew->extended_warranty_counter_limit ? number_format($ew->extended_warranty_counter_limit) . ' ' . $ewUnit : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Current Reading</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $ewCounter !== null ? number_format($ewCounter) . ' ' . $ewUnit : '--' }}
+                        </dd>
+                    </div>
+                    @if ($ewCounterRemaining !== null)
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Remaining</dt>
+                        <dd class="mt-0.5 text-sm {{ $ewCounterExpired ? 'text-red-400' : ($ewCounterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $ewCounterExpired ? 'Expired' : number_format($ewCounterRemaining) . ' ' . $ewUnit }}
+                        </dd>
+                    </div>
+                    @endif
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Remind when within</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $ew->extended_warranty_reminder_before_units ? number_format($ew->extended_warranty_reminder_before_units) . ' ' . $ewUnit : '--' }}
+                        </dd>
+                    </div>
+                    @endif
                     <div class="sm:col-span-2 lg:col-span-3">
                         <dt class="text-xs font-medium text-zinc-500">Warranty Terms</dt>
                         <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $ew->extended_warranty_terms ?: '--' }}</dd>
@@ -182,12 +225,7 @@
 
         {{-- EW Card --}}
         <div class="grid grid-cols-3 gap-4">
-        @php
-            $expired     = $ew->extended_warranty_date_to && $ew->extended_warranty_date_to->isPast();
-            $days        = $ew->extended_warranty_date_to ? (int) now()->startOfDay()->diffInDays($ew->extended_warranty_date_to->startOfDay(), false) : null;
-            $soon        = ! $expired && $days !== null && $days <= 30;
-            $expiryClass = $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-200');
-        @endphp
+        @php $expiryClass = $ewIsExpired ? 'text-red-400 font-semibold' : ($ewIsSoon ? 'text-yellow-400' : 'text-zinc-200'); @endphp
 
         <div class="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
             {{-- Card header --}}
@@ -202,11 +240,15 @@
                     @endif
                 </div>
                 <div class="flex shrink-0 items-center gap-1.5">
-                    @if ($expired)
+                    @if ($ewIsExpired)
                         <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
-                    @elseif ($soon)
-                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
-                    @elseif ($days !== null)
+                    @elseif ($ewIsSoon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">
+                            @if ($ewMode === 'time') Expiring in {{ $days }}d
+                            @else {{ number_format($ewCounterRemaining) }} {{ $ewUnit }} left
+                            @endif
+                        </span>
+                    @elseif ($ewIsActive)
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
                     <button type="button"
@@ -243,35 +285,54 @@
                         <dt class="text-xs font-medium text-zinc-500">Vendor / Provider</dt>
                         <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $ew->extended_warranty_vendor ?: '—' }}</dd>
                     </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">From</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $ew->extended_warranty_date_from?->format('d M Y') ?: '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
-                        <dd class="mt-0.5 text-sm {{ $expiryClass }}">
-                            {{ $ew->extended_warranty_date_to?->format('d M Y') ?: '—' }}
-                            @if ($expired) <span class="text-xs font-normal">(Expired)</span>
-                            @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Bill Number</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $ew->extended_warranty_bill_no ?: '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Amount</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
-                            {{ $ew->extended_warranty_amount ? '₹ ' . number_format($ew->extended_warranty_amount, 2) : '—' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
-                            {{ $ew->reminder_before_days ? $ew->reminder_before_days . ' days' : '—' }}
-                        </dd>
-                    </div>
+                    @if ($ewMode === 'time')
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">From</dt>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $ew->extended_warranty_date_from?->format('d M Y') ?: '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
+                            <dd class="mt-0.5 text-sm {{ $expiryClass }}">
+                                {{ $ew->extended_warranty_date_to?->format('d M Y') ?: '—' }}
+                                @if ($expired) <span class="text-xs font-normal">(Expired)</span>
+                                @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                {{ $ew->reminder_before_days ? $ew->reminder_before_days . ' days' : '—' }}
+                            </dd>
+                        </div>
+                    @else
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">Warranty Limit</dt>
+                            <dd class="mt-0.5 text-sm {{ $ewCounterExpired ? 'text-red-400 font-semibold' : ($ewCounterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
+                                {{ $ew->extended_warranty_counter_limit ? number_format($ew->extended_warranty_counter_limit) . ' ' . $ewUnit : '—' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">Current Reading</dt>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                {{ $ewCounter !== null ? number_format($ewCounter) . ' ' . $ewUnit : '—' }}
+                            </dd>
+                        </div>
+                        @if ($ewCounterRemaining !== null)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Remaining</dt>
+                                <dd class="mt-0.5 text-sm {{ $ewCounterExpired ? 'text-red-400' : ($ewCounterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
+                                    {{ $ewCounterExpired ? 'Expired' : number_format($ewCounterRemaining) . ' ' . $ewUnit }}
+                                </dd>
+                            </div>
+                        @endif
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-500">Remind when within</dt>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                {{ $ew->extended_warranty_reminder_before_units ? number_format($ew->extended_warranty_reminder_before_units) . ' ' . $ewUnit : '—' }}
+                            </dd>
+                        </div>
+                    @endif
                     @if ($ew->extended_warranty_terms)
                         <div class="sm:col-span-2 lg:col-span-3">
                             <dt class="text-xs font-medium text-zinc-500">Warranty Terms</dt>

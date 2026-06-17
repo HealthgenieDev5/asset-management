@@ -1,11 +1,39 @@
 @php
     use Illuminate\Support\Facades\Storage;
-    $warrantyDocs = $asset->documents->whereIn('document_type', ['warranty_card', 'warranty_activation_image'])->values();
-    $expired      = $asset->warranty_lapse_date && $asset->warranty_lapse_date->isPast();
-    $days         = $asset->warranty_lapse_date ? (int) now()->startOfDay()->diffInDays($asset->warranty_lapse_date->startOfDay(), false) : null;
-    $soon         = ! $expired && $days !== null && $days <= 30;
-    $hasWarranty  = $asset->warranty_details || $asset->warranty_lapse_date || $asset->warranty_reminder_before_days || $warrantyDocs->isNotEmpty();
-    $expiryClass  = $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-200');
+
+    $warrantyDocs   = $asset->documents->whereIn('document_type', ['warranty_card', 'warranty_activation_image'])->values();
+    $warrantyMode   = $asset->warranty_tracking_mode ?? 'time';
+    $warrantyUnit   = $asset->warrantyUnitLabel();
+    $currentCounter = $asset->latestWarrantyCounter();
+
+    // Time-based status
+    $expired = $warrantyMode === 'time' && $asset->warranty_lapse_date && $asset->warranty_lapse_date->isPast();
+    $days    = $warrantyMode === 'time' && $asset->warranty_lapse_date
+                ? (int) now()->startOfDay()->diffInDays($asset->warranty_lapse_date->startOfDay(), false)
+                : null;
+    $soon    = ! $expired && $days !== null && $days <= 30;
+
+    // Counter-based status
+    $counterExpired = $warrantyMode !== 'time' && $currentCounter !== null && $asset->warranty_counter_limit !== null
+                      && $currentCounter >= $asset->warranty_counter_limit;
+    $counterRemaining = ($warrantyMode !== 'time' && $asset->warranty_counter_limit !== null && $currentCounter !== null)
+                        ? max(0, $asset->warranty_counter_limit - $currentCounter)
+                        : null;
+    $counterSoon = ! $counterExpired && $counterRemaining !== null
+                   && $asset->warranty_reminder_before_units !== null
+                   && $counterRemaining <= $asset->warranty_reminder_before_units;
+
+    $hasWarranty = $asset->warranty_details
+        || $asset->warranty_lapse_date
+        || $asset->warranty_counter_limit
+        || $asset->warranty_reminder_before_days
+        || $warrantyDocs->isNotEmpty();
+
+    // Unified badge state
+    $isExpired  = $expired || $counterExpired;
+    $isSoon     = ! $isExpired && ($soon || $counterSoon);
+    $isActive   = ! $isExpired && ($days !== null || $counterRemaining !== null);
+    $expiryClass = $isExpired ? 'text-red-400 font-semibold' : ($isSoon ? 'text-yellow-400' : 'text-zinc-200');
 @endphp
 
 <div class="space-y-5">
@@ -60,16 +88,21 @@
                         <flux:icon.shield-check class="size-4 shrink-0 text-zinc-400" />
                         <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">Original Warranty</h3>
                     </div>
-                    @if ($expired)
+                    @if ($isExpired)
                         <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
-                    @elseif ($soon)
-                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
-                    @elseif ($days !== null)
+                    @elseif ($isSoon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">
+                            @if ($warrantyMode === 'time') Expiring in {{ $days }}d
+                            @else {{ number_format($counterRemaining) }} {{ $warrantyUnit }} left
+                            @endif
+                        </span>
+                    @elseif ($isActive)
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
                 </div>
 
                 <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                    @if ($warrantyMode === 'time')
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
                         <dd class="mt-0.5 text-sm {{ $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
@@ -85,6 +118,29 @@
                             {{ $asset->warranty_reminder_before_days ? $asset->warranty_reminder_before_days . ' days' : '--' }}
                         </dd>
                     </div>
+                    @else
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Warranty Limit</dt>
+                        <dd class="mt-0.5 text-sm {{ $counterExpired ? 'text-red-400 font-semibold' : ($counterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100') }}">
+                            {{ $asset->warranty_counter_limit ? number_format($asset->warranty_counter_limit) . ' ' . $warrantyUnit : '--' }}
+                            @if ($counterExpired) <span class="text-xs font-normal">(Expired)</span>
+                            @elseif ($counterSoon) <span class="text-xs">({{ number_format($counterRemaining) }} {{ $warrantyUnit }} left)</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Current Reading</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $currentCounter !== null ? number_format($currentCounter) . ' ' . $warrantyUnit : '--' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-500">Remind when within</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            {{ $asset->warranty_reminder_before_units ? number_format($asset->warranty_reminder_before_units) . ' ' . $warrantyUnit : '--' }}
+                        </dd>
+                    </div>
+                    @endif
                     <div class="sm:col-span-2 lg:col-span-3">
                         <dt class="text-xs font-medium text-zinc-500">Warranty Details</dt>
                         <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $asset->warranty_details ?: '--' }}</dd>
@@ -129,11 +185,15 @@
                         <span class="truncate text-sm font-semibold text-zinc-800 dark:text-zinc-200">Original Warranty</span>
                     </div>
                     <div class="flex shrink-0 items-center gap-1.5">
-                        @if ($expired)
+                        @if ($isExpired)
                             <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
-                        @elseif ($soon)
-                            <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $days }}d</span>
-                        @elseif ($days !== null)
+                        @elseif ($isSoon)
+                            <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">
+                                @if ($warrantyMode === 'time') Expiring in {{ $days }}d
+                                @else {{ number_format($counterRemaining) }} {{ $warrantyUnit }} left
+                                @endif
+                            </span>
+                        @elseif ($isActive)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
                         <button type="button"
@@ -162,21 +222,50 @@
                                 <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200">{{ $asset->warranty_details }}</dd>
                             </div>
                         @endif
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
-                            <dd class="mt-0.5 text-sm {{ $expiryClass }}">
-                                {{ $asset->warranty_lapse_date?->format('d M Y') ?: '—' }}
-                                @if ($expired) <span class="text-xs font-normal">(Expired)</span>
-                                @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
-                                @endif
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
-                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
-                                {{ $asset->warranty_reminder_before_days ? $asset->warranty_reminder_before_days . ' days' : '—' }}
-                            </dd>
-                        </div>
+                        @if ($warrantyMode === 'time')
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Lapse Date</dt>
+                                <dd class="mt-0.5 text-sm {{ $expiryClass }}">
+                                    {{ $asset->warranty_lapse_date?->format('d M Y') ?: '—' }}
+                                    @if ($expired) <span class="text-xs font-normal">(Expired)</span>
+                                    @elseif ($soon) <span class="text-xs">({{ $days }}d left)</span>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                    {{ $asset->warranty_reminder_before_days ? $asset->warranty_reminder_before_days . ' days' : '—' }}
+                                </dd>
+                            </div>
+                        @else
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Warranty Limit</dt>
+                                <dd class="mt-0.5 text-sm {{ $counterExpired ? 'text-red-400 font-semibold' : ($counterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
+                                    {{ $asset->warranty_counter_limit ? number_format($asset->warranty_counter_limit) . ' ' . $warrantyUnit : '—' }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Current Reading</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                    {{ $currentCounter !== null ? number_format($currentCounter) . ' ' . $warrantyUnit : '—' }}
+                                </dd>
+                            </div>
+                            @if ($counterRemaining !== null)
+                                <div>
+                                    <dt class="text-xs font-medium text-zinc-500">Remaining</dt>
+                                    <dd class="mt-0.5 text-sm {{ $counterExpired ? 'text-red-400' : ($counterSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
+                                        {{ $counterExpired ? 'Expired' : number_format($counterRemaining) . ' ' . $warrantyUnit }}
+                                    </dd>
+                                </div>
+                            @endif
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Remind when within</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                                    {{ $asset->warranty_reminder_before_units ? number_format($asset->warranty_reminder_before_units) . ' ' . $warrantyUnit : '—' }}
+                                </dd>
+                            </div>
+                        @endif
                     </dl>
 
                     {{-- Documents --}}

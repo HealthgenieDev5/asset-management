@@ -45,6 +45,11 @@ class Asset extends Model
         'warranty_details',
         'warranty_lapse_date',
         'warranty_reminder_before_days',
+        'warranty_tracking_mode',
+        'warranty_unit',
+        'warranty_meter_source',
+        'warranty_counter_limit',
+        'warranty_reminder_before_units',
         'maintenance_schedule_type',
         'maintenance_interval_value',
         'maintenance_interval_unit',
@@ -79,7 +84,9 @@ class Asset extends Model
             'vehicle_obv'         => 'decimal:2',
             'vehicle_depreciation_percent' => 'decimal:2',
             'vehicle_depreciation_book_value' => 'decimal:2',
-            'inspection_required' => 'boolean',
+            'inspection_required'           => 'boolean',
+            'warranty_counter_limit'        => 'integer',
+            'warranty_reminder_before_units' => 'integer',
         ];
     }
 
@@ -151,6 +158,32 @@ class Asset extends Model
     public function isVehicle(): bool
     {
         return $this->category?->code === 'VE';
+    }
+
+    public function isTimeBasedWarranty(): bool
+    {
+        return ($this->warranty_tracking_mode ?? 'time') === 'time';
+    }
+
+    public function isMeterWarranty(): bool
+    {
+        return $this->warranty_tracking_mode === 'meter';
+    }
+
+    public function isCountWarranty(): bool
+    {
+        return $this->warranty_tracking_mode === 'count';
+    }
+
+    public function warrantyUnitLabel(): string
+    {
+        return $this->warranty_unit ?? 'units';
+    }
+
+    public function latestWarrantyCounter(): ?int
+    {
+        $field = $this->warranty_meter_source === 'mileage' ? 'mileage_reading' : 'meter_reading';
+        return $this->services()->orderByDesc('service_date')->value($field);
     }
 
     public static function generateAssetCode(int $categoryId): string

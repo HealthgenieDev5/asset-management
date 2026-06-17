@@ -12,17 +12,37 @@ class AssetWarrantyController extends Controller
     public function update(Request $request, Asset $asset)
     {
         $validated = $request->validate([
-            'warranty_details'              => ['nullable', 'string'],
-            'warranty_lapse_date'           => ['nullable', 'date'],
-            'warranty_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
-            'warranty_card'                 => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
-            'warranty_activation_image'     => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+            'warranty_details'               => ['nullable', 'string'],
+            'warranty_tracking_mode'         => ['required', 'in:time,meter,count'],
+            'warranty_unit'                  => ['nullable', 'string', 'max:20'],
+            'warranty_meter_source'          => ['nullable', 'in:mileage,meter'],
+            'warranty_lapse_date'            => ['nullable', 'date'],
+            'warranty_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'warranty_counter_limit'         => ['nullable', 'integer', 'min:1'],
+            'warranty_reminder_before_units' => ['nullable', 'integer', 'min:1'],
+            'warranty_card'                  => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+            'warranty_activation_image'      => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
+        $mode = $validated['warranty_tracking_mode'];
+
+        if ($mode === 'time') {
+            $validated['warranty_counter_limit']         = null;
+            $validated['warranty_reminder_before_units'] = null;
+        } else {
+            $validated['warranty_lapse_date']            = null;
+            $validated['warranty_reminder_before_days']  = null;
+        }
+
         $asset->update([
-            'warranty_details'              => $validated['warranty_details'] ?? null,
-            'warranty_lapse_date'           => $validated['warranty_lapse_date'] ?? null,
-            'warranty_reminder_before_days' => $validated['warranty_reminder_before_days'] ?? null,
+            'warranty_details'               => $validated['warranty_details'] ?? null,
+            'warranty_tracking_mode'         => $mode,
+            'warranty_unit'                  => $mode !== 'time' ? ($validated['warranty_unit'] ?? null) : null,
+            'warranty_meter_source'          => $mode === 'meter' ? ($validated['warranty_meter_source'] ?? 'meter') : null,
+            'warranty_lapse_date'            => $validated['warranty_lapse_date'] ?? null,
+            'warranty_reminder_before_days'  => $validated['warranty_reminder_before_days'] ?? null,
+            'warranty_counter_limit'         => $validated['warranty_counter_limit'] ?? null,
+            'warranty_reminder_before_units' => $validated['warranty_reminder_before_units'] ?? null,
         ]);
 
         $this->storeDocuments($request, $asset);
