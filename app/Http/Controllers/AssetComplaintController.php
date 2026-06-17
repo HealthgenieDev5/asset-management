@@ -16,6 +16,8 @@ class AssetComplaintController extends Controller
 
     public function store(Request $request, Asset $asset)
     {
+        $this->stripNonFileVideoFields($request);
+
         $validated = $request->validate($this->complaintRules());
 
         $validated['asset_id'] = $asset->id;
@@ -41,8 +43,10 @@ class AssetComplaintController extends Controller
     {
         abort_if($complaint->asset_id !== $asset->id, 403);
 
+        $this->stripNonFileVideoFields($request);
+
         $validated = $request->validate([
-            'status' => ['required', 'in:open,acknowledged,in_progress,resolved,closed,rejected'],
+            'status' => ['nullable', 'in:open,acknowledged,in_progress,resolved,closed,rejected'],
             'priority' => ['required', 'in:low,medium,high,critical'],
             'resolution_summary' => ['nullable', 'string'],
             'resolved_at' => ['nullable', 'date'],
@@ -52,6 +56,10 @@ class AssetComplaintController extends Controller
         ]);
 
         $validated['updated_by'] = auth()->id();
+
+        if (empty($validated['status'])) {
+            unset($validated['status']);
+        }
 
         $complaint->update($validated);
 

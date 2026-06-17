@@ -42,6 +42,8 @@ class ComplaintController extends Controller
 
     public function store(Request $request)
     {
+        $this->stripNonFileVideoFields($request);
+
         $validated = $request->validate(array_merge(
             ['asset_id' => ['required', 'exists:assets,id']],
             $this->complaintRules()

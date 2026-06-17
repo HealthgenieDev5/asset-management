@@ -1,5 +1,8 @@
 @php
+use Illuminate\Support\Facades\Storage;
 $v   = fn($f) => old($f, $complaint?->{$f} ?? null);
+$videoBefore = $complaint?->documents->where('document_type', 'complaint_video_before')->last();
+$videoAfter  = $complaint?->documents->where('document_type', 'complaint_video_after')->last();
 $oldLabels = old('detail_labels', []);
 $oldValues = old('detail_values', []);
 $initialDetailRows = $oldLabels
@@ -100,15 +103,27 @@ $err = 'mt-0.5 text-[11px] text-red-400';
         </style>
         <p class="{{ $sec }}">Videos</p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="complaint-video-upload" x-data x-init="initUploadPond($refs.videoBefore, { acceptedFileTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'] })">
+            <div class="complaint-video-upload" x-data="{ removed: false }" x-init="initUploadPond($refs.videoBefore, {
+                    acceptedFileTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'],
+                    files: @js($videoBefore ? [['source' => Storage::url($videoBefore->file_path), 'options' => ['type' => 'local']]] : []),
+                    fileMetaBySource: @js($videoBefore ? [Storage::url($videoBefore->file_path) => ['name' => $videoBefore->file_original_name]] : []),
+                    onremovefile: () => { removed = true },
+                })">
                 <label class="block text-xs font-medium text-zinc-500 mb-1">Before-Repair Video</label>
                 <input type="file" name="video_before" x-ref="videoBefore" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm" />
+                <input type="hidden" name="remove_video_before" :value="removed ? '1' : ''">
                 <p class="mt-0.5 text-[10px] text-zinc-400">MP4, MOV, AVI, WEBM · max 100 MB</p>
                 @error('video_before')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="complaint-video-upload" x-data x-init="initUploadPond($refs.videoAfter, { acceptedFileTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'] })">
+            <div class="complaint-video-upload" x-data="{ removed: false }" x-init="initUploadPond($refs.videoAfter, {
+                    acceptedFileTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'],
+                    files: @js($videoAfter ? [['source' => Storage::url($videoAfter->file_path), 'options' => ['type' => 'local']]] : []),
+                    onremovefile: () => { removed = true },
+                    fileMetaBySource: @js($videoAfter ? [Storage::url($videoAfter->file_path) => ['name' => $videoAfter->file_original_name]] : []),
+                })">
                 <label class="block text-xs font-medium text-zinc-500 mb-1">After-Repair Video</label>
                 <input type="file" name="video_after" x-ref="videoAfter" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm" />
+                <input type="hidden" name="remove_video_after" :value="removed ? '1' : ''">
                 <p class="mt-0.5 text-[10px] text-zinc-400">MP4, MOV, AVI, WEBM · max 100 MB</p>
                 @error('video_after')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>

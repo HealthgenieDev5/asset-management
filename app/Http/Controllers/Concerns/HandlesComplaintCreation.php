@@ -10,9 +10,19 @@ use App\Models\AssetDocument;
 use App\Models\ComplaintEscalationRule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 trait HandlesComplaintCreation
 {
+    protected function stripNonFileVideoFields(Request $request): void
+    {
+        foreach (['video_before', 'video_after'] as $field) {
+            if ($request->has($field) && ! $request->hasFile($field)) {
+                $request->request->remove($field);
+            }
+        }
+    }
+
     protected function complaintRules(): array
     {
         return [
@@ -55,8 +65,14 @@ trait HandlesComplaintCreation
     protected function storeComplaintVideo(Request $request, Asset $asset, AssetComplaint $complaint, string $field, string $docType): void
     {
         if (! $request->hasFile($field)) {
+            if ($request->boolean("remove_{$field}")) {
+                $this->deleteComplaintVideo($complaint, $docType);
+            }
+
             return;
         }
+
+        $this->deleteComplaintVideo($complaint, $docType);
 
         $file = $request->file($field);
         $path = $file->store("assets/{$asset->id}/complaints/{$complaint->id}", 'public');
@@ -73,6 +89,14 @@ trait HandlesComplaintCreation
             'file_size' => $file->getSize(),
             'uploaded_by' => auth()->id(),
         ]);
+    }
+
+    protected function deleteComplaintVideo(AssetComplaint $complaint, string $docType): void
+    {
+        $complaint->documents()->where('document_type', $docType)->get()->each(function (AssetDocument $document) {
+            Storage::disk('public')->delete($document->file_path);
+            $document->delete();
+        });
     }
 
     protected function triggerComplaintEscalation(Asset $asset, AssetComplaint $complaint): void

@@ -74,7 +74,7 @@
                     </dl>
                 </div>
 
-                @include('assets.tabs._complaint-form-fields')
+                @include('assets.tabs._complaint-form-fields', ['complaint' => null])
 
                 <div class="flex items-center gap-3 pt-1">
                     <flux:button type="submit" variant="primary" size="sm" icon="check">Submit Complaint</flux:button>

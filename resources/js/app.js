@@ -30,6 +30,7 @@ window.initUploadPond = function (inputEl, options = {}) {
         allowBrowse:        true,
         allowDrop:          true,
         allowPaste:         true,
+        storeAsFile:        true,
         credits:            false,
         labelIdle:          options.labelIdle ?? 'Drag & Drop your file or <span class="filepond--label-action">Browse</span>',
         imagePreviewHeight: 220,

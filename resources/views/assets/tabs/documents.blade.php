@@ -163,8 +163,7 @@
                                  const fileMeta = {{ Js::from($previewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
                                  let pond = null;
                                  const mountPond = () => {
-                                     if (pond) { try { destroyDocImageViewer(pond); } catch(e) {} pond = null; }
-                                     if (!mount.isConnected) return;
+                                     if (pond) { try { pond.destroy(); } catch(e) {} }
                                      mount.innerHTML = '';
                                      const input = document.createElement('input');
                                      input.type = 'file';

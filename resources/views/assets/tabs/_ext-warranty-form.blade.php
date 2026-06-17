@@ -1,4 +1,5 @@
 @php
+use Illuminate\Support\Facades\Storage;
 $v   = fn($f) => old($f, $ew?->{$f});
 $inp = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
 $txa = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
@@ -82,38 +83,36 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
 
     {{-- ── Documents ── --}}
     <div>
+        <style>
+            .ext-warranty-doc-upload .filepond--panel-root {
+                border: 1px dashed #4b4b4c;
+                border-radius: 10px;
+            }
+        </style>
         <p class="{{ $sec }}">Documents</p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
+            <div class="ext-warranty-doc-upload">
                 <p class="mb-1 text-xs text-zinc-500">Warranty Bill <span class="font-normal">(PDF / image, max 5 MB)</span></p>
-                @if ($ew && ($ewBill = $ew->documents->where('document_type', 'extended_warranty_bill')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-3.5 shrink-0 text-zinc-400" />
-                        <span class="truncate text-zinc-600 dark:text-zinc-300">{{ $ewBill->file_original_name }}</span>
-                        <span class="ml-auto shrink-0 text-zinc-400">Upload new to replace</span>
-                    </div>
-                @endif
-                <input type="file" name="extended_warranty_bill" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                       class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700
-                              file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:font-medium file:text-zinc-700
-                              hover:file:bg-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent
-                              dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600" />
+                @php $ewBill = $ew?->documents->where('document_type', 'extended_warranty_bill')->last(); @endphp
+                <div x-data x-init="initUploadPond($refs.ewBill, {
+                        acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                        files: @js($ewBill ? [['source' => Storage::url($ewBill->file_path), 'options' => ['type' => 'local']]] : []),
+                        fileMetaBySource: @js($ewBill ? [Storage::url($ewBill->file_path) => ['name' => $ewBill->file_original_name]] : []),
+                    })">
+                    <input type="file" name="extended_warranty_bill" x-ref="ewBill" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                </div>
                 @error('extended_warranty_bill')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div class="ext-warranty-doc-upload">
                 <p class="mb-1 text-xs text-zinc-500">Activation Image <span class="font-normal">(PDF / image, max 5 MB)</span></p>
-                @if ($ew && ($ewImg = $ew->documents->where('document_type', 'extended_warranty_image')->last()))
-                    <div class="mb-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs dark:border-zinc-700 dark:bg-zinc-800">
-                        <flux:icon.paper-clip class="size-3.5 shrink-0 text-zinc-400" />
-                        <span class="truncate text-zinc-600 dark:text-zinc-300">{{ $ewImg->file_original_name }}</span>
-                        <span class="ml-auto shrink-0 text-zinc-400">Upload new to replace</span>
-                    </div>
-                @endif
-                <input type="file" name="extended_warranty_image" accept=".pdf,.jpg,.jpeg,.png,.webp"
-                       class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-700
-                              file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:font-medium file:text-zinc-700
-                              hover:file:bg-zinc-200 focus:outline-none focus:ring-1 focus:ring-accent
-                              dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200 dark:hover:file:bg-zinc-600" />
+                @php $ewImg = $ew?->documents->where('document_type', 'extended_warranty_image')->last(); @endphp
+                <div x-data x-init="initUploadPond($refs.ewImage, {
+                        acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                        files: @js($ewImg ? [['source' => Storage::url($ewImg->file_path), 'options' => ['type' => 'local']]] : []),
+                        fileMetaBySource: @js($ewImg ? [Storage::url($ewImg->file_path) => ['name' => $ewImg->file_original_name]] : []),
+                    })">
+                    <input type="file" name="extended_warranty_image" x-ref="ewImage" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                </div>
                 @error('extended_warranty_image')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
         </div>
