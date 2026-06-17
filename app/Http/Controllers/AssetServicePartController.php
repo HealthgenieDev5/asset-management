@@ -13,7 +13,7 @@ class AssetServicePartController extends Controller
     {
         abort_if($service->asset_id !== $asset->id, 403);
 
-        $validated = $request->validate($this->rules());
+        $validated = $this->nullOutTrackingFields($request->validate($this->rules()));
 
         $validated['asset_service_id'] = $service->id;
         $validated['asset_id']         = $asset->id;
@@ -30,7 +30,7 @@ class AssetServicePartController extends Controller
         abort_if($service->asset_id !== $asset->id, 403);
         abort_if($part->asset_service_id !== $service->id, 403);
 
-        $validated = $request->validate($this->rules());
+        $validated = $this->nullOutTrackingFields($request->validate($this->rules()));
         $validated['updated_by'] = auth()->id();
 
         $part->update($validated);
@@ -53,12 +53,36 @@ class AssetServicePartController extends Controller
     private function rules(): array
     {
         return [
-            'part_name'      => ['required', 'string', 'max:255'],
-            'quantity'       => ['required', 'integer', 'min:1'],
-            'part_cost'      => ['nullable', 'numeric', 'min:0'],
-            'purchased_from' => ['nullable', 'string', 'max:255'],
-            'warranty_till'  => ['nullable', 'date'],
-            'remarks'        => ['nullable', 'string'],
+            'part_name'                    => ['required', 'string', 'max:255'],
+            'quantity'                     => ['required', 'integer', 'min:1'],
+            'part_cost'                    => ['nullable', 'numeric', 'min:0'],
+            'purchased_from'               => ['nullable', 'string', 'max:255'],
+            'warranty_tracking_mode'       => ['nullable', 'in:time,meter,count'],
+            'warranty_till'                => ['nullable', 'date'],
+            'warranty_unit'                => ['nullable', 'string', 'max:20'],
+            'warranty_meter_source'        => ['nullable', 'in:mileage,meter'],
+            'warranty_counter_limit'       => ['nullable', 'integer', 'min:1'],
+            'warranty_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'warranty_reminder_before_units' => ['nullable', 'integer', 'min:1'],
+            'remarks'                      => ['nullable', 'string'],
         ];
+    }
+
+    private function nullOutTrackingFields(array $data): array
+    {
+        $mode = $data['warranty_tracking_mode'] ?? 'time';
+        if ($mode === 'time') {
+            $data['warranty_counter_limit']       = null;
+            $data['warranty_reminder_before_units'] = null;
+            $data['warranty_unit']                = null;
+            $data['warranty_meter_source']        = null;
+        } else {
+            $data['warranty_till']                  = null;
+            $data['warranty_reminder_before_days']  = null;
+            if ($mode !== 'meter') {
+                $data['warranty_meter_source'] = null;
+            }
+        }
+        return $data;
     }
 }

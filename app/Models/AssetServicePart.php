@@ -15,6 +15,12 @@ class AssetServicePart extends Model
         'part_cost',
         'purchased_from',
         'warranty_till',
+        'warranty_tracking_mode',
+        'warranty_unit',
+        'warranty_meter_source',
+        'warranty_counter_limit',
+        'warranty_reminder_before_days',
+        'warranty_reminder_before_units',
         'remarks',
         'created_by',
         'updated_by',
@@ -26,6 +32,11 @@ class AssetServicePart extends Model
             'part_cost'    => 'decimal:2',
             'warranty_till'=> 'date',
         ];
+    }
+
+    public function isWarrantyTimeBased(): bool
+    {
+        return ($this->warranty_tracking_mode ?? 'time') === 'time';
     }
 
     public function service(): BelongsTo
