@@ -1,3 +1,36 @@
+@php use Illuminate\Support\Facades\Storage; @endphp
+
+{{-- ── Doc Lightbox ── --}}
+<div x-data="docLightbox()"
+     x-on:keydown.escape.window="close()"
+     x-on:open-doc-lightbox.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+     x-show="open" style="display:none"
+     class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    {{-- Header bar --}}
+    <div class="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
+        <p class="truncate text-sm font-medium text-white" x-text="title"></p>
+        <button type="button" @click="close()"
+                class="shrink-0 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+        </button>
+    </div>
+    {{-- Content --}}
+    <div class="flex flex-1 items-center justify-center overflow-hidden p-4">
+        <template x-if="isPdf">
+            <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
+        </template>
+        <template x-if="!isPdf">
+            <img :src="src" :alt="title" class="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+        </template>
+    </div>
+</div>
+
 <div class="space-y-6">
 
     {{-- Header --}}
@@ -6,7 +39,7 @@
             <flux:heading class="font-semibold text-zinc-800 dark:text-zinc-200">Parts Replacement History</flux:heading>
             @php
                 $totalParts     = $asset->services->flatMap->parts;
-                $totalPartsCost = $totalParts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
+                $totalPartsCost = $totalParts->sum(fn($p) => $p->part_cost ?? 0);
                 $totalSvcCost   = $asset->services->sum('service_cost');
             @endphp
             <flux:text class="text-xs text-zinc-500 mt-0.5">
@@ -39,7 +72,7 @@
         @foreach ($asset->services->sortByDesc('service_date') as $svc)
             <x-modal name="add-part-{{ $svc->id }}" title="Add Part — {{ $svc->service_date->format('d M Y') }}" :dismissible="false"
                 :auto-open="$errors->any() && old('_form') === 'part' && (int) old('_service_id') === $svc->id && !old('_part_id')">
-                <form method="POST" action="{{ route('assets.services.parts.store', [$asset, $svc]) }}" class="space-y-4">
+                <form method="POST" action="{{ route('assets.services.parts.store', [$asset, $svc]) }}" class="space-y-4" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="_form" value="part">
                     <input type="hidden" name="_service_id" value="{{ $svc->id }}">
@@ -60,7 +93,7 @@
             @foreach ($svc->parts as $part)
                 <x-modal name="edit-part-{{ $part->id }}" title="Edit Part" :dismissible="false"
                     :auto-open="$errors->any() && old('_form') === 'part' && (int) old('_part_id') === $part->id">
-                    <form method="POST" action="{{ route('assets.services.parts.update', [$asset, $svc, $part]) }}" class="space-y-4">
+                    <form method="POST" action="{{ route('assets.services.parts.update', [$asset, $svc, $part]) }}" class="space-y-4" enctype="multipart/form-data">
                         @csrf @method('PUT')
                         <input type="hidden" name="_form" value="part">
                         <input type="hidden" name="_service_id" value="{{ $svc->id }}">
@@ -79,7 +112,6 @@
                 </x-modal>
 
                 <x-modal name="view-part-{{ $part->id }}" title="Part Replacement Details">
-                    @php $lineTotal = $part->part_cost !== null ? (float) $part->part_cost * $part->quantity : null; @endphp
                     <div class="space-y-5">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
@@ -101,22 +133,26 @@
                         </div>
 
                         <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @if ($part->part_serial_number)
                             <div>
-                                <dt class="text-xs font-medium text-zinc-500">Quantity</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->quantity }}</dd>
+                                <dt class="text-xs font-medium text-zinc-500">Serial Number</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_serial_number }}</dd>
                             </div>
+                            @endif
                             <div>
-                                <dt class="text-xs font-medium text-zinc-500">Unit Cost</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_cost !== null ? 'Rs. ' . number_format($part->part_cost, 2) : '--' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Line Total</dt>
-                                <dd class="mt-0.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $lineTotal !== null ? 'Rs. ' . number_format($lineTotal, 2) : '--' }}</dd>
+                                <dt class="text-xs font-medium text-zinc-500">Cost</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_cost !== null ? '₹ ' . number_format($part->part_cost, 2) : '--' }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Purchased From</dt>
                                 <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->purchased_from ?: '--' }}</dd>
                             </div>
+                            @if ($part->bill_no)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-500">Bill / Invoice No.</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->bill_no }}</dd>
+                            </div>
+                            @endif
                             <div>
                                 <dt class="text-xs font-medium text-zinc-500">Warranty Till</dt>
                                 <dd class="mt-0.5 text-sm {{ $part->warranty_till && $part->warranty_till->lt(now()->startOfDay()) ? 'text-red-400 font-semibold' : 'text-zinc-800 dark:text-zinc-100' }}">
@@ -133,6 +169,31 @@
                                 <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->remarks ?: '--' }}</dd>
                             </div>
                         </dl>
+                        @if ($part->documents->isNotEmpty())
+                            <div>
+                                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Document</p>
+                                <div class="space-y-1">
+                                    @foreach ($part->documents as $doc)
+                                        <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                            @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
+                                            <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
+                                            <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                            <button type="button"
+                                                x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                title="View"
+                                                class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.eye class="size-3" />
+                                            </button>
+                                            <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                                title="Download"
+                                                class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.arrow-down-tray class="size-3" />
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </x-modal>
             @endforeach
@@ -142,7 +203,7 @@
         <div class="grid grid-cols-3 gap-4">
             @foreach ($asset->services->sortByDesc('service_date') as $svc)
                 @php
-                    $partsCostTotal = $svc->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
+                    $partsCostTotal = $svc->parts->sum(fn($p) => $p->part_cost ?? 0);
                     $grandTotal     = ($svc->service_cost ?? 0) + $partsCostTotal;
                 @endphp
 
@@ -180,18 +241,13 @@
                     @else
                         <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
                             @foreach ($svc->parts as $part)
-                                @php $lineTotal = $part->part_cost !== null ? (float) $part->part_cost * $part->quantity : null; @endphp
                                 <div class="px-4 py-3">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="min-w-0 flex-1">
                                             <p class="truncate text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ $part->part_name }}</p>
-                                            <p class="mt-0.5 text-[11px] text-zinc-500">
-                                                Qty: {{ $part->quantity }}
-                                                @if ($part->part_cost !== null)
-                                                    · ₹ {{ number_format($part->part_cost, 2) }}
-                                                    @if ($part->quantity > 1) = ₹ {{ number_format($lineTotal, 2) }} @endif
-                                                @endif
-                                            </p>
+                                            @if ($part->part_cost !== null)
+                                            <p class="mt-0.5 text-[11px] text-zinc-500">₹ {{ number_format($part->part_cost, 2) }}</p>
+                                            @endif
                                             @if ($part->purchased_from)
                                                 <p class="text-[11px] text-zinc-500">{{ $part->purchased_from }}</p>
                                             @endif
@@ -233,6 +289,28 @@
                                             </form>
                                         </div>
                                     </div>
+                                    @if ($part->documents->isNotEmpty())
+                                        <div class="mt-2 space-y-1">
+                                            @foreach ($part->documents as $doc)
+                                                <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                                    @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
+                                                    <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
+                                                    <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                                    <button type="button"
+                                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                        title="View"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.eye class="size-3" />
+                                                    </button>
+                                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                                        title="Download"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.arrow-down-tray class="size-3" />
+                                                    </a>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>

@@ -134,7 +134,7 @@ class AssetWarrantyController extends Controller
 
     private function storeDocuments(Request $request, Asset $asset, AssetWarranty $warranty): void
     {
-        if (! $request->hasFile('warranty_doc')) {
+        if (! $request->hasFile('warranty_doc') || ! $request->file('warranty_doc')->isValid()) {
             return;
         }
 

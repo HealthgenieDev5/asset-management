@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssetServicePart extends Model
 {
@@ -11,9 +12,10 @@ class AssetServicePart extends Model
         'asset_service_id',
         'asset_id',
         'part_name',
-        'quantity',
+        'part_serial_number',
         'part_cost',
         'purchased_from',
+        'bill_no',
         'warranty_till',
         'warranty_tracking_mode',
         'warranty_unit',
@@ -30,7 +32,7 @@ class AssetServicePart extends Model
     {
         return [
             'part_cost'    => 'decimal:2',
-            'warranty_till'=> 'date',
+            'warranty_till' => 'date',
         ];
     }
 
@@ -49,11 +51,9 @@ class AssetServicePart extends Model
         return $this->belongsTo(Asset::class);
     }
 
-    public function getTotalCostAttribute(): ?string
+    public function documents(): HasMany
     {
-        if ($this->part_cost === null) {
-            return null;
-        }
-        return number_format((float) $this->part_cost * $this->quantity, 2);
+        return $this->hasMany(AssetDocument::class, 'documentable_id')
+            ->where('documentable_type', self::class);
     }
 }

@@ -164,8 +164,17 @@ if ($isDisposed && $w->scope === 'part') {
                                 <p class="truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
                                 <p class="text-[11px] text-zinc-500">{{ number_format($doc->file_size / 1024, 0) }} KB</p>
                             </div>
-                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                               class="text-xs text-accent hover:underline">View</a>
+                            <button type="button"
+                                x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                title="View"
+                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                <flux:icon.eye class="size-3.5" />
+                            </button>
+                            <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                title="Download"
+                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                <flux:icon.arrow-down-tray class="size-3.5" />
+                            </a>
                             <form method="POST" action="{{ route('assets.warranties.documents.destroy', [$asset, $doc]) }}"
                                   onsubmit="return confirm('Delete this document?')">
                                 @csrf @method('DELETE')

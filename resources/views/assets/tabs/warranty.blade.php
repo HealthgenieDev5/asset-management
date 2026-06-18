@@ -14,6 +14,28 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
 @endphp
 
 
+{{-- Lightbox overlay --}}
+<div x-data="docLightbox()"
+     x-on:keydown.escape.window="close()"
+     x-on:open-doc-lightbox.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+     x-show="open" style="display:none"
+     class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm">
+    <div class="flex shrink-0 items-center justify-between px-4 py-3">
+        <span x-text="title" class="truncate text-sm font-medium text-white"></span>
+        <button type="button" x-on:click="close()" class="ml-4 shrink-0 rounded p-1 text-white/70 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div class="min-h-0 flex-1 overflow-auto flex items-center justify-center p-4">
+        <template x-if="isPdf">
+            <iframe :src="src" class="h-full w-full rounded" style="min-height:70vh"></iframe>
+        </template>
+        <template x-if="!isPdf">
+            <img :src="src" :alt="title" class="max-h-full max-w-full rounded object-contain" />
+        </template>
+    </div>
+</div>
+
 <div class="space-y-6">
 
     {{-- Header --}}
@@ -206,7 +228,18 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                                 <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
                                                     @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
                                                     <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
-                                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="shrink-0 text-[11px] text-accent hover:underline">View</a>
+                                                    <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                                    <button type="button"
+                                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                        title="View"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.eye class="size-3" />
+                                                    </button>
+                                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                                        title="Download"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.arrow-down-tray class="size-3" />
+                                                    </a>
                                                     <form method="POST" action="{{ route('assets.warranties.documents.destroy', [$asset, $doc]) }}" onsubmit="return confirm('Delete this document?')">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700"><flux:icon.trash class="size-3" /></button>
@@ -339,7 +372,18 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                                 <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
                                                     @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
                                                     <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
-                                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="shrink-0 text-[11px] text-accent hover:underline">View</a>
+                                                    <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
+                                                    <button type="button"
+                                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                        title="View"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.eye class="size-3" />
+                                                    </button>
+                                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                                        title="Download"
+                                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                        <flux:icon.arrow-down-tray class="size-3" />
+                                                    </a>
                                                     <form method="POST" action="{{ route('assets.warranties.documents.destroy', [$asset, $doc]) }}" onsubmit="return confirm('Delete this document?')">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700"><flux:icon.trash class="size-3" /></button>

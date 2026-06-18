@@ -57,6 +57,17 @@ class AssetExtendedWarrantyController extends Controller
             ->with('success', 'Extended warranty deleted.');
     }
 
+    public function destroyDocument(Asset $asset, AssetDocument $document)
+    {
+        abort_if($document->asset_id !== $asset->id, 403);
+
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'ext-warranty'])
+            ->with('success', 'Document removed.');
+    }
+
     private function rules(): array
     {
         return [

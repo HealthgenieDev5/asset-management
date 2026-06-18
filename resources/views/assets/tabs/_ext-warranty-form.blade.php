@@ -202,25 +202,41 @@ $currentCounter = $ewAsset?->latestWarrantyCounter();
         </style>
         <p class="{{ $sec }}">Documents</p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="ext-warranty-doc-upload">
+            {{-- Warranty Bill --}}
+            <div>
                 <p class="mb-1 text-xs text-zinc-500">Warranty Bill <span class="font-normal">(PDF / image, max 5 MB)</span></p>
                 @php $ewBill = $ew?->documents->where('document_type', 'extended_warranty_bill')->last(); @endphp
-                <div x-data x-init="initUploadPond($refs.ewBill, {
+                <div class="ext-warranty-doc-upload" x-data x-init="initUploadPond($refs.ewBill, {
                         acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                        files: @js($ewBill ? [['source' => Storage::url($ewBill->file_path), 'options' => ['type' => 'local']]] : []),
-                        fileMetaBySource: @js($ewBill ? [Storage::url($ewBill->file_path) => ['name' => $ewBill->file_original_name]] : []),
+                        @if ($ewBill)
+                        files: [{ source: '{{ Storage::url($ewBill->file_path) }}', options: { type: 'local' } }],
+                        fileMetaBySource: { '{{ Storage::url($ewBill->file_path) }}': { name: '{{ addslashes($ewBill->file_original_name) }}' } },
+                        onremovefile: () => fetch('{{ route('assets.ext-warranty.documents.destroy', [$asset, $ewBill]) }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: '_method=DELETE'
+                        }),
+                        @endif
                     })">
                     <input type="file" name="extended_warranty_bill" x-ref="ewBill" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                 </div>
                 @error('extended_warranty_bill')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="ext-warranty-doc-upload">
+            {{-- Activation Image --}}
+            <div>
                 <p class="mb-1 text-xs text-zinc-500">Activation Image <span class="font-normal">(PDF / image, max 5 MB)</span></p>
                 @php $ewImg = $ew?->documents->where('document_type', 'extended_warranty_image')->last(); @endphp
-                <div x-data x-init="initUploadPond($refs.ewImage, {
+                <div class="ext-warranty-doc-upload" x-data x-init="initUploadPond($refs.ewImage, {
                         acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                        files: @js($ewImg ? [['source' => Storage::url($ewImg->file_path), 'options' => ['type' => 'local']]] : []),
-                        fileMetaBySource: @js($ewImg ? [Storage::url($ewImg->file_path) => ['name' => $ewImg->file_original_name]] : []),
+                        @if ($ewImg)
+                        files: [{ source: '{{ Storage::url($ewImg->file_path) }}', options: { type: 'local' } }],
+                        fileMetaBySource: { '{{ Storage::url($ewImg->file_path) }}': { name: '{{ addslashes($ewImg->file_original_name) }}' } },
+                        onremovefile: () => fetch('{{ route('assets.ext-warranty.documents.destroy', [$asset, $ewImg]) }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: '_method=DELETE'
+                        }),
+                        @endif
                     })">
                     <input type="file" name="extended_warranty_image" x-ref="ewImage" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                 </div>

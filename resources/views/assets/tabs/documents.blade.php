@@ -122,9 +122,140 @@
             </div>
         </div>
     @else
-        @php $grouped = $allDocs->groupBy('document_type'); @endphp
+        @php
+            $partBillDocs    = $allDocs->where('document_type', 'service_part_bill');
+            $otherTypedDocs  = $allDocs->where('document_type', '!=', 'service_part_bill');
+            $grouped         = $otherTypedDocs->groupBy('document_type');
+            $partBillsByPart = $partBillDocs->groupBy('documentable_id');
+            $partModels      = \App\Models\AssetServicePart::whereIn('id', $partBillsByPart->keys())->get()->keyBy('id');
+        @endphp
 
         <div class="grid grid-cols-3 gap-4">
+            {{-- One card per service part that has documents --}}
+            @foreach ($partBillsByPart as $partId => $docs)
+                @php
+                    $part      = $partModels->get($partId);
+                    $cardLabel = $part ? ($part->part_name ?: 'Part #' . $partId) : 'Part Document';
+                    $type      = 'service_part_bill_' . $partId;
+                    $isImageType = false;
+                @endphp
+                <div class="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
+                    <div class="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40">
+                        <flux:icon.document-text class="size-4 text-zinc-400" />
+                        <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{{ $cardLabel }}</span>
+                        <span class="ml-auto rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                            {{ $docs->count() }}
+                        </span>
+                    </div>
+
+                    @php
+                        $previewDocs = $docs->filter(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'))->values();
+                        $otherDocs   = $docs->reject(fn($d) => $d->isImage() || str_contains($d->file_mime_type ?? '', 'pdf'));
+                    @endphp
+
+                    @if ($previewDocs->isNotEmpty())
+                        @php $pondId = 'filepond-' . Str::slug($type); @endphp
+                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1"
+                             x-data
+                             x-init="
+                                 const wrap     = document.getElementById('pond-wrap-{{ $pondId }}');
+                                 const mount    = document.getElementById('pond-mount-{{ $pondId }}');
+                                 const files    = {{ Js::from($previewDocs->map(fn($d) => ['source' => Storage::url($d->file_path), 'options' => ['type' => 'local']])) }};
+                                 const fileMeta = {{ Js::from($previewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
+                                 let pond = null;
+                                 const mountPond = () => {
+                                     if (pond) { try { pond.destroy(); } catch(e) {} }
+                                     mount.innerHTML = '';
+                                     const input = document.createElement('input');
+                                     input.type = 'file';
+                                     mount.appendChild(input);
+                                     pond = initDocImageViewer(input, files);
+                                 };
+                                 wrap.addEventListener('click', (e) => {
+                                     if (wrap.offsetParent === null) return;
+                                     const item = e.target.closest('.filepond--item');
+                                     if (!item) return;
+                                     const idx = Array.from(wrap.querySelectorAll('.filepond--item')).indexOf(item);
+                                     if (fileMeta[idx]) $dispatch('docs-lightbox-open', fileMeta[idx]);
+                                 });
+                                 window.addEventListener('tab-visible', (e) => {
+                                     if (e.detail === 'documents') setTimeout(mountPond, 50);
+                                 });
+                                 if (document.readyState === 'complete') { setTimeout(mountPond, 50); }
+                                 else { window.addEventListener('load', () => setTimeout(mountPond, 50), { once: true }); }
+                             ">
+                            <div id="pond-mount-{{ $pondId }}"></div>
+                        </div>
+                        <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                            @foreach ($previewDocs as $doc)
+                                <div class="flex items-center gap-2 px-4 py-2">
+                                    <span class="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-400">
+                                        {{ $doc->document_title ?: $doc->file_original_name }}
+                                    </span>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                       class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
+                                    <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                    <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
+                                          onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" aria-label="Delete document" title="Delete document"
+                                                class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                            <flux:icon.trash class="size-3" />
+                                        </button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($otherDocs->isNotEmpty())
+                        <div class="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                            @foreach ($otherDocs as $doc)
+                                <div class="flex items-start gap-3 px-4 py-3">
+                                    <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                                        @if (str_contains($doc->file_mime_type ?? '', 'pdf'))
+                                            <flux:icon.document class="size-4 text-red-400" />
+                                        @else
+                                            <flux:icon.document-text class="size-4 text-zinc-400" />
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                                            {{ $doc->document_title ?: $doc->file_original_name }}
+                                        </p>
+                                        <p class="text-[11px] text-zinc-500">
+                                            {{ number_format($doc->file_size / 1024, 0) }} KB
+                                            · {{ $doc->created_at->format('d M Y') }}
+                                            @if ($doc->uploader) · {{ $doc->uploader->name }} @endif
+                                        </p>
+                                        @if ($doc->remarks)
+                                            <p class="mt-0.5 text-[11px] text-zinc-500 italic">{{ $doc->remarks }}</p>
+                                        @endif
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
+                                               class="text-xs text-accent hover:underline">View</a>
+                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                               class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
+                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
+                                                  onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" aria-label="Delete document" title="Delete document"
+                                                        class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                                    <flux:icon.trash class="size-3" />
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+
+            {{-- All other document types, one card per type --}}
             @foreach ($grouped as $type => $docs)
                 @php
                     $isImageType = in_array($type, ['warranty_activation_image', 'extended_warranty_image', 'asset_photo', 'puc_copy', 'rc_copy']);

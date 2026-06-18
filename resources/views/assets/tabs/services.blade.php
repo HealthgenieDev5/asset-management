@@ -1,5 +1,33 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
 
+{{-- ── Doc Lightbox ── --}}
+<div x-data="docLightbox()"
+     x-on:keydown.escape.window="close()"
+     x-on:open-doc-lightbox.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+     x-show="open" style="display:none"
+     class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    <div class="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
+        <p class="truncate text-sm font-medium text-white" x-text="title"></p>
+        <button type="button" @click="close()"
+                class="shrink-0 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+        </button>
+    </div>
+    <div class="flex flex-1 items-center justify-center overflow-hidden p-4">
+        <template x-if="isPdf">
+            <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
+        </template>
+        <template x-if="!isPdf">
+            <img :src="src" :alt="title" class="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+        </template>
+    </div>
+</div>
 
 <div class="space-y-5">
 
@@ -231,8 +259,17 @@
                                     @endif
                                     <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
                                     <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">Open</a>
+                                    <button type="button"
+                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        title="View"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                        title="Download"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
                                 </div>
                             @endforeach
                         </div>
@@ -469,8 +506,17 @@
                                     @endif
                                     <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
                                     <span class="text-xs text-zinc-600">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">View</a>
+                                    <button type="button"
+                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        title="View"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                        title="Download"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
                                 </div>
                             @endforeach
                         </div>

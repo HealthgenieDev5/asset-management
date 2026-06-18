@@ -151,25 +151,41 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
         </style>
         <p class="{{ $sec }}">Documents</p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="warranty-doc-upload">
+            {{-- Warranty Card --}}
+            <div>
                 <p class="mb-1 text-xs text-zinc-500">Warranty Card <span class="font-normal">(PDF / image, max 5 MB)</span></p>
                 @php $warrantyCard = $asset->documents->where('document_type', 'warranty_card')->last(); @endphp
-                <div x-data x-init="initUploadPond($refs.warrantyCard, {
+                <div class="warranty-doc-upload" x-data x-init="initUploadPond($refs.warrantyCard, {
                         acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                        files: @js($warrantyCard ? [['source' => Storage::url($warrantyCard->file_path), 'options' => ['type' => 'local']]] : []),
-                        fileMetaBySource: @js($warrantyCard ? [Storage::url($warrantyCard->file_path) => ['name' => $warrantyCard->file_original_name]] : []),
+                        @if ($warrantyCard)
+                        files: [{ source: '{{ Storage::url($warrantyCard->file_path) }}', options: { type: 'local' } }],
+                        fileMetaBySource: { '{{ Storage::url($warrantyCard->file_path) }}': { name: '{{ addslashes($warrantyCard->file_original_name) }}' } },
+                        onremovefile: () => fetch('{{ route('assets.documents.destroy', [$asset, $warrantyCard]) }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: '_method=DELETE'
+                        }),
+                        @endif
                     })">
                     <input type="file" name="warranty_card" x-ref="warrantyCard" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                 </div>
                 @error('warranty_card')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="warranty-doc-upload">
+            {{-- Activation Image --}}
+            <div>
                 <p class="mb-1 text-xs text-zinc-500">Activation Image <span class="font-normal">(PDF / image, max 5 MB)</span></p>
                 @php $activationImg = $asset->documents->where('document_type', 'warranty_activation_image')->last(); @endphp
-                <div x-data x-init="initUploadPond($refs.activationImage, {
+                <div class="warranty-doc-upload" x-data x-init="initUploadPond($refs.activationImage, {
                         acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                        files: @js($activationImg ? [['source' => Storage::url($activationImg->file_path), 'options' => ['type' => 'local']]] : []),
-                        fileMetaBySource: @js($activationImg ? [Storage::url($activationImg->file_path) => ['name' => $activationImg->file_original_name]] : []),
+                        @if ($activationImg)
+                        files: [{ source: '{{ Storage::url($activationImg->file_path) }}', options: { type: 'local' } }],
+                        fileMetaBySource: { '{{ Storage::url($activationImg->file_path) }}': { name: '{{ addslashes($activationImg->file_original_name) }}' } },
+                        onremovefile: () => fetch('{{ route('assets.documents.destroy', [$asset, $activationImg]) }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: '_method=DELETE'
+                        }),
+                        @endif
                     })">
                     <input type="file" name="warranty_activation_image" x-ref="activationImage" accept=".pdf,.jpg,.jpeg,.png,.webp" />
                 </div>

@@ -268,31 +268,23 @@ $formId = 'wf_' . ($w?->id ?? 'new');
             }
         </style>
         <p class="{{ $sec }}">Document</p>
-        @php $existingDocs = $w?->documents ?? collect(); @endphp
-        @if ($existingDocs->isNotEmpty())
-            <div class="mb-2 space-y-1">
-                @foreach ($existingDocs as $doc)
-                    <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
-                        @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
-                        <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
-                        <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="shrink-0 text-[11px] text-accent hover:underline">View</a>
-                        <form method="POST" action="{{ route('assets.warranties.documents.destroy', [$asset, $doc]) }}" onsubmit="return confirm('Delete this document?')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700"><flux:icon.trash class="size-3" /></button>
-                        </form>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-        <div class="warranty-doc-upload">
-            <p class="mb-1 text-xs text-zinc-500">{{ $existingDocs->isNotEmpty() ? 'Replace / Add Document' : 'Warranty Document' }} <span class="font-normal">(PDF / image, max 5 MB)</span></p>
-            <div x-data x-init="initUploadPond($refs.warrantyDoc, {
-                    acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                })">
-                <input type="file" name="warranty_doc" x-ref="warrantyDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-            </div>
-            @error('warranty_doc')<p class="{{ $err }}">{{ $message }}</p>@enderror
+        @php $wDoc = $w?->documents->first(); @endphp
+        <p class="mb-1 text-xs text-zinc-500">Warranty Document <span class="font-normal">(PDF / image, max 5 MB)</span></p>
+        <div class="warranty-doc-upload" x-data x-init="initUploadPond($refs.warrantyDoc, {
+                acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                @if ($wDoc)
+                files: [{ source: '{{ Storage::url($wDoc->file_path) }}', options: { type: 'local' } }],
+                fileMetaBySource: { '{{ Storage::url($wDoc->file_path) }}': { name: '{{ addslashes($wDoc->file_original_name) }}' } },
+                onremovefile: () => fetch('{{ route('assets.warranties.documents.destroy', [$asset, $wDoc]) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: '_method=DELETE'
+                }),
+                @endif
+            })">
+            <input type="file" name="warranty_doc" x-ref="warrantyDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
         </div>
+        @error('warranty_doc')<p class="{{ $err }}">{{ $message }}</p>@enderror
     </div>
 
 </div>

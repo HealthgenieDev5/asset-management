@@ -55,6 +55,17 @@ class AssetServiceController extends Controller
             ->with('success', 'Service record deleted.');
     }
 
+    public function destroyDocument(Asset $asset, AssetDocument $document)
+    {
+        abort_if($document->asset_id !== $asset->id, 403);
+
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'services'])
+            ->with('success', 'Document removed.');
+    }
+
     private function rules(): array
     {
         return [
@@ -74,7 +85,7 @@ class AssetServiceController extends Controller
             'downtime_hours'                    => ['nullable', 'numeric', 'min:0'],
             'condition_rating'                  => ['nullable', 'in:excellent,good,fair,poor,critical'],
             'certification_expiry'              => ['nullable', 'date'],
-            'certification_reminder_before_days'=> ['nullable', 'integer', 'min:1', 'max:365'],
+            'certification_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'next_service_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
             'safety_notes'                      => ['nullable', 'string'],
             'remarks'                           => ['nullable', 'string'],

@@ -3,6 +3,28 @@
     $ew = $asset->extendedWarranties->first();
 @endphp
 
+{{-- Lightbox overlay --}}
+<div x-data="docLightbox()"
+     x-on:keydown.escape.window="close()"
+     x-on:open-doc-lightbox.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+     x-show="open" style="display:none"
+     class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm">
+    <div class="flex shrink-0 items-center justify-between px-4 py-3">
+        <span x-text="title" class="truncate text-sm font-medium text-white"></span>
+        <button type="button" x-on:click="close()" class="ml-4 shrink-0 rounded p-1 text-white/70 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div class="min-h-0 flex-1 overflow-auto flex items-center justify-center p-4">
+        <template x-if="isPdf">
+            <iframe :src="src" class="h-full w-full rounded" style="min-height:70vh"></iframe>
+        </template>
+        <template x-if="!isPdf">
+            <img :src="src" :alt="title" class="max-h-full max-w-full rounded object-contain" />
+        </template>
+    </div>
+</div>
+
 <div class="space-y-5">
 
     {{-- Header --}}

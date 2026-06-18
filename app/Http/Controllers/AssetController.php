@@ -28,9 +28,9 @@ class AssetController extends Controller
                         ->orWhere('custodian', 'like', "%{$s}%");
                 });
             })
-            ->when($request->category_id, fn ($q, $id) => $q->where('asset_category_id', $id))
-            ->when($request->subcategory_id, fn ($q, $id) => $q->where('asset_subcategory_id', $id))
-            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->when($request->category_id, fn($q, $id) => $q->where('asset_category_id', $id))
+            ->when($request->subcategory_id, fn($q, $id) => $q->where('asset_subcategory_id', $id))
+            ->when($request->status, fn($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
@@ -106,13 +106,14 @@ class AssetController extends Controller
     public function show(Asset $asset)
     {
         $asset->load([
-            'category', 'subcategory',
+            'category',
+            'subcategory',
             'documents.uploader',
             'extendedWarranties.documents.uploader',
             'amcContracts.documents',
             'insurancePolicies.documents',
             'services.documents',
-            'services.parts',
+            'services.parts.documents',
             'complaints.comments.user',
             'complaints.documents',
             'complaints.service',

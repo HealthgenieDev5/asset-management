@@ -1,4 +1,5 @@
 @php
+use Illuminate\Support\Facades\Storage;
 $v   = fn($f) => old($f, $part?->{$f});
 $inp = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
 $lbl = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-zinc-500 dark:text-zinc-400 dark:peer-focus:text-zinc-400';
@@ -28,43 +29,50 @@ $formId = 'pf_' . ($part?->id ?? 'new');
     {{-- ── Part Info ── --}}
     <div>
         <p class="{{ $sec }}">Part Info</p>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-6">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {{-- Part Name --}}
-            <div class="relative col-span-2 sm:col-span-2">
+            <div class="relative sm:col-span-2">
                 <input type="text" name="part_name" id="{{ $formId }}_part_name" value="{{ $v('part_name') }}" placeholder=" " class="{{ $inp }}" />
                 <label for="{{ $formId }}_part_name" class="{{ $lbl }}">Part Name <span class="text-red-400">*</span></label>
                 @error('part_name')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            {{-- Purchased From --}}
-            <div class="relative col-span-2 sm:col-span-2">
-                <input type="text" name="purchased_from" id="{{ $formId }}_purchased_from" value="{{ $v('purchased_from') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="{{ $formId }}_purchased_from" class="{{ $lbl }}">Purchased From</label>
-                @error('purchased_from')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            {{-- Quantity --}}
-            <div class="relative col-span-1 sm:col-span-1">
-                <input type="number" name="quantity" id="{{ $formId }}_quantity" value="{{ $v('quantity') ?? 1 }}" placeholder=" " min="1" class="{{ $inp }}" />
-                <label for="{{ $formId }}_quantity" class="{{ $lbl }}">Qty</label>
-                @error('quantity')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            {{-- Part Cost --}}
-            <div class="relative col-span-1 sm:col-span-1">
-                <input type="number" name="part_cost" id="{{ $formId }}_part_cost" value="{{ $v('part_cost') }}" placeholder=" " min="0" step="0.01" class="{{ $inp }}" />
-                <label for="{{ $formId }}_part_cost" class="{{ $lbl }}">Cost (₹/unit)</label>
-                @error('part_cost')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            {{-- Remarks --}}
-            <div class="relative col-span-2 sm:col-span-6">
-                <input type="text" name="remarks" id="{{ $formId }}_remarks" value="{{ $v('remarks') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="{{ $formId }}_remarks" class="{{ $lbl }}">Remarks</label>
-                @error('remarks')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            {{-- Part Serial Number --}}
+            <div class="relative sm:col-span-2">
+                <input type="text" name="part_serial_number" id="{{ $formId }}_part_serial" value="{{ $v('part_serial_number') }}" placeholder=" " maxlength="255" class="{{ $inp }}" />
+                <label for="{{ $formId }}_part_serial" class="{{ $lbl }}">Serial Number</label>
+                @error('part_serial_number')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
         </div>
     </div>
 
-    {{-- ── Warranty ── --}}
+    {{-- ── Vendor & Billing ── --}}
     <div>
-        <p class="{{ $sec }}">Warranty</p>
+        <p class="{{ $sec }}">Vendor & Billing</p>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {{-- Purchased From --}}
+            <div class="relative sm:col-span-2">
+                <input type="text" name="purchased_from" id="{{ $formId }}_purchased_from" value="{{ $v('purchased_from') }}" placeholder=" " class="{{ $inp }}" />
+                <label for="{{ $formId }}_purchased_from" class="{{ $lbl }}">Purchased From</label>
+                @error('purchased_from')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
+            {{-- Bill No --}}
+            <div class="relative">
+                <input type="text" name="bill_no" id="{{ $formId }}_bill_no" value="{{ $v('bill_no') }}" placeholder=" " class="{{ $inp }}" />
+                <label for="{{ $formId }}_bill_no" class="{{ $lbl }}">Bill / Invoice No.</label>
+                @error('bill_no')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
+            {{-- Part Cost --}}
+            <div class="relative">
+                <input type="number" name="part_cost" id="{{ $formId }}_part_cost" value="{{ $v('part_cost') }}" placeholder=" " min="0" step="0.01" class="{{ $inp }}" />
+                <label for="{{ $formId }}_part_cost" class="{{ $lbl }}">Cost (₹)</label>
+                @error('part_cost')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
+        </div>
+    </div>
+
+    {{-- ── Warranty Period ── --}}
+    <div>
+        <p class="{{ $sec }}">Warranty Period</p>
 
         {{-- Tracking Mode toggle --}}
         <div class="mb-3 flex gap-2">
@@ -154,6 +162,44 @@ $formId = 'pf_' . ($part?->id ?? 'new');
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- ── Notes ── --}}
+    <div>
+        <p class="{{ $sec }}">Notes</p>
+        <div class="relative">
+            <input type="text" name="remarks" id="{{ $formId }}_remarks" value="{{ $v('remarks') }}" placeholder=" " class="{{ $inp }}" />
+            <label for="{{ $formId }}_remarks" class="{{ $lbl }}">Remarks</label>
+            @error('remarks')<p class="{{ $err }}">{{ $message }}</p>@enderror
+        </div>
+    </div>
+
+    {{-- ── Document ── --}}
+    <div>
+        <style>
+            .part-doc-upload .filepond--panel-root {
+                border: 1px dashed #4b4b4c;
+                border-radius: 10px;
+            }
+        </style>
+        <p class="{{ $sec }}">Document</p>
+        @php $partDoc = $part?->documents->first(); @endphp
+        <p class="mb-1 text-xs text-zinc-500">Warranty Document <span class="font-normal">(PDF / image, max 5 MB)</span></p>
+        <div class="part-doc-upload" x-data x-init="initUploadPond($refs.partDoc, {
+                acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                @if ($partDoc)
+                files: [{ source: '{{ Storage::url($partDoc->file_path) }}', options: { type: 'local' } }],
+                fileMetaBySource: { '{{ Storage::url($partDoc->file_path) }}': { name: '{{ addslashes($partDoc->file_original_name) }}' } },
+                onremovefile: () => fetch('{{ route('assets.services.parts.documents.destroy', [$asset, $partDoc]) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: '_method=DELETE'
+                }),
+                @endif
+            })">
+            <input type="file" name="part_doc" x-ref="partDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        </div>
+        @error('part_doc')<p class="{{ $err }}">{{ $message }}</p>@enderror
     </div>
 
 </div>

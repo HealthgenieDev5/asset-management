@@ -177,11 +177,18 @@ $err = 'mt-0.5 text-[11px] text-red-400';
             }
         </style>
         <p class="{{ $sec }}">Document</p>
-        @php $serviceBill = $service?->documents->first(); @endphp
+        @php $svcDoc = $service?->documents->first(); @endphp
         <div class="service-doc-upload" x-data x-init="initUploadPond($refs.serviceBill, {
                 acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                files: @js($serviceBill ? [['source' => Storage::url($serviceBill->file_path), 'options' => ['type' => 'local']]] : []),
-                fileMetaBySource: @js($serviceBill ? [Storage::url($serviceBill->file_path) => ['name' => $serviceBill->file_original_name]] : []),
+                @if ($svcDoc)
+                files: [{ source: '{{ Storage::url($svcDoc->file_path) }}', options: { type: 'local' } }],
+                fileMetaBySource: { '{{ Storage::url($svcDoc->file_path) }}': { name: '{{ addslashes($svcDoc->file_original_name) }}' } },
+                onremovefile: () => fetch('{{ route('assets.services.documents.destroy', [$asset, $svcDoc]) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: '_method=DELETE'
+                }),
+                @endif
             })">
             <input type="file" name="service_bill" x-ref="serviceBill" accept=".pdf,.jpg,.jpeg,.png,.webp" />
         </div>

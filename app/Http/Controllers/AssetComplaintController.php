@@ -95,7 +95,7 @@ class AssetComplaintController extends Controller
         ]);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'complaints'])
-            ->with('success', ucwords(str_replace('_', ' ', $field)).' updated.');
+            ->with('success', ucwords(str_replace('_', ' ', $field)) . ' updated.');
     }
 
     public function destroy(Asset $asset, AssetComplaint $complaint)
@@ -141,7 +141,7 @@ class AssetComplaintController extends Controller
                     'documentable_type' => AssetService::class,
                     'documentable_id' => $service->id,
                     'document_type' => 'complaint_video_before',
-                    'document_title' => 'Before-Repair Video (from Complaint #'.$complaint->id.')',
+                    'document_title' => 'Before-Repair Video (from Complaint #' . $complaint->id . ')',
                     'file_path' => $newPath,
                     'file_original_name' => $videoBefore->file_original_name,
                     'file_mime_type' => $videoBefore->file_mime_type,
