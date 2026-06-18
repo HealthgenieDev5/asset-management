@@ -162,12 +162,6 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                     </div>
                     @error('expiry_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
                 </div>
-                <div class="relative">
-                    <input type="number" name="reminder_before_days" id="{{ $formId }}_reminder_days"
-                           value="{{ $v('reminder_before_days') }}" placeholder=" " min="1" max="365" class="{{ $inp }}" />
-                    <label for="{{ $formId }}_reminder_days" class="{{ $lbl }}">Reminder (days before)</label>
-                    @error('reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
-                </div>
             </div>
 
             {{-- Counter-based fields --}}

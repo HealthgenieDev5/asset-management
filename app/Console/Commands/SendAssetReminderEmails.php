@@ -9,7 +9,9 @@ use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetWarranty;
 use App\Models\AssetService;
+use App\Models\AssetMaintenanceSchedule;
 use App\Models\AssetServicePart;
+use App\Models\AssetSmartReminder;
 use App\Models\User;
 use Carbon\CarbonInterface;
 use Illuminate\Console\Command;
@@ -36,19 +38,8 @@ class SendAssetReminderEmails extends Command
 
         $this->info($dryRun ? '[DRY RUN] Scanning expiry reminders…' : 'Sending expiry reminder emails…');
 
-        $this->processWarrantyEntries($dryRun, $daysOverride);
-        $this->processOriginalWarranties($dryRun, $daysOverride);
-        $this->processCounterWarranties($dryRun, $daysOverride);
-        $this->processExtendedWarranties($dryRun, $daysOverride);
-        $this->processExtendedCounterWarranties($dryRun, $daysOverride);
-        $this->processAmcContracts($dryRun, $daysOverride);
-        $this->processInsurancePolicies($dryRun, $daysOverride);
-        $this->processPucExpiry($dryRun, $daysOverride);
-        $this->processFitnessExpiry($dryRun, $daysOverride);
-        $this->processRoadTaxExpiry($dryRun, $daysOverride);
-        $this->processNextServiceDates($dryRun, $daysOverride);
-        $this->processCertificationExpiry($dryRun, $daysOverride);
-        $this->processPartWarranties($dryRun, $daysOverride);
+        $this->processSmartReminders($dryRun, $daysOverride);
+        $this->processMaintenanceSchedules($dryRun, $daysOverride);
 
         $verb = $dryRun ? 'would be sent' : 'sent';
         $this->newLine();
@@ -534,6 +525,243 @@ class SendAssetReminderEmails extends Command
         }
 
         $this->sent++;
+    }
+
+    private function processSmartReminders(bool $dryRun, ?int $daysOverride): void
+    {
+        $this->info('Processing smart reminders…');
+
+        AssetSmartReminder::where('is_active', true)
+            ->with('asset.createdBy', 'asset.meterLogs')
+            ->get()
+            ->each(function (AssetSmartReminder $sr) use ($dryRun, $daysOverride) {
+                $asset = $sr->asset;
+                if (! $asset) return;
+
+                $overrideEmail = config('mail.asset_reminder_recipient');
+                $toEmail       = $overrideEmail ?: ($asset->createdBy?->email ?? null);
+                if (! $toEmail) { $this->skipped++; return; }
+
+                if ($sr->isTimeBased()) {
+                    // ── Date mode: exact-day match ──────────────────────────
+                    if (! $sr->expiry_date) return;
+
+                    $daysLeft = (int) now()->startOfDay()->diffInDays($sr->expiry_date->startOfDay(), false);
+
+                    foreach ($sr->reminder_days as $threshold) {
+                        $effective = $daysOverride ?? $threshold;
+                        if ($daysLeft !== $effective) continue;
+
+                        $key = "smart-reminder-{$sr->id}-{$threshold}";
+                        if (! $dryRun && $this->alreadySentToday($toEmail, $key)) {
+                            $this->skipped++;
+                            $this->line("  ⊘ Already sent [{$key}] → {$toEmail}");
+                            continue;
+                        }
+
+                        $payload = [
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $sr->reminder_name,
+                            'detail'            => "Reminder: {$threshold} day(s) before expiry",
+                            'expiry_date'       => $sr->expiry_date->format('d M Y'),
+                            'days_until_expiry' => $daysLeft,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'reminders']),
+                            'tab'               => 'reminders',
+                        ];
+
+                        if ($dryRun) {
+                            $flag = $daysLeft < 0 ? '🔴' : ($daysLeft <= 7 ? '🟡' : '🟢');
+                            $this->line("  {$flag}  [{$sr->reminder_name}] {$asset->asset_code} — {$toEmail} — {$daysLeft}d (threshold: {$threshold}d)");
+                        } else {
+                            Mail::to($toEmail)->send(new AssetExpiryReminderMail($payload));
+                            $this->recordSent($toEmail, $key);
+                            $this->line("  ✓ Sent [{$sr->reminder_name}] {$asset->asset_code} → {$toEmail}");
+                        }
+                        $this->sent++;
+                    }
+                } else {
+                    // ── Meter/Count mode: range check (remaining <= threshold) ──
+                    $remaining = $sr->remainingUnits();
+                    if ($remaining === null) {
+                        $this->skipped++;
+                        return;
+                    }
+
+                    $unit = $sr->threshold_unit ?? 'units';
+
+                    foreach ($sr->reminder_days as $threshold) {
+                        if ($remaining > $threshold) continue;
+
+                        $key = "smart-reminder-{$sr->id}-units-{$threshold}";
+                        if (! $dryRun && $this->alreadySentToday($toEmail, $key)) {
+                            $this->skipped++;
+                            $this->line("  ⊘ Already sent [{$key}] → {$toEmail}");
+                            continue;
+                        }
+
+                        $payload = [
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $sr->reminder_name,
+                            'detail'            => "Reminder: {$remaining} {$unit} remaining (threshold: {$threshold} {$unit})",
+                            'expiry_date'       => number_format((int) $sr->counter_limit) . ' ' . $unit . ' limit',
+                            'days_until_expiry' => $remaining,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'reminders']),
+                            'tab'               => 'reminders',
+                        ];
+
+                        if ($dryRun) {
+                            $flag = $remaining <= 0 ? '🔴' : '🟡';
+                            $this->line("  {$flag}  [{$sr->reminder_name}] {$asset->asset_code} — {$toEmail} — {$remaining} {$unit} left (threshold: {$threshold})");
+                        } else {
+                            Mail::to($toEmail)->send(new AssetExpiryReminderMail($payload));
+                            $this->recordSent($toEmail, $key);
+                            $this->line("  ✓ Sent [{$sr->reminder_name}] {$asset->asset_code} → {$toEmail}");
+                        }
+                        $this->sent++;
+                    }
+                }
+            });
+    }
+
+    private function processMaintenanceSchedules(bool $dryRun, ?int $daysOverride): void
+    {
+        $this->info('Processing maintenance schedules…');
+
+        AssetMaintenanceSchedule::where('is_active', true)
+            ->with('asset.createdBy', 'asset.services')
+            ->get()
+            ->each(function (AssetMaintenanceSchedule $schedule) use ($dryRun, $daysOverride) {
+                $asset = $schedule->asset;
+                if (! $asset) {
+                    return;
+                }
+
+                $overrideEmail = config('mail.asset_reminder_recipient');
+                $toEmail       = $overrideEmail ?: ($asset->createdBy?->email ?? null);
+
+                if (! $toEmail) {
+                    $this->skipped++;
+                    return;
+                }
+
+                $isDate = $schedule->schedule_type === 'date';
+
+                if ($isDate) {
+                    if (! $schedule->next_due_date) {
+                        return;
+                    }
+                    $daysLeft = (int) now()->startOfDay()->diffInDays(
+                        $schedule->next_due_date->startOfDay(), false
+                    );
+                    foreach ($schedule->reminder_thresholds as $threshold) {
+                        $effective = $daysOverride ?? $threshold;
+                        if ($daysLeft !== $effective) {
+                            continue;
+                        }
+                        $reminderKey = "maintenance-schedule-{$schedule->id}-{$threshold}";
+                        if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                            $this->skipped++;
+                            continue;
+                        }
+                        $payload = [
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $schedule->schedule_name,
+                            'detail'            => $schedule->serviceTypeLabel() . ' schedule — due in ' . $threshold . ' day(s)',
+                            'expiry_date'       => $schedule->next_due_date->format('d M Y'),
+                            'days_until_expiry' => $daysLeft,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'schedules']),
+                            'tab'               => 'schedules',
+                        ];
+                        if ($dryRun) {
+                            $this->line("  🟡  [{$schedule->schedule_name}] {$asset->asset_code} — {$toEmail} — {$daysLeft}d before due");
+                        } else {
+                            Mail::to($toEmail)->send(new AssetExpiryReminderMail($payload));
+                            $this->recordSent($toEmail, $reminderKey);
+                            $this->line("  ✓ Sent [{$schedule->schedule_name}] {$asset->asset_code} → {$toEmail}");
+                        }
+                        $this->sent++;
+                    }
+                    return;
+                }
+
+                // Mileage-based
+                if ($schedule->schedule_type === 'mileage') {
+                    $latestKm = $asset->services()->orderByDesc('service_date')->value('mileage_reading');
+                    if ($latestKm === null || $schedule->last_done_km === null || $schedule->interval_km === null) {
+                        return;
+                    }
+                    $remaining = (int) $schedule->interval_km - ($latestKm - (int) $schedule->last_done_km);
+                    foreach ($schedule->reminder_thresholds as $threshold) {
+                        if ($remaining > $threshold) {
+                            continue;
+                        }
+                        $reminderKey = "maintenance-schedule-{$schedule->id}-km-{$threshold}";
+                        if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                            $this->skipped++;
+                            continue;
+                        }
+                        $payload = [
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $schedule->schedule_name,
+                            'detail'            => number_format($remaining) . ' km remaining (reminder at ' . number_format($threshold) . ' km)',
+                            'expiry_date'       => 'In ' . number_format(max(0, $remaining)) . ' km',
+                            'days_until_expiry' => $remaining,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'schedules']),
+                            'tab'               => 'schedules',
+                        ];
+                        if ($dryRun) {
+                            $this->line("  🟡  [{$schedule->schedule_name}] {$asset->asset_code} — {$toEmail} — {$remaining} km remaining");
+                        } else {
+                            Mail::to($toEmail)->send(new AssetExpiryReminderMail($payload));
+                            $this->recordSent($toEmail, $reminderKey);
+                            $this->line("  ✓ Sent [{$schedule->schedule_name}] {$asset->asset_code} → {$toEmail}");
+                        }
+                        $this->sent++;
+                    }
+                    return;
+                }
+
+                // Operating hours-based
+                if ($schedule->schedule_type === 'operating_hours') {
+                    $latestHrs = $asset->services()->orderByDesc('service_date')->value('meter_reading');
+                    if ($latestHrs === null || $schedule->last_done_hours === null || $schedule->interval_hours === null) {
+                        return;
+                    }
+                    $remaining = (int) $schedule->interval_hours - ($latestHrs - (int) $schedule->last_done_hours);
+                    foreach ($schedule->reminder_thresholds as $threshold) {
+                        if ($remaining > $threshold) {
+                            continue;
+                        }
+                        $reminderKey = "maintenance-schedule-{$schedule->id}-hr-{$threshold}";
+                        if (! $dryRun && $this->alreadySentToday($toEmail, $reminderKey)) {
+                            $this->skipped++;
+                            continue;
+                        }
+                        $payload = [
+                            'asset_code'        => $asset->asset_code,
+                            'asset_name'        => $asset->asset_name,
+                            'type'              => $schedule->schedule_name,
+                            'detail'            => number_format($remaining) . ' hrs remaining (reminder at ' . number_format($threshold) . ' hrs)',
+                            'expiry_date'       => 'In ' . number_format(max(0, $remaining)) . ' hours',
+                            'days_until_expiry' => $remaining,
+                            'asset_url'         => route('assets.show', [$asset, 'tab' => 'schedules']),
+                            'tab'               => 'schedules',
+                        ];
+                        if ($dryRun) {
+                            $this->line("  🟡  [{$schedule->schedule_name}] {$asset->asset_code} — {$toEmail} — {$remaining} hrs remaining");
+                        } else {
+                            Mail::to($toEmail)->send(new AssetExpiryReminderMail($payload));
+                            $this->recordSent($toEmail, $reminderKey);
+                            $this->line("  ✓ Sent [{$schedule->schedule_name}] {$asset->asset_code} → {$toEmail}");
+                        }
+                        $this->sent++;
+                    }
+                }
+            });
     }
 
     private function alreadySentToday(string $email, string $key): bool

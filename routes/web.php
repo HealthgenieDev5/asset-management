@@ -8,8 +8,11 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
 use App\Http\Controllers\AssetExtendedWarrantyController;
 use App\Http\Controllers\AssetInsurancePolicyController;
+use App\Http\Controllers\AssetMaintenanceScheduleController;
+use App\Http\Controllers\AssetMeterLogController;
 use App\Http\Controllers\AssetReminderController;
 use App\Http\Controllers\AssetServiceController;
+use App\Http\Controllers\AssetSmartReminderController;
 use App\Http\Controllers\AssetServicePartController;
 use App\Http\Controllers\AssetSubcategoryController;
 use App\Http\Controllers\AssetWarrantyController;
@@ -78,6 +81,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'update'])->name('assets.services.parts.update');
     Route::delete('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'destroy'])->name('assets.services.parts.destroy');
     Route::delete('assets/{asset}/services/parts/documents/{document}', [AssetServicePartController::class, 'destroyDocument'])->name('assets.services.parts.documents.destroy');
+
+    // Smart Reminders (nested under asset)
+    Route::post('assets/{asset}/smart-reminders', [AssetSmartReminderController::class, 'store'])->name('assets.smart-reminders.store');
+    Route::put('assets/{asset}/smart-reminders/{reminder}', [AssetSmartReminderController::class, 'update'])->name('assets.smart-reminders.update');
+    Route::delete('assets/{asset}/smart-reminders/{reminder}', [AssetSmartReminderController::class, 'destroy'])->name('assets.smart-reminders.destroy');
+
+    // Maintenance Schedules (nested under asset)
+    Route::post('assets/{asset}/maintenance-schedules', [AssetMaintenanceScheduleController::class, 'store'])->name('assets.maintenance-schedules.store');
+    Route::put('assets/{asset}/maintenance-schedules/{schedule}', [AssetMaintenanceScheduleController::class, 'update'])->name('assets.maintenance-schedules.update');
+    Route::delete('assets/{asset}/maintenance-schedules/{schedule}', [AssetMaintenanceScheduleController::class, 'destroy'])->name('assets.maintenance-schedules.destroy');
+    Route::patch('assets/{asset}/maintenance-schedules/{schedule}/complete', [AssetMaintenanceScheduleController::class, 'complete'])->name('assets.maintenance-schedules.complete');
+
+    // Meter Logs (nested under asset)
+    Route::post('assets/{asset}/meter-logs', [AssetMeterLogController::class, 'store'])->name('assets.meter-logs.store');
+    Route::put('assets/{asset}/meter-logs/{log}', [AssetMeterLogController::class, 'update'])->name('assets.meter-logs.update');
+    Route::delete('assets/{asset}/meter-logs/{log}', [AssetMeterLogController::class, 'destroy'])->name('assets.meter-logs.destroy');
 
     // Complaints (nested under asset)
     Route::post('assets/{asset}/complaints', [AssetComplaintController::class, 'store'])->name('assets.complaints.store');

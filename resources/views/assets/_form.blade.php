@@ -376,15 +376,6 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 <flux:error name="puc_expiry_date" />
             </div>
 
-            <div class="relative">
-                <input type="number" name="puc_reminder_before_days" id="puc_reminder_before_days"
-                    value="{{ $old('puc_reminder_before_days') }}" placeholder=" "
-                    min="1" max="365"
-                    class="{{ $inputCls }}" />
-                <label for="puc_reminder_before_days" class="{{ $labelCls }}">PUC Reminder (days before)</label>
-                <flux:error name="puc_reminder_before_days" />
-            </div>
-
             <div></div>{{-- spacer --}}
 
             <div>
@@ -392,29 +383,11 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 <flux:error name="fitness_expiry_date" />
             </div>
 
-            <div class="relative">
-                <input type="number" name="fitness_reminder_before_days" id="fitness_reminder_before_days"
-                    value="{{ $old('fitness_reminder_before_days') }}" placeholder=" "
-                    min="1" max="365"
-                    class="{{ $inputCls }}" />
-                <label for="fitness_reminder_before_days" class="{{ $labelCls }}">Fitness Reminder (days before)</label>
-                <flux:error name="fitness_reminder_before_days" />
-            </div>
-
             <div></div>{{-- spacer --}}
 
             <div>
                 <x-date-picker name="road_tax_expiry_date" label="Road Tax Expiry Date" value="{{ $old('road_tax_expiry_date') }}" />
                 <flux:error name="road_tax_expiry_date" />
-            </div>
-
-            <div class="relative">
-                <input type="number" name="road_tax_reminder_before_days" id="road_tax_reminder_before_days"
-                    value="{{ $old('road_tax_reminder_before_days') }}" placeholder=" "
-                    min="1" max="365"
-                    class="{{ $inputCls }}" />
-                <label for="road_tax_reminder_before_days" class="{{ $labelCls }}">Road Tax Reminder (days before)</label>
-                <flux:error name="road_tax_reminder_before_days" />
             </div>
 
             <div></div>{{-- spacer --}}

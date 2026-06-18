@@ -90,6 +90,28 @@ window.initDocImageViewer = function (inputEl, files) {
 };
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('reminderDaysPicker', (initial = []) => ({
+        days:     initial.filter(d => d > 0),
+        inputVal: null,
+        add() {
+            const v = parseInt(this.inputVal);
+            if (v > 0 && !this.days.includes(v)) {
+                this.days.push(v);
+                this.days.sort((a, b) => b - a);
+            }
+            this.inputVal = null;
+        },
+        addPreset(v) {
+            if (!this.days.includes(v)) {
+                this.days.push(v);
+                this.days.sort((a, b) => b - a);
+            }
+        },
+        remove(i) {
+            this.days.splice(i, 1);
+        },
+    }));
+
     Alpine.data('docLightbox', () => ({
         open:  false,
         src:   '',

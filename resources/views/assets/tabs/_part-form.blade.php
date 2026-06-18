@@ -116,12 +116,6 @@ $formId = 'pf_' . ($part?->id ?? 'new');
                     </div>
                     @error('warranty_till')<p class="{{ $err }}">{{ $message }}</p>@enderror
                 </div>
-                <div class="relative">
-                    <input type="number" name="warranty_reminder_before_days" id="{{ $formId }}_reminder_days"
-                           value="{{ $v('warranty_reminder_before_days') }}" placeholder=" " min="1" max="365" class="{{ $inp }}" />
-                    <label for="{{ $formId }}_reminder_days" class="{{ $lbl }}">Reminder (days before)</label>
-                    @error('warranty_reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
-                </div>
             </div>
         </div>
 

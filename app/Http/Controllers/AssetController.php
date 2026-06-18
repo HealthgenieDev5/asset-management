@@ -117,6 +117,9 @@ class AssetController extends Controller
             'complaints.comments.user',
             'complaints.documents',
             'complaints.service',
+            'smartReminders',
+            'maintenanceSchedules',
+            'meterLogs',
         ]);
         $tab = request('tab', 'overview');
 

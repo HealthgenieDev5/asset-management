@@ -3,177 +3,272 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
-use App\Models\AssetAmcContract;
-use App\Models\AssetExtendedWarranty;
-use App\Models\AssetInsurancePolicy;
-use App\Models\AssetService;
+use App\Models\AssetCategory;
+use App\Models\AssetSubcategory;
 use Illuminate\Http\Request;
 
 class AssetReminderController extends Controller
 {
     public function index(Request $request)
     {
-        $filter = $request->get('filter', 'upcoming');
+        $filter      = $request->query('filter', 'upcoming');
+        $type        = $request->query('type', '');
+        $search      = $request->query('search', '');
+        $categoryId  = $request->query('asset_category_id', '');
+        $subcatId    = $request->query('asset_subcategory_id', '');
 
-        $reminders = collect();
+        $categories    = AssetCategory::where('status', 'active')->orderBy('name')->get(['id', 'name']);
+        $subcategories = AssetSubcategory::when($categoryId, fn($q) => $q->where('asset_category_id', $categoryId))
+            ->where('status', 'active')->orderBy('name')->get(['id', 'name', 'asset_category_id']);
 
-        // Original warranty
-        Asset::whereNotNull('warranty_lapse_date')
-            ->with('category')
-            ->get()
-            ->each(function ($asset) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $asset,
-                    'type'          => 'Original Warranty',
-                    'expiry'        => $asset->warranty_lapse_date,
-                    'reminder_days' => $asset->warranty_reminder_before_days,
-                    'detail'        => $asset->warranty_details,
-                    'tab'           => 'warranty',
-                ]);
-            });
+        $assets = Asset::with([
+            'category',
+            'warranties',
+            'extendedWarranties',
+            'amcContracts',
+            'insurancePolicies',
+            'services.parts',
+            'maintenanceSchedules',
+        ])
+        ->when($categoryId, fn($q) => $q->where('asset_category_id', $categoryId))
+        ->when($subcatId,   fn($q) => $q->where('asset_subcategory_id', $subcatId))
+        ->get();
 
-        // Extended warranties
-        AssetExtendedWarranty::whereNotNull('extended_warranty_date_to')
-            ->whereHas('asset')
-            ->with('asset.category')
-            ->get()
-            ->each(function ($ew) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $ew->asset,
-                    'type'          => 'Extended Warranty',
-                    'expiry'        => $ew->extended_warranty_date_to,
-                    'reminder_days' => $ew->reminder_before_days,
-                    'detail'        => $ew->extended_warranty_vendor,
-                    'tab'           => 'ext-warranty',
-                ]);
-            });
+        $items = collect();
 
-        // AMC contracts
-        AssetAmcContract::whereNotNull('amc_date_to')
-            ->whereHas('asset')
-            ->with('asset.category')
-            ->get()
-            ->each(function ($amc) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $amc->asset,
-                    'type'          => 'AMC Contract',
-                    'expiry'        => $amc->amc_date_to,
-                    'reminder_days' => $amc->reminder_before_days,
-                    'detail'        => $amc->vendor_name ?: $amc->contract_number,
-                    'tab'           => 'amc',
-                ]);
-            });
+        foreach ($assets as $asset) {
+            $assetMatches = ! $search
+                || str_contains(strtolower($asset->asset_name ?? ''), strtolower($search))
+                || str_contains(strtolower($asset->asset_code ?? ''), strtolower($search));
 
-        // Insurance policies
-        AssetInsurancePolicy::whereNotNull('policy_date_to')
-            ->whereHas('asset')
-            ->with('asset.category')
-            ->get()
-            ->each(function ($policy) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $policy->asset,
-                    'type'          => 'Insurance',
-                    'expiry'        => $policy->policy_date_to,
-                    'reminder_days' => $policy->reminder_before_days,
-                    'detail'        => $policy->insurer_name ?: $policy->policy_number,
-                    'tab'           => 'insurance',
-                ]);
-            });
+            if (! $assetMatches) {
+                continue;
+            }
 
-        // PUC expiry
-        Asset::whereNotNull('puc_expiry_date')
-            ->with('category')
-            ->get()
-            ->each(function ($asset) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $asset,
-                    'type'          => 'PUC Expiry',
-                    'expiry'        => $asset->puc_expiry_date,
-                    'reminder_days' => $asset->puc_reminder_before_days,
-                    'detail'        => 'Pollution Under Control Certificate',
-                    'tab'           => 'overview',
-                ]);
-            });
+            // 1. Legacy warranty on asset record
+            if ($asset->warranty_lapse_date) {
+                $items->push($this->item(
+                    $asset,
+                    'warranty',
+                    'Warranty',
+                    'bg-blue-400/10 text-blue-400',
+                    'shield-check',
+                    $asset->warranty_details ?: 'Asset Warranty',
+                    'From asset record',
+                    $asset->warranty_lapse_date,
+                    'overview'
+                ));
+            }
 
-        // Fitness certificate expiry
-        Asset::whereNotNull('fitness_expiry_date')
-            ->with('category')
-            ->get()
-            ->each(function ($asset) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $asset,
-                    'type'          => 'Fitness Certificate',
-                    'expiry'        => $asset->fitness_expiry_date,
-                    'reminder_days' => $asset->fitness_reminder_before_days,
-                    'detail'        => 'Vehicle Fitness Certificate',
-                    'tab'           => 'overview',
-                ]);
-            });
+            // 2. Unified warranties (asset_warranties table)
+            foreach ($asset->warranties as $w) {
+                if (! $w->expiry_date) continue;
+                $isPart = $w->scope === 'part';
+                $cat    = $isPart ? 'part_warranty' : 'warranty';
+                $label  = $isPart ? 'Part Warranty' : ($w->warrantyTypeLabel() . ' Warranty');
+                $color  = $isPart ? 'bg-violet-400/10 text-violet-400' : 'bg-blue-400/10 text-blue-400';
+                $icon   = $isPart ? 'puzzle-piece' : 'shield-exclamation';
+                $name   = $isPart
+                    ? ($w->part_name ?: 'Unnamed Part')
+                    : ($w->vendor ?: ($w->details ?: ($w->warrantyTypeLabel() . ' Warranty')));
+                $source = $isPart
+                    ? ($w->vendor ?: null)
+                    : ($w->vendor && $w->details ? $w->details : null);
+                $items->push($this->item($asset, $cat, $label, $color, $icon, $name, $source, $w->expiry_date, 'warranty'));
+            }
 
-        // Road tax expiry
-        Asset::whereNotNull('road_tax_expiry_date')
-            ->with('category')
-            ->get()
-            ->each(function ($asset) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $asset,
-                    'type'          => 'Road Tax',
-                    'expiry'        => $asset->road_tax_expiry_date,
-                    'reminder_days' => $asset->road_tax_reminder_before_days,
-                    'detail'        => 'Road Tax Renewal',
-                    'tab'           => 'overview',
-                ]);
-            });
+            // 3. Extended warranties (legacy)
+            foreach ($asset->extendedWarranties as $ew) {
+                if (! $ew->extended_warranty_date_to) continue;
+                $items->push($this->item(
+                    $asset,
+                    'extended_warranty',
+                    'Extended Warranty',
+                    'bg-indigo-400/10 text-indigo-400',
+                    'shield-exclamation',
+                    $ew->extended_warranty_vendor ?: 'No vendor',
+                    null,
+                    $ew->extended_warranty_date_to,
+                    'warranty'
+                ));
+            }
 
-        // Next service dates (most recent service record per asset that has a next_service_date)
-        AssetService::whereNotNull('next_service_date')
-            ->whereHas('asset')
-            ->with('asset.category')
-            ->get()
-            ->each(function ($svc) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $svc->asset,
-                    'type'          => 'Next Service Due',
-                    'expiry'        => $svc->next_service_date,
-                    'reminder_days' => $svc->next_service_reminder_before_days,
-                    'detail'        => $svc->service_type_label . ($svc->service_agency ? ' — ' . $svc->service_agency : ''),
-                    'tab'           => 'services',
-                ]);
-            });
+            // 4. AMC contracts
+            foreach ($asset->amcContracts as $amc) {
+                if (! $amc->amc_date_to) continue;
+                $name   = $amc->vendor_name ?: ($amc->contract_number ?: 'No vendor');
+                $source = $amc->contract_number && $amc->vendor_name ? 'Contract #' . $amc->contract_number : null;
+                $items->push($this->item(
+                    $asset,
+                    'amc',
+                    'AMC',
+                    'bg-amber-400/10 text-amber-400',
+                    'wrench-screwdriver',
+                    $name,
+                    $source,
+                    $amc->amc_date_to,
+                    'amc'
+                ));
+            }
 
-        // Certification expiry from service records
-        AssetService::whereNotNull('certification_expiry')
-            ->whereHas('asset')
-            ->with('asset.category')
-            ->get()
-            ->each(function ($svc) use (&$reminders) {
-                $reminders->push([
-                    'asset'         => $svc->asset,
-                    'type'          => 'Certification Expiry',
-                    'expiry'        => $svc->certification_expiry,
-                    'reminder_days' => $svc->certification_reminder_before_days,
-                    'detail'        => $svc->service_type_label . ($svc->service_agency ? ' — ' . $svc->service_agency : ''),
-                    'tab'           => 'services',
-                ]);
-            });
+            // 5. Insurance policies
+            foreach ($asset->insurancePolicies as $policy) {
+                if (! $policy->policy_date_to) continue;
+                $name   = $policy->insurer_name ?: ($policy->policy_number ?: 'No insurer');
+                $source = $policy->policy_number ? 'Policy #' . $policy->policy_number : null;
+                $items->push($this->item(
+                    $asset,
+                    'insurance',
+                    'Insurance',
+                    'bg-green-400/10 text-green-400',
+                    'building-library',
+                    $name,
+                    $source,
+                    $policy->policy_date_to,
+                    'insurance'
+                ));
+            }
 
-        // Count buckets before filtering
+            // 6. Part warranties (from service parts)
+            foreach ($asset->services->flatMap->parts as $part) {
+                if (! $part->warranty_till) continue;
+                $items->push($this->item(
+                    $asset,
+                    'part_warranty',
+                    'Part Warranty',
+                    'bg-violet-400/10 text-violet-400',
+                    'puzzle-piece',
+                    $part->part_name,
+                    $part->purchased_from ?: null,
+                    $part->warranty_till,
+                    'servicing'
+                ));
+            }
+
+            // 7. Maintenance schedules (date-based with next_due_date)
+            foreach ($asset->maintenanceSchedules as $sch) {
+                if ($sch->schedule_type !== 'date' || ! $sch->next_due_date) continue;
+                $items->push($this->item(
+                    $asset,
+                    'schedule',
+                    'Schedule',
+                    'bg-cyan-400/10 text-cyan-400',
+                    'calendar-days',
+                    $sch->schedule_name,
+                    $sch->serviceTypeLabel(),
+                    $sch->next_due_date,
+                    'schedules'
+                ));
+            }
+
+            // 8. Vehicle-specific fields
+            if ($asset->isVehicle()) {
+                if ($asset->puc_expiry_date) {
+                    $items->push($this->item(
+                        $asset,
+                        'puc',
+                        'PUC',
+                        'bg-orange-400/10 text-orange-400',
+                        'document-check',
+                        'PUC Certificate',
+                        null,
+                        $asset->puc_expiry_date,
+                        'overview'
+                    ));
+                }
+                if ($asset->fitness_expiry_date) {
+                    $items->push($this->item(
+                        $asset,
+                        'fitness',
+                        'Fitness',
+                        'bg-orange-400/10 text-orange-400',
+                        'document-check',
+                        'Fitness Certificate',
+                        null,
+                        $asset->fitness_expiry_date,
+                        'overview'
+                    ));
+                }
+                if ($asset->road_tax_expiry_date) {
+                    $items->push($this->item(
+                        $asset,
+                        'road_tax',
+                        'Road Tax',
+                        'bg-orange-400/10 text-orange-400',
+                        'document-check',
+                        'Road Tax',
+                        null,
+                        $asset->road_tax_expiry_date,
+                        'overview'
+                    ));
+                }
+            }
+        }
+
+        // Apply type filter
+        if ($type) {
+            $items = $items->filter(fn($i) => $i['type_slug'] === $type);
+        }
+
+        // Compute days_left and status
+        $items = $items->map(function ($item) {
+            $daysLeft = (int) now()->startOfDay()->diffInDays($item['expiry']->copy()->startOfDay(), false);
+            $status   = $daysLeft < 0 ? 'expired' : ($daysLeft <= 30 ? 'soon' : 'active');
+            return array_merge($item, ['days_left' => $daysLeft, 'status' => $status]);
+        });
+
+        // Count buckets
         $counts = [
-            'upcoming' => $reminders->filter(fn($r) => ! $r['expiry']->isPast() && $r['expiry']->lte(now()->addDays(90)))->count(),
-            'expired'  => $reminders->filter(fn($r) => $r['expiry']->isPast())->count(),
-            'all'      => $reminders->count(),
+            'upcoming' => $items->where('status', '!=', 'expired')->count(),
+            'expired'  => $items->where('status', 'expired')->count(),
+            'all'      => $items->count(),
         ];
 
-        // Apply filter
-        $reminders = match ($filter) {
-            'expired'  => $reminders->filter(fn($r) => $r['expiry']->isPast()),
-            'upcoming' => $reminders->filter(fn($r) => ! $r['expiry']->isPast() && $r['expiry']->lte(now()->addDays(90))),
-            default    => $reminders,
+        // Apply tab filter
+        $items = match ($filter) {
+            'expired'  => $items->filter(fn($i) => $i['status'] === 'expired'),
+            'upcoming' => $items->filter(fn($i) => $i['status'] !== 'expired'),
+            default    => $items,
         };
 
-        // Sort: expired most recently first, then upcoming soonest first
-        $reminders = $reminders->sortBy(fn($r) => $r['expiry']->timestamp)->values();
+        $items = $items->sortBy('days_left')->values();
 
-        return view('asset-reminders.index', compact('reminders', 'counts', 'filter'));
+        $typeOptions = [
+            'warranty'          => 'Warranty',
+            'extended_warranty' => 'Extended Warranty',
+            'amc'               => 'AMC',
+            'insurance'         => 'Insurance',
+            'part_warranty'     => 'Part Warranty',
+            'schedule'          => 'Schedule',
+            'puc'               => 'PUC',
+            'fitness'           => 'Fitness',
+            'road_tax'          => 'Road Tax',
+        ];
+
+        return view('asset-reminders.index', compact('items', 'counts', 'filter', 'type', 'search', 'typeOptions', 'categories', 'subcategories', 'categoryId', 'subcatId'));
+    }
+
+    private function item(
+        Asset $asset,
+        string $typeSlug,
+        string $category,
+        string $categoryColor,
+        string $icon,
+        string $name,
+        ?string $source,
+        $expiry,
+        string $tab,
+    ): array {
+        return [
+            'asset'          => $asset,
+            'type_slug'      => $typeSlug,
+            'category'       => $category,
+            'category_color' => $categoryColor,
+            'icon'           => $icon,
+            'name'           => $name,
+            'source'         => $source,
+            'expiry'         => $expiry,
+            'tab'            => $tab,
+        ];
     }
 }

@@ -21,6 +21,8 @@ class Asset extends Model
             $asset->extendedWarranties()->delete();
             $asset->warranties()->delete();
             $asset->documents()->delete();
+            $asset->smartReminders()->delete();
+            $asset->maintenanceSchedules()->delete();
         });
     }
 
@@ -139,6 +141,26 @@ class Asset extends Model
     public function complaints(): HasMany
     {
         return $this->hasMany(AssetComplaint::class);
+    }
+
+    public function smartReminders(): HasMany
+    {
+        return $this->hasMany(AssetSmartReminder::class);
+    }
+
+    public function maintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(AssetMaintenanceSchedule::class);
+    }
+
+    public function meterLogs(): HasMany
+    {
+        return $this->hasMany(AssetMeterLog::class)->orderByDesc('logged_at');
+    }
+
+    public function latestMeterReading(string $unit): ?int
+    {
+        return $this->meterLogs()->where('unit', $unit)->value('reading_value');
     }
 
     public function createdBy(): BelongsTo

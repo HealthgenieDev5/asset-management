@@ -47,11 +47,6 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
                 </div>
                 @error('policy_date_to')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="relative">
-                <input type="number" name="reminder_before_days" id="reminder_before_days" value="{{ $v('reminder_before_days') }}" placeholder=" " min="1" max="365" class="{{ $inp }}" />
-                <label for="reminder_before_days" class="{{ $lbl }}">Reminder (days)</label>
-                @error('reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
         </div>
     </div>
 
