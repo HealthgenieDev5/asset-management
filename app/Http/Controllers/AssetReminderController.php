@@ -16,6 +16,8 @@ class AssetReminderController extends Controller
         $search      = $request->query('search', '');
         $categoryId  = $request->query('asset_category_id', '');
         $subcatId    = $request->query('asset_subcategory_id', '');
+        $sort        = in_array($request->query('sort'), ['asset', 'category', 'name', 'expiry', 'days_left', 'status']) ? $request->query('sort') : 'days_left';
+        $direction   = $request->query('direction', 'asc') === 'desc' ? 'desc' : 'asc';
 
         $categories    = AssetCategory::where('status', 'active')->orderBy('name')->get(['id', 'name']);
         $subcategories = AssetSubcategory::when($categoryId, fn($q) => $q->where('asset_category_id', $categoryId))
@@ -231,7 +233,16 @@ class AssetReminderController extends Controller
             default    => $items,
         };
 
-        $items = $items->sortBy('days_left')->values();
+        $items = $items->sortBy(function ($i) use ($sort) {
+            return match ($sort) {
+                'asset'    => strtolower($i['asset']->asset_name ?? ''),
+                'category' => $i['category'],
+                'name'     => strtolower($i['name']),
+                'expiry'   => $i['expiry']->timestamp,
+                'status'   => $i['status'],
+                default    => $i['days_left'],
+            };
+        }, SORT_REGULAR, $direction === 'desc')->values();
 
         $typeOptions = [
             'warranty'          => 'Warranty',
@@ -245,7 +256,7 @@ class AssetReminderController extends Controller
             'road_tax'          => 'Road Tax',
         ];
 
-        return view('asset-reminders.index', compact('items', 'counts', 'filter', 'type', 'search', 'typeOptions', 'categories', 'subcategories', 'categoryId', 'subcatId'));
+        return view('asset-reminders.index', compact('items', 'counts', 'filter', 'type', 'search', 'typeOptions', 'categories', 'subcategories', 'categoryId', 'subcatId', 'sort', 'direction'));
     }
 
     private function item(

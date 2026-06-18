@@ -154,13 +154,23 @@
         <div class="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900">
             <table class="w-full text-sm">
                 <thead>
+                    @php
+                        $thCls  = 'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide';
+                        $sortUrl = fn($col) => request()->fullUrlWithQuery([
+                            'sort'      => $col,
+                            'direction' => ($sort === $col && $direction === 'asc') ? 'desc' : 'asc',
+                        ]);
+                        $sortIcon = fn($col) => $sort === $col
+                            ? ($direction === 'asc' ? '↑' : '↓')
+                            : '<span class="opacity-30">↕</span>';
+                    @endphp
                     <tr class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/40">
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Asset</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Category</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Name / Detail</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Expiry Date</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Days Left</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Status</th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('asset') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Asset {!! $sortIcon('asset') !!}</a></th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('category') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Category {!! $sortIcon('category') !!}</a></th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('name') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Name / Detail {!! $sortIcon('name') !!}</a></th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('expiry') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Expiry Date {!! $sortIcon('expiry') !!}</a></th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('days_left') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Days Left {!! $sortIcon('days_left') !!}</a></th>
+                        <th class="{{ $thCls }}"><a href="{{ $sortUrl('status') }}" class="flex items-center gap-1 text-zinc-500 hover:text-accent transition-colors">Status {!! $sortIcon('status') !!}</a></th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

@@ -65,7 +65,7 @@
 
                         $reportItems = [
                             $item('squares-2x2',        'All Reports',          'reports.index',              'reports.*'),
-                            $item('document-text',      'Asset Register',       'reports.asset-register'),
+                            $item('document-text',      'Asset Reports',        'reports.asset-register'),
                             $item('receipt-percent',    'Purchase / Bills',     'reports.purchase-bills'),
                             $item('wrench-screwdriver', 'Service Reports',      'reports.service-due',        'reports.service-*'),
                             $item('truck',              'Vehicle Depreciation', 'reports.vehicle-depreciation'),
