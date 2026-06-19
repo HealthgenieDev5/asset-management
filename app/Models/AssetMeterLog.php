@@ -13,6 +13,8 @@ class AssetMeterLog extends Model
         'reading_value',
         'logged_at',
         'notes',
+        'evidence_path',
+        'evidence_original_name',
         'created_by',
     ];
 

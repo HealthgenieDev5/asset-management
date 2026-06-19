@@ -19,7 +19,7 @@
     <x-modal name="add-meter-log" title="Log Meter Reading" :dismissible="false"
         :auto-open="$errors->any() && old('_form') === 'meter_log' && !old('_log_id')">
         <form method="POST" action="{{ route('assets.meter-logs.store', $asset) }}"
-              class="mt-4 space-y-4">
+              enctype="multipart/form-data" class="mt-4 space-y-4">
             @csrf
             <input type="hidden" name="_form" value="meter_log">
             @include('assets.tabs._meter-log-form', ['log' => null])
@@ -41,7 +41,7 @@
         <x-modal name="edit-meter-log-{{ $log->id }}" title="Edit Meter Reading" :dismissible="false"
             :auto-open="$errors->any() && old('_form') === 'meter_log' && (int) old('_log_id') === $log->id">
             <form method="POST" action="{{ route('assets.meter-logs.update', [$asset, $log]) }}"
-                  class="mt-4 space-y-4">
+                  enctype="multipart/form-data" class="mt-4 space-y-4">
                 @csrf @method('PUT')
                 <input type="hidden" name="_form" value="meter_log">
                 <input type="hidden" name="_log_id" value="{{ $log->id }}">
@@ -61,7 +61,50 @@
     @endforeach
 
     {{-- Content --}}
-    @php $grouped = $asset->meterLogs->groupBy('unit'); @endphp
+    @php
+        $grouped = $asset->meterLogs->groupBy('unit');
+    @endphp
+
+    {{-- Stats Summary Cards --}}
+    @if ($grouped->isNotEmpty())
+        <div class="flex flex-wrap gap-3">
+            @foreach ($grouped as $unit => $logs)
+                @php
+                    $sorted  = $logs->sortByDesc('logged_at')->values();
+                    $latest  = $sorted->first();
+                    $prev    = $sorted->get(1);
+                    $delta   = $prev ? ($latest->reading_value - $prev->reading_value) : null;
+                @endphp
+                <div class="flex-1 min-w-44 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{{ $unit }}</span>
+                        <span class="text-[11px] text-zinc-400">{{ $sorted->count() }} {{ Str::plural('reading', $sorted->count()) }}</span>
+                    </div>
+                    <p class="text-2xl font-bold text-zinc-800 dark:text-zinc-100 leading-none">
+                        {{ number_format($latest->reading_value) }}
+                    </p>
+                    <p class="mt-0.5 text-xs text-zinc-400">{{ $latest->logged_at->format('d M Y') }}</p>
+                    <div class="mt-2">
+                        @if ($delta !== null && $delta > 0)
+                            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.03 7.78a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z" clip-rule="evenodd"/></svg>
+                                +{{ number_format($delta) }} since last
+                            </span>
+                        @elseif ($delta !== null && $delta < 0)
+                            <span class="inline-flex items-center gap-0.5 text-xs font-semibold text-red-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3"><path fill-rule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v8.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.22 3.22V2.75A.75.75 0 0 1 8 2Z" clip-rule="evenodd"/></svg>
+                                {{ number_format($delta) }} since last
+                            </span>
+                        @elseif ($delta === null)
+                            <span class="text-xs text-zinc-400">First reading</span>
+                        @else
+                            <span class="text-xs text-zinc-400">No change since last</span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     @foreach ($grouped as $unit => $logs)
         @php
@@ -92,6 +135,7 @@
                         <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">Reading</th>
                         <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">Change</th>
                         <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">Notes</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400">Evidence</th>
                         <th class="px-4 py-2"></th>
                     </tr>
                 </thead>
@@ -126,6 +170,18 @@
                             </td>
                             <td class="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400 max-w-48 truncate">
                                 {{ $log->notes ?: '—' }}
+                            </td>
+                            <td class="px-4 py-3">
+                                @if ($log->evidence_path)
+                                    <a href="{{ Storage::url($log->evidence_path) }}" target="_blank"
+                                       title="{{ $log->evidence_original_name ?? 'Evidence' }}"
+                                       class="inline-flex items-center gap-1 rounded-md border border-zinc-300 px-2 py-0.5 text-[11px] font-medium text-zinc-500 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700">
+                                        <flux:icon.paper-clip class="size-3" />
+                                        Evidence
+                                    </a>
+                                @else
+                                    <span class="text-xs text-zinc-300 dark:text-zinc-600">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-1.5">
