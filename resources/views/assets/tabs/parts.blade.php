@@ -56,7 +56,7 @@
 
     @if ($asset->services->isEmpty())
         <div class="grid grid-cols-3 gap-4">
-            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
                 <flux:icon.puzzle-piece class="mx-auto size-10 text-zinc-600" />
                 <flux:heading class="mt-4 text-zinc-400">No Servicing Records Yet</flux:heading>
                 <flux:text class="mt-1 text-sm text-zinc-600">Add a servicing record first, then log parts replaced during that service.</flux:text>
@@ -334,7 +334,7 @@
             @endforeach
 
          
-            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
                 <flux:icon.puzzle-piece class="mx-auto size-10 text-zinc-600" />
                 <flux:heading class="mt-4 text-zinc-400">Add Another Service</flux:heading>
                 <flux:text class="mt-1 text-sm text-zinc-600">Log a new servicing record to track more replaced parts.</flux:text>

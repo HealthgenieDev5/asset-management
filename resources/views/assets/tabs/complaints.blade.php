@@ -604,7 +604,7 @@
         @endforeach
 
         {{-- Always-visible placeholder --}}
-        <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
             <flux:icon.exclamation-triangle class="mx-auto size-10 text-zinc-600" />
             <flux:heading class="mt-4 text-zinc-400">
                 {{ $asset->complaints->isEmpty() ? 'No Complaints' : 'Log Another Complaint' }}

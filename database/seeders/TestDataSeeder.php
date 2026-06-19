@@ -17,6 +17,13 @@ class TestDataSeeder extends Seeder
 {
     public function run(): void
     {
+        $hasAssets   = Asset::withTrashed()->where('asset_code', 'LIKE', '%-TEST%')->exists();
+        $hasServices = AssetService::count() > 0;
+        if ($hasAssets && $hasServices) {
+            $this->command->warn('Test data already exists — skipping. Run migrate:fresh --seed to reset.');
+            return;
+        }
+
         $user = User::first();
 
         $catVehicle = AssetCategory::where('code', 'VE')->first();
@@ -31,7 +38,7 @@ class TestDataSeeder extends Seeder
         $subDiesel  = AssetSubcategory::where('name', 'Diesel Generator')->first();
 
         // ── SCENARIO 1: Active vehicle – all compliance dates set ──────────────
-        $car1 = Asset::create([
+        $car1 = Asset::firstOrCreate(['asset_code' => $catVehicle->code . '-TEST1'], [
             'asset_code'                   => $catVehicle->code . '-TEST1',
             'asset_name'                   => 'Toyota Innova (Test)',
             'asset_category_id'            => $catVehicle->id,
@@ -68,7 +75,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // ── SCENARIO 2: Active bike – PUC/fitness overdue ─────────────────────
-        $bike1 = Asset::create([
+        $bike1 = Asset::firstOrCreate(['asset_code' => $catVehicle->code . '-TEST2'], [
             'asset_code'                   => $catVehicle->code . '-TEST2',
             'asset_name'                   => 'Honda Activa (Test)',
             'asset_category_id'            => $catVehicle->id,
@@ -94,7 +101,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // ── SCENARIO 3: Laptop – active, warranty expiring soon ───────────────
-        $laptop1 = Asset::create([
+        $laptop1 = Asset::firstOrCreate(['asset_code' => $catIT->code . '-TEST1'], [
             'asset_code'          => $catIT->code . '-TEST1',
             'asset_name'          => 'Dell Latitude 5540 (Test)',
             'asset_category_id'   => $catIT->id,
@@ -118,7 +125,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // ── SCENARIO 4: Split AC – under repair ───────────────────────────────
-        $ac1 = Asset::create([
+        $ac1 = Asset::firstOrCreate(['asset_code' => $catAC->code . '-TEST1'], [
             'asset_code'          => $catAC->code . '-TEST1',
             'asset_name'          => 'Voltas 1.5 Ton Split AC (Test)',
             'asset_category_id'   => $catAC->id,
@@ -138,7 +145,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // ── SCENARIO 5: Generator – inactive ─────────────────────────────────
-        $gen1 = Asset::create([
+        $gen1 = Asset::firstOrCreate(['asset_code' => $catGen->code . '-TEST1'], [
             'asset_code'          => $catGen->code . '-TEST1',
             'asset_name'          => 'Kirloskar 25 KVA Generator (Test)',
             'asset_category_id'   => $catGen->id,
@@ -160,7 +167,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // ── SCENARIO 6: Asset that will be soft-deleted (orphan test) ─────────
-        $orphanAsset = Asset::create([
+        $orphanAsset = Asset::withTrashed()->firstOrCreate(['asset_code' => $catIT->code . '-TEST99'], [
             'asset_code'        => $catIT->code . '-TEST99',
             'asset_name'        => 'Orphan Test Laptop (DELETE ME)',
             'asset_category_id' => $catIT->id,
@@ -171,7 +178,7 @@ class TestDataSeeder extends Seeder
         // ── AMC Contracts ──────────────────────────────────────────────────────
 
         // AMC expired
-        AssetAmcContract::create([
+        AssetAmcContract::firstOrCreate(['contract_number' => 'AMC-AC-TEST-001'], [
             'asset_id'         => $ac1->id,
             'contract_number'  => 'AMC-AC-TEST-001',
             'vendor_name'      => 'Voltas Service Center',
@@ -184,7 +191,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // AMC expiring in 20 days
-        AssetAmcContract::create([
+        AssetAmcContract::firstOrCreate(['contract_number' => 'AMC-IT-TEST-001'], [
             'asset_id'         => $laptop1->id,
             'contract_number'  => 'AMC-IT-TEST-001',
             'vendor_name'      => 'Dell Support',
@@ -197,7 +204,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // AMC active (90+ days)
-        AssetAmcContract::create([
+        AssetAmcContract::firstOrCreate(['contract_number' => 'AMC-GEN-TEST-001'], [
             'asset_id'         => $gen1->id,
             'contract_number'  => 'AMC-GEN-TEST-001',
             'vendor_name'      => 'Kirloskar Service',
@@ -210,7 +217,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // AMC for orphan asset (will be cascade-deleted)
-        AssetAmcContract::create([
+        AssetAmcContract::firstOrCreate(['contract_number' => 'AMC-ORPHAN-TEST-001'], [
             'asset_id'         => $orphanAsset->id,
             'contract_number'  => 'AMC-ORPHAN-TEST-001',
             'vendor_name'      => 'Test Vendor',
@@ -224,7 +231,7 @@ class TestDataSeeder extends Seeder
         // ── Insurance Policies ─────────────────────────────────────────────────
 
         // Expired policy
-        AssetInsurancePolicy::create([
+        AssetInsurancePolicy::firstOrCreate(['policy_number' => 'INS-BIKE-TEST-001'], [
             'asset_id'            => $bike1->id,
             'policy_number'       => 'INS-BIKE-TEST-001',
             'insurer_name'        => 'New India Assurance',
@@ -238,7 +245,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // Policy expiring in 25 days
-        AssetInsurancePolicy::create([
+        AssetInsurancePolicy::firstOrCreate(['policy_number' => 'INS-CAR-TEST-001'], [
             'asset_id'            => $car1->id,
             'policy_number'       => 'INS-CAR-TEST-001',
             'insurer_name'        => 'HDFC ERGO',
@@ -252,7 +259,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // Policy active (fine)
-        AssetInsurancePolicy::create([
+        AssetInsurancePolicy::firstOrCreate(['policy_number' => 'INS-IT-TEST-001'], [
             'asset_id'            => $laptop1->id,
             'policy_number'       => 'INS-IT-TEST-001',
             'insurer_name'        => 'Bajaj Allianz',
@@ -266,7 +273,7 @@ class TestDataSeeder extends Seeder
         ]);
 
         // Insurance for orphan asset (will be cascade-deleted)
-        AssetInsurancePolicy::create([
+        AssetInsurancePolicy::firstOrCreate(['policy_number' => 'INS-ORPHAN-TEST-001'], [
             'asset_id'            => $orphanAsset->id,
             'policy_number'       => 'INS-ORPHAN-TEST-001',
             'insurer_name'        => 'Test Insurer',
@@ -280,40 +287,44 @@ class TestDataSeeder extends Seeder
 
         // ── Extended Warranties ────────────────────────────────────────────────
 
-        // Expired extended warranty
-        AssetExtendedWarranty::create([
-            'asset_id'                    => $ac1->id,
-            'extended_warranty_vendor'    => 'Voltas Care',
-            'extended_warranty_date_from' => '2022-04-01',
-            'extended_warranty_date_to'   => today()->subDays(60), // expired
-            'extended_warranty_amount'    => 8000,
-            'reminder_before_days'        => 30,
-        ]);
+        if (! AssetExtendedWarranty::where('asset_id', $ac1->id)->exists()) {
+            AssetExtendedWarranty::create([
+                'asset_id'                    => $ac1->id,
+                'extended_warranty_vendor'    => 'Voltas Care',
+                'extended_warranty_date_from' => '2022-04-01',
+                'extended_warranty_date_to'   => today()->subDays(60),
+                'extended_warranty_amount'    => 8000,
+                'reminder_before_days'        => 30,
+            ]);
+        }
 
-        // Extended warranty expiring in 15 days
-        AssetExtendedWarranty::create([
-            'asset_id'                    => $laptop1->id,
-            'extended_warranty_vendor'    => 'Dell Extended Care',
-            'extended_warranty_date_from' => today()->subYear()->addDays(10),
-            'extended_warranty_date_to'   => today()->addDays(15),
-            'extended_warranty_amount'    => 15000,
-            'reminder_before_days'        => 30,
-        ]);
+        if (! AssetExtendedWarranty::where('asset_id', $laptop1->id)->exists()) {
+            AssetExtendedWarranty::create([
+                'asset_id'                    => $laptop1->id,
+                'extended_warranty_vendor'    => 'Dell Extended Care',
+                'extended_warranty_date_from' => today()->subYear()->addDays(10),
+                'extended_warranty_date_to'   => today()->addDays(15),
+                'extended_warranty_amount'    => 15000,
+                'reminder_before_days'        => 30,
+            ]);
+        }
 
-        // Extended warranty active (fine)
-        AssetExtendedWarranty::create([
-            'asset_id'                    => $car1->id,
-            'extended_warranty_vendor'    => 'Toyota Warranty Plus',
-            'extended_warranty_date_from' => today()->subMonths(6),
-            'extended_warranty_date_to'   => today()->addMonths(18),
-            'extended_warranty_amount'    => 35000,
-            'reminder_before_days'        => 30,
-        ]);
+        if (! AssetExtendedWarranty::where('asset_id', $car1->id)->exists()) {
+            AssetExtendedWarranty::create([
+                'asset_id'                    => $car1->id,
+                'extended_warranty_vendor'    => 'Toyota Warranty Plus',
+                'extended_warranty_date_from' => today()->subMonths(6),
+                'extended_warranty_date_to'   => today()->addMonths(18),
+                'extended_warranty_amount'    => 35000,
+                'reminder_before_days'        => 30,
+            ]);
+        }
 
         // ── Services ───────────────────────────────────────────────────────────
+        $skipServices = AssetService::where('asset_id', $car1->id)->exists();
 
         // Past service for car — next service overdue
-        $svc1 = AssetService::create([
+        $svc1 = $skipServices ? AssetService::where('bill_no', 'SVC-CAR-001')->first() : AssetService::create([
             'asset_id'                        => $car1->id,
             'service_type'                    => 'preventive_maintenance',
             'service_date'                    => today()->subDays(120),
@@ -332,126 +343,133 @@ class TestDataSeeder extends Seeder
             'created_by'                      => $user->id,
         ]);
 
-        // Recent service for car — next due in 25 days
-        AssetService::create([
-            'asset_id'                        => $car1->id,
-            'service_type'                    => 'inspection',
-            'service_date'                    => today()->subDays(5),
-            'service_agency'                  => 'Toyota Authorized Service',
-            'work_done'                       => 'Annual inspection, brake check',
-            'service_cost'                    => 3500,
-            'bill_no'                         => 'SVC-CAR-002',
-            'next_service_date'               => today()->addDays(25),
-            'certification_expiry'            => today()->addDays(25),
-            'certification_reminder_before_days' => 15,
-            'condition_rating'                => 'excellent',
-            'created_by'                      => $user->id,
-        ]);
+        if (! $skipServices) {
+            // Recent service for car — next due in 25 days
+            AssetService::create([
+                'asset_id'                        => $car1->id,
+                'service_type'                    => 'inspection',
+                'service_date'                    => today()->subDays(5),
+                'service_agency'                  => 'Toyota Authorized Service',
+                'work_done'                       => 'Annual inspection, brake check',
+                'service_cost'                    => 3500,
+                'bill_no'                         => 'SVC-CAR-002',
+                'next_service_date'               => today()->addDays(25),
+                'certification_expiry'            => today()->addDays(25),
+                'certification_reminder_before_days' => 15,
+                'condition_rating'                => 'excellent',
+                'created_by'                      => $user->id,
+            ]);
 
-        // Bike service — next due in 60 days
-        AssetService::create([
-            'asset_id'                        => $bike1->id,
-            'service_type'                    => 'preventive_maintenance',
-            'service_date'                    => today()->subDays(30),
-            'service_agency'                  => 'Honda Service Center',
-            'work_done'                       => 'Engine oil change, chain lubrication',
-            'service_cost'                    => 1200,
-            'next_service_date'               => today()->addDays(60),
-            'service_interval_value'          => 3,
-            'service_interval_unit'           => 'months',
-            'meter_reading'                   => 12000,
-            'condition_rating'                => 'good',
-            'created_by'                      => $user->id,
-        ]);
+            // Bike service — next due in 60 days
+            AssetService::create([
+                'asset_id'                        => $bike1->id,
+                'service_type'                    => 'preventive_maintenance',
+                'service_date'                    => today()->subDays(30),
+                'service_agency'                  => 'Honda Service Center',
+                'work_done'                       => 'Engine oil change, chain lubrication',
+                'service_cost'                    => 1200,
+                'next_service_date'               => today()->addDays(60),
+                'service_interval_value'          => 3,
+                'service_interval_unit'           => 'months',
+                'meter_reading'                   => 12000,
+                'condition_rating'                => 'good',
+                'created_by'                      => $user->id,
+            ]);
+        }
 
         // AC service — repair type with downtime, next overdue
-        $svc4 = AssetService::create([
-            'asset_id'                        => $ac1->id,
-            'service_type'                    => 'repair',
-            'service_date'                    => today()->subDays(90),
-            'service_agency'                  => 'Voltas Service',
-            'work_done'                       => 'Compressor replacement',
-            'service_cost'                    => 18000,
-            'bill_no'                         => 'SVC-AC-001',
-            'next_service_date'               => today()->subDays(20), // overdue
-            'downtime_hours'                  => 48.00,
-            'condition_rating'                => 'fair',
-            'created_by'                      => $user->id,
-        ]);
+        $svc4 = AssetService::where('bill_no', 'SVC-AC-001')->first()
+            ?? AssetService::create([
+                'asset_id'                        => $ac1->id,
+                'service_type'                    => 'repair',
+                'service_date'                    => today()->subDays(90),
+                'service_agency'                  => 'Voltas Service',
+                'work_done'                       => 'Compressor replacement',
+                'service_cost'                    => 18000,
+                'bill_no'                         => 'SVC-AC-001',
+                'next_service_date'               => today()->subDays(20),
+                'downtime_hours'                  => 48.00,
+                'condition_rating'                => 'fair',
+                'created_by'                      => $user->id,
+            ]);
 
-        // Laptop service — calibration with certification
-        AssetService::create([
-            'asset_id'                        => $laptop1->id,
-            'service_type'                    => 'calibration',
-            'service_date'                    => today()->subDays(45),
-            'service_agency'                  => 'Dell Certified Service',
-            'technician_name'                 => 'IT Support Team',
-            'work_done'                       => 'Screen calibration, battery diagnostic',
-            'service_cost'                    => 2500,
-            'next_service_date'               => today()->addDays(80),
-            'certification_expiry'            => today()->subDays(10), // cert expired
-            'certification_reminder_before_days' => 30,
-            'condition_rating'                => 'excellent',
-            'created_by'                      => $user->id,
-        ]);
+        if (! AssetService::where('asset_id', $laptop1->id)->exists()) {
+            AssetService::create([
+                'asset_id'                        => $laptop1->id,
+                'service_type'                    => 'calibration',
+                'service_date'                    => today()->subDays(45),
+                'service_agency'                  => 'Dell Certified Service',
+                'technician_name'                 => 'IT Support Team',
+                'work_done'                       => 'Screen calibration, battery diagnostic',
+                'service_cost'                    => 2500,
+                'next_service_date'               => today()->addDays(80),
+                'certification_expiry'            => today()->subDays(10),
+                'certification_reminder_before_days' => 30,
+                'condition_rating'                => 'excellent',
+                'created_by'                      => $user->id,
+            ]);
+        }
 
-        // Generator service — inspection with certification expiring soon
-        AssetService::create([
-            'asset_id'                        => $gen1->id,
-            'service_type'                    => 'inspection',
-            'service_date'                    => today()->subDays(10),
-            'service_agency'                  => 'Kirloskar Service Center',
-            'work_done'                       => 'Load testing, oil level check',
-            'service_cost'                    => 6000,
-            'next_service_date'               => today()->addDays(80),
-            'certification_expiry'            => today()->addDays(20), // expiring soon
-            'certification_reminder_before_days' => 30,
-            'condition_rating'                => 'good',
-            'created_by'                      => $user->id,
-        ]);
+        if (! AssetService::where('asset_id', $gen1->id)->exists()) {
+            AssetService::create([
+                'asset_id'                        => $gen1->id,
+                'service_type'                    => 'inspection',
+                'service_date'                    => today()->subDays(10),
+                'service_agency'                  => 'Kirloskar Service Center',
+                'work_done'                       => 'Load testing, oil level check',
+                'service_cost'                    => 6000,
+                'next_service_date'               => today()->addDays(80),
+                'certification_expiry'            => today()->addDays(20),
+                'certification_reminder_before_days' => 30,
+                'condition_rating'                => 'good',
+                'created_by'                      => $user->id,
+            ]);
+        }
 
-        // Service for orphan asset (will be cascade soft-deleted when asset is deleted)
-        AssetService::create([
-            'asset_id'         => $orphanAsset->id,
-            'service_type'     => 'preventive_maintenance',
-            'service_date'     => today()->subDays(15),
-            'work_done'        => 'Orphan service — will be soft-deleted with asset',
-            'service_cost'     => 1000,
-            'next_service_date'=> today()->addDays(75),
-            'created_by'       => $user->id,
-        ]);
+        if (! AssetService::where('asset_id', $orphanAsset->id)->exists()) {
+            AssetService::create([
+                'asset_id'         => $orphanAsset->id,
+                'service_type'     => 'preventive_maintenance',
+                'service_date'     => today()->subDays(15),
+                'work_done'        => 'Orphan service — will be soft-deleted with asset',
+                'service_cost'     => 1000,
+                'next_service_date'=> today()->addDays(75),
+                'created_by'       => $user->id,
+            ]);
+        }
 
         // ── Service Parts ──────────────────────────────────────────────────────
 
-        AssetServicePart::create([
-            'asset_service_id' => $svc1->id,
-            'asset_id'         => $car1->id,
-            'part_name'        => 'Engine Oil (5W-30)',
-            'quantity'         => 4,
-            'part_cost'        => 2400,
-            'purchased_from'   => 'Toyota Parts',
-            'created_by'       => $user->id,
-        ]);
+        if ($svc1 && ! AssetServicePart::where('asset_service_id', $svc1->id)->exists()) {
+            AssetServicePart::create([
+                'asset_service_id' => $svc1->id,
+                'asset_id'         => $car1->id,
+                'part_name'        => 'Engine Oil (5W-30)',
+                'part_cost'        => 2400,
+                'purchased_from'   => 'Toyota Parts',
+                'created_by'       => $user->id,
+            ]);
 
-        AssetServicePart::create([
-            'asset_service_id' => $svc1->id,
-            'asset_id'         => $car1->id,
-            'part_name'        => 'Oil Filter',
-            'quantity'         => 1,
-            'part_cost'        => 350,
-            'purchased_from'   => 'Toyota Parts',
-            'created_by'       => $user->id,
-        ]);
+            AssetServicePart::create([
+                'asset_service_id' => $svc1->id,
+                'asset_id'         => $car1->id,
+                'part_name'        => 'Oil Filter',
+                'part_cost'        => 350,
+                'purchased_from'   => 'Toyota Parts',
+                'created_by'       => $user->id,
+            ]);
+        }
 
-        AssetServicePart::create([
-            'asset_service_id' => $svc4->id,
-            'asset_id'         => $ac1->id,
-            'part_name'        => 'AC Compressor',
-            'quantity'         => 1,
-            'part_cost'        => 14000,
-            'purchased_from'   => 'Voltas Parts',
-            'created_by'       => $user->id,
-        ]);
+        if ($svc4 && ! AssetServicePart::where('asset_service_id', $svc4->id)->exists()) {
+            AssetServicePart::create([
+                'asset_service_id' => $svc4->id,
+                'asset_id'         => $ac1->id,
+                'part_name'        => 'AC Compressor',
+                'part_cost'        => 14000,
+                'purchased_from'   => 'Voltas Parts',
+                'created_by'       => $user->id,
+            ]);
+        }
 
         // ── NOW: soft-delete the orphan asset to test cascade ─────────────────
         $orphanAsset->delete();

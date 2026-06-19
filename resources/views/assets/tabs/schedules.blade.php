@@ -247,13 +247,20 @@ $serviceTypeColors = [
             @endforeach
 
             {{-- Add Schedule card --}}
-            <button type="button" x-on:click="$dispatch('open-modal-add-schedule')"
-                    class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 py-10 text-center transition-colors hover:border-accent hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent dark:hover:bg-zinc-800/50">
-                <div class="flex size-9 items-center justify-center rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4 text-zinc-400"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
+                <flux:icon.calendar-days class="mx-auto size-10 text-zinc-600" />
+                <flux:heading class="mt-4 text-zinc-400">
+                    {{ $allSchedules->isEmpty() ? 'No Schedules Yet' : 'Add Another Schedule' }}
+                </flux:heading>
+                <flux:text class="mt-1 text-sm text-zinc-600">Track recurring maintenance by date, mileage, or operating hours.</flux:text>
+                <div class="mt-4">
+                    <button type="button" x-on:click="$dispatch('open-modal-add-schedule')"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                        {{ $allSchedules->isEmpty() ? 'Add First Schedule' : 'Add Schedule' }}
+                    </button>
                 </div>
-                <span class="text-xs font-medium text-zinc-400 dark:text-zinc-500">Add Schedule</span>
-            </button>
+            </div>
         </div>
 
 </div>

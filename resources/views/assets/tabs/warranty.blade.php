@@ -133,9 +133,19 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
         <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Overall Product Warranties</h3>
 
         @if ($overallWars->isEmpty())
-            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:icon.shield-exclamation class="mx-auto size-8 text-zinc-400" />
-                <p class="mt-2 text-sm text-zinc-500">No overall warranties recorded. Click <strong>Add Warranty</strong> above.</p>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
+                    <flux:icon.shield-exclamation class="mx-auto size-10 text-zinc-600" />
+                    <flux:heading class="mt-4 text-zinc-400">No Overall Warranties</flux:heading>
+                    <flux:text class="mt-1 text-sm text-zinc-600">Record manufacturer or supplier warranties for this asset.</flux:text>
+                    <div class="mt-4">
+                        <button type="button" x-on:click="$dispatch('open-modal-add-warranty')"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                            Add Warranty
+                        </button>
+                    </div>
+                </div>
             </div>
         @else
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -262,15 +272,19 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
         <h3 class="mb-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Part-Level Warranties</h3>
 
         @if ($partWars->isEmpty())
-            <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:icon.puzzle-piece class="mx-auto size-8 text-zinc-400" />
-                <p class="mt-2 text-sm text-zinc-500">No part warranties recorded yet.</p>
-                <p class="mt-1 text-xs text-zinc-400">Parts like compressor, PCB, battery etc. can have their own warranty entries.</p>
-                <button type="button" x-on:click="$dispatch('open-modal-add-warranty')"
-                    class="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:border-zinc-700 dark:hover:text-zinc-300 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
-                    Add Part Warranty
-                </button>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
+                    <flux:icon.puzzle-piece class="mx-auto size-10 text-zinc-600" />
+                    <flux:heading class="mt-4 text-zinc-400">No Part Warranties</flux:heading>
+                    <flux:text class="mt-1 text-sm text-zinc-600">Parts like compressor, PCB, battery etc. can have their own warranty entries.</flux:text>
+                    <div class="mt-4">
+                        <button type="button" x-on:click="$dispatch('open-modal-add-warranty')"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors border border-zinc-300 dark:border-zinc-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                            Add Part Warranty
+                        </button>
+                    </div>
+                </div>
             </div>
         @else
             <div x-data="{ showDisposed: false }" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
