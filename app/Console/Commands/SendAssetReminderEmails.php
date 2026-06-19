@@ -53,7 +53,7 @@ class SendAssetReminderEmails extends Command
     private function processWarrantyEntries(bool $dryRun, ?int $daysOverride): void
     {
         AssetWarranty::where('status', 'active')
-            ->with(['asset.createdBy', 'asset.services'])
+            ->with(['asset.createdBy', 'asset.meterLogs'])
             ->get()
             ->each(function (AssetWarranty $warranty) use ($dryRun, $daysOverride) {
                 $asset = $warranty->asset;

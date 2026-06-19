@@ -98,36 +98,4 @@ $initSelected = $isPreset ? strtolower($initUnit) : ($initUnit !== '' ? '__custo
         <label for="notes_{{ $uid }}" class="{{ $lbl }}">Notes</label>
         @error('notes') <p class="{{ $err }}">{{ $message }}</p> @enderror
     </div>
-
-    {{-- Evidence Upload --}}
-    <div>
-        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-            Evidence
-            <span class="font-normal normal-case tracking-normal text-zinc-400">(photo, receipt, PDF — max 5 MB)</span>
-        </p>
-        <style>
-            .meter-evidence-upload .filepond--panel-root {
-                border: 1px dashed #4b4b4c;
-                border-radius: 10px;
-            }
-        </style>
-        <div class="meter-evidence-upload" x-data x-init="initUploadPond($refs.evidencePond, {
-                acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
-                labelIdle: 'Drag & Drop evidence or <span class=\'filepond--label-action\'>Browse</span>',
-                @if ($isEdit && $log->evidence_path)
-                files: [{ source: '{{ Storage::url($log->evidence_path) }}', options: { type: 'local' } }],
-                fileMetaBySource: { '{{ Storage::url($log->evidence_path) }}': { name: '{{ addslashes($log->evidence_original_name ?? basename($log->evidence_path)) }}' } },
-                onremovefile: () => {
-                    let f = document.getElementById('remove_evidence_{{ $uid }}');
-                    if (f) f.value = '1';
-                },
-                @endif
-            })">
-            <input type="file" name="evidence" x-ref="evidencePond" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-        </div>
-        @if ($isEdit && $log->evidence_path)
-            <input type="hidden" name="remove_evidence" id="remove_evidence_{{ $uid }}" value="0">
-        @endif
-        @error('evidence') <p class="{{ $err }}">{{ $message }}</p> @enderror
-    </div>
 </div>

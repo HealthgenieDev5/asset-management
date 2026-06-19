@@ -16,7 +16,8 @@ $prefillPart = $prefillPart ?? null;
 $wMode  = old('tracking_mode', $w?->tracking_mode ?? 'time');
 $wSrc   = old('meter_source', $w?->meter_source ?? 'meter');
 $wUnit  = old('unit', $w?->unit ?? '');
-$currentCounter = $asset?->latestWarrantyCounter();
+$currentCounter  = ($w?->unit) ? $asset?->latestMeterReading($w->unit) : null;
+$remainingUnits  = ($currentCounter !== null && $w?->counter_limit) ? max(0, $w->counter_limit - $currentCounter) : null;
 
 $formId = 'wf_' . ($w?->id ?? 'new');
 @endphp
@@ -175,13 +176,8 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                     @error('unit')<p class="{{ $err }}">{{ $message }}</p>@enderror
                 </div>
 
-                <div x-show="mode === 'meter'" style="display:none" class="relative">
-                    <select x-model="src" class="peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent">
-                        <option value="mileage">Odometer / Distance (mileage)</option>
-                        <option value="meter">Hour meter / Operating hours</option>
-                    </select>
-                    <label class="pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Reading Source</label>
-                </div>
+                {{-- meter_source kept as hidden for backward compatibility --}}
+                <input type="hidden" name="meter_source" :value="src">
 
                 <div class="relative">
                     <input type="number" name="counter_limit" id="{{ $formId }}_counter_limit"
@@ -200,8 +196,21 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                 </div>
 
                 @if ($currentCounter !== null)
-                    <div class="col-span-2 sm:col-span-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400">
-                        Current reading from last service: <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format($currentCounter) }} <span x-text="unit || 'units'"></span></span>
+                    <div class="col-span-2 sm:col-span-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400 flex items-center gap-3 flex-wrap">
+                        <span>
+                            Latest meter reading:
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format($currentCounter) }} {{ $w->unit }}</span>
+                        </span>
+                        @if ($remainingUnits !== null)
+                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                            <span class="{{ $remainingUnits <= ($w->reminder_before_units ?? 0) ? 'text-yellow-500 font-semibold' : '' }}">
+                                <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format($remainingUnits) }} {{ $w->unit }}</span> remaining before warranty expires
+                            </span>
+                        @endif
+                    </div>
+                @elseif ($w?->unit)
+                    <div class="col-span-2 sm:col-span-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-400 dark:bg-zinc-800/50">
+                        No meter readings logged yet for <strong>{{ $w->unit }}</strong>. Log readings in the <strong>Meter Logs</strong> tab to track warranty progress.
                     </div>
                 @endif
             </div>

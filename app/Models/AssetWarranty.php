@@ -101,8 +101,15 @@ class AssetWarranty extends Model
 
     public function latestCounter(): ?int
     {
-        $field = $this->meter_source === 'mileage' ? 'mileage_reading' : 'meter_reading';
-        return $this->asset?->services()->orderByDesc('service_date')->value($field);
+        if (! $this->unit) return null;
+        return $this->asset?->latestMeterReading($this->unit);
+    }
+
+    public function remainingUnits(): ?int
+    {
+        $current = $this->latestCounter();
+        if ($current === null || ! $this->counter_limit) return null;
+        return max(0, $this->counter_limit - $current);
     }
 
     public function isExpired(): bool

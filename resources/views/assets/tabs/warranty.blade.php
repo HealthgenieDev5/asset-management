@@ -206,9 +206,28 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                         <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($w->reminder_before_units) }} {{ $w->unitLabel() }}</dd></div>
                                     @endif
                                     @if (! $w->isTimeBased())
-                                        @php $cur = $w->latestCounter(); @endphp
+                                        @php
+                                            $cur       = $w->latestCounter();
+                                            $remaining = $w->remainingUnits();
+                                        @endphp
                                         @if ($cur !== null)
-                                            <div><dt class="{{ $dt }}">Current Reading</dt><dd class="{{ $dd }}">{{ number_format($cur) }} {{ $w->unitLabel() }}</dd></div>
+                                            <div>
+                                                <dt class="{{ $dt }}">Current Reading</dt>
+                                                <dd class="{{ $dd }}">{{ number_format($cur) }} {{ $w->unitLabel() }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($remaining !== null)
+                                            <div>
+                                                <dt class="{{ $dt }}">Remaining</dt>
+                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($w->reminder_before_units ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
+                                                    {{ number_format($remaining) }} {{ $w->unitLabel() }}
+                                                </dd>
+                                            </div>
+                                        @elseif (! $w->isTimeBased() && $cur === null && $w->unit)
+                                            <div>
+                                                <dt class="{{ $dt }}">Current Reading</dt>
+                                                <dd class="mt-0.5 text-xs text-zinc-400">No meter logs for {{ $w->unit }} yet</dd>
+                                            </div>
                                         @endif
                                     @endif
                                     @if ($w->bill_no)
@@ -354,9 +373,28 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                         <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($w->reminder_before_units) }} {{ $w->unitLabel() }}</dd></div>
                                     @endif
                                     @if (! $w->isTimeBased())
-                                        @php $cur = $w->latestCounter(); @endphp
+                                        @php
+                                            $cur       = $w->latestCounter();
+                                            $remaining = $w->remainingUnits();
+                                        @endphp
                                         @if ($cur !== null)
-                                            <div><dt class="{{ $dt }}">Current Reading</dt><dd class="{{ $dd }}">{{ number_format($cur) }} {{ $w->unitLabel() }}</dd></div>
+                                            <div>
+                                                <dt class="{{ $dt }}">Current Reading</dt>
+                                                <dd class="{{ $dd }}">{{ number_format($cur) }} {{ $w->unitLabel() }}</dd>
+                                            </div>
+                                        @endif
+                                        @if ($remaining !== null)
+                                            <div>
+                                                <dt class="{{ $dt }}">Remaining</dt>
+                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($w->reminder_before_units ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
+                                                    {{ number_format($remaining) }} {{ $w->unitLabel() }}
+                                                </dd>
+                                            </div>
+                                        @elseif (! $w->isTimeBased() && $cur === null && $w->unit)
+                                            <div>
+                                                <dt class="{{ $dt }}">Current Reading</dt>
+                                                <dd class="mt-0.5 text-xs text-zinc-400">No meter logs for {{ $w->unit }} yet</dd>
+                                            </div>
                                         @endif
                                     @endif
                                     @if ($w->bill_no)
