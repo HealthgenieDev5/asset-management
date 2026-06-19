@@ -60,6 +60,50 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        // Department searchable dropdown
+        allDepartments: {!! json_encode(($departments ?? collect())->map(fn($d) => ['id' => $d->id, 'name' => $d->name])->values()) !!},
+        deptSearch: '{{ addslashes($old('department')) }}',
+        deptValue: '{{ addslashes($old('department')) }}',
+        deptOpen: false,
+        deptResults: [],
+        showAddDept: false,
+        newDeptName: '',
+        deptSaving: false,
+        filterDepts() {
+            const q = this.deptSearch.toLowerCase();
+            this.deptResults = q.length === 0
+                ? this.allDepartments
+                : this.allDepartments.filter(d => d.name.toLowerCase().includes(q));
+            this.showAddDept = q.length > 1
+                && !this.allDepartments.some(d => d.name.toLowerCase() === q.toLowerCase());
+            if (q.length > 1 && this.showAddDept) this.newDeptName = this.deptSearch;
+        },
+        selectDept(name) {
+            this.deptSearch = name;
+            this.deptValue  = name;
+            this.deptOpen   = false;
+        },
+        async saveNewDept() {
+            if (!this.newDeptName.trim()) return;
+            this.deptSaving = true;
+            try {
+                const xsrf = decodeURIComponent(document.cookie.split(';').find(c => c.trim().startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+                const res = await fetch('/api/departments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
+                    body: JSON.stringify({ name: this.newDeptName.trim() })
+                });
+                const dept = await res.json();
+                this.allDepartments.push(dept);
+                this.allDepartments.sort((a, b) => a.name.localeCompare(b.name));
+                this.selectDept(dept.name);
+                this.newDeptName = '';
+                this.showAddDept = false;
+            } finally {
+                this.deptSaving = false;
+            }
+        },
+
         init() {
             this.$nextTick(() => {
                 // Apply after x-for has rendered the options
@@ -280,12 +324,50 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 </div>
             </div>
 
-            <div class="relative">
-                <input type="text" name="department" id="department"
-                    value="{{ $old('department') }}" placeholder=" "
-                    class="{{ $inputCls }}" />
+            {{-- Department searchable dropdown --}}
+            <div class="relative" x-on:click.outside="deptOpen = false">
+                <input type="hidden" name="department" :value="deptValue">
+                <input type="text" placeholder=" " autocomplete="off" id="department"
+                       x-model="deptSearch"
+                       x-on:focus="deptOpen = true; filterDepts()"
+                       x-on:input="deptOpen = true; filterDepts()"
+                       x-on:keydown.escape="deptOpen = false"
+                       class="{{ $inputCls }}" />
                 <label for="department" class="{{ $labelCls }}">Department</label>
                 <flux:error name="department" />
+
+                <div x-show="deptOpen" x-cloak
+                     class="absolute z-50 mt-1 w-full rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                     style="max-height: 220px; overflow-y: auto;">
+
+                    <template x-for="dept in deptResults" :key="dept.id">
+                        <button type="button" x-on:click="selectDept(dept.name)"
+                                class="flex w-full items-center px-3 py-2 text-sm text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                :class="deptValue === dept.name ? 'text-accent font-semibold bg-accent/5' : 'text-zinc-700 dark:text-zinc-300'"
+                                x-text="dept.name">
+                        </button>
+                    </template>
+
+                    <p x-show="deptResults.length === 0 && !showAddDept"
+                       class="px-3 py-2 text-xs text-zinc-400">No departments found.</p>
+
+                    <div x-show="showAddDept"
+                         class="border-t border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
+                        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Add New Department</p>
+                        <div class="flex items-center gap-2">
+                            <input type="text" x-model="newDeptName"
+                                   placeholder="Department name…"
+                                   x-on:keydown.enter.prevent="saveNewDept()"
+                                   class="flex-1 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-sm focus:border-accent focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
+                            <button type="button" x-on:click="saveNewDept()"
+                                    :disabled="deptSaving"
+                                    class="rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground disabled:opacity-50 transition-opacity">
+                                <span x-show="!deptSaving">Add</span>
+                                <span x-show="deptSaving" x-cloak>Saving…</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="relative">

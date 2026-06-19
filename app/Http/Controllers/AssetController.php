@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\AssetDocument;
 use App\Models\AssetSubcategory;
+use App\Models\Department;
 use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -53,10 +54,11 @@ class AssetController extends Controller
 
     public function create()
     {
-        $categories = AssetCategory::active()->orderBy('name')->get();
-        $locations  = Location::active()->orderBy('name')->get(['id', 'name']);
+        $categories  = AssetCategory::active()->orderBy('name')->get();
+        $locations   = Location::active()->orderBy('name')->get(['id', 'name']);
+        $departments = Department::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('assets.create', compact('categories', 'locations'));
+        return view('assets.create', compact('categories', 'locations', 'departments'));
     }
 
     public function store(Request $request)
@@ -135,8 +137,9 @@ class AssetController extends Controller
         $subcategories = AssetSubcategory::where('asset_category_id', $asset->asset_category_id)
             ->active()->orderBy('name')->get();
         $locations     = Location::active()->orderBy('name')->get(['id', 'name']);
+        $departments   = Department::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('assets.edit', compact('asset', 'categories', 'subcategories', 'locations'));
+        return view('assets.edit', compact('asset', 'categories', 'subcategories', 'locations', 'departments'));
     }
 
     public function update(Request $request, Asset $asset)
