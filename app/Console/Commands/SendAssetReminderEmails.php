@@ -38,6 +38,7 @@ class SendAssetReminderEmails extends Command
 
         $this->info($dryRun ? '[DRY RUN] Scanning expiry reminders…' : 'Sending expiry reminder emails…');
 
+        $this->processWarrantyEntries($dryRun, $daysOverride);
         $this->processSmartReminders($dryRun, $daysOverride);
         $this->processMaintenanceSchedules($dryRun, $daysOverride);
 

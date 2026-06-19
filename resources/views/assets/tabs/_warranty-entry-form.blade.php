@@ -16,6 +16,10 @@ $prefillPart = $prefillPart ?? null;
 $wMode  = old('tracking_mode', $w?->tracking_mode ?? 'time');
 $wSrc   = old('meter_source', $w?->meter_source ?? 'meter');
 $wUnit  = old('unit', $w?->unit ?? '');
+$unitPresets  = ['km', 'hours', 'prints', 'cycles', 'litres'];
+$unitIsPreset = in_array(strtolower($wUnit), $unitPresets);
+$unitCustom   = (!$unitIsPreset && $wUnit !== '') ? $wUnit : '';
+$unitSelected = $unitIsPreset ? strtolower($wUnit) : ($wUnit !== '' ? '__custom__' : 'km');
 $currentCounter  = ($w?->unit) ? $asset?->latestMeterReading($w->unit) : null;
 $remainingUnits  = ($currentCounter !== null && $w?->counter_limit) ? max(0, $w->counter_limit - $currentCounter) : null;
 
@@ -24,11 +28,13 @@ $formId = 'wf_' . ($w?->id ?? 'new');
 
 <div id="{{ $formId }}" class="space-y-4"
      x-data="{
-         wtype: '{{ $wType }}',
-         scope: '{{ $wScope }}',
-         mode:  '{{ $wMode }}',
-         src:   '{{ $wSrc }}',
-         unit:  '{{ $wUnit }}'
+         wtype:      '{{ $wType }}',
+         scope:      '{{ $wScope }}',
+         mode:       '{{ $wMode }}',
+         src:        '{{ $wSrc }}',
+         unitSel:    '{{ $unitSelected }}',
+         customUnit: '{{ $unitCustom }}',
+         get unit() { return this.unitSel === '__custom__' ? this.customUnit : this.unitSel; }
      }">
 
     <input type="hidden" name="warranty_type" :value="wtype">
@@ -167,13 +173,39 @@ $formId = 'wf_' . ($w?->id ?? 'new');
 
             {{-- Counter-based fields --}}
             <div x-show="mode !== 'time'" style="display:none" class="col-span-2 sm:col-span-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div class="relative">
-                    <input type="text" name="unit" id="{{ $formId }}_unit"
-                           x-model="unit"
-                           value="{{ old('unit', $w?->unit) }}"
-                           placeholder=" " maxlength="20" class="{{ $inp }}" />
-                    <label for="{{ $formId }}_unit" class="{{ $lbl }}">Unit (e.g. km, hours, prints)</label>
-                    @error('unit')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                <div class="col-span-2 sm:col-span-4">
+                    <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                        Unit <span class="text-red-400">*</span>
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @foreach (['km', 'hours', 'prints', 'cycles', 'litres'] as $preset)
+                            <button type="button"
+                                @click="unitSel = '{{ $preset }}'"
+                                :class="unitSel === '{{ $preset }}'
+                                    ? 'bg-accent text-accent-foreground shadow-sm'
+                                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'"
+                                class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors capitalize">
+                                {{ $preset }}
+                            </button>
+                        @endforeach
+                        <button type="button"
+                            @click="unitSel = '__custom__'; $nextTick(() => $refs.wCustomUnit_{{ $formId }}.focus())"
+                            :class="unitSel === '__custom__'
+                                ? 'bg-accent text-accent-foreground shadow-sm'
+                                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'"
+                            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">
+                            Other…
+                        </button>
+                        <input type="text"
+                               x-ref="wCustomUnit_{{ $formId }}"
+                               x-show="unitSel === '__custom__'"
+                               x-cloak
+                               x-model="customUnit"
+                               placeholder="e.g. miles…"
+                               class="w-32 rounded-lg border border-accent bg-white px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-accent dark:bg-zinc-800 dark:text-zinc-100" />
+                    </div>
+                    <input type="hidden" name="unit" :value="unit">
+                    @error('unit')<p class="{{ $err }} mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 {{-- meter_source kept as hidden for backward compatibility --}}

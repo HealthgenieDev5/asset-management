@@ -17,6 +17,11 @@
     $initMode    = old('reminder_mode', $isEdit ? ($reminder?->reminder_mode ?? 'time') : 'time');
     $initDays    = old('reminder_days_input', $isEdit ? implode(', ', $reminder?->reminder_days ?? []) : '');
     $initDaysArr = array_values(array_filter(array_map('intval', array_filter(explode(',', str_replace(' ', '', $initDays))))));
+    $unitPresets  = ['km', 'hours', 'prints', 'cycles', 'litres'];
+    $initUnit     = old('threshold_unit', $reminder?->threshold_unit ?? '');
+    $unitIsPreset = in_array(strtolower($initUnit), $unitPresets);
+    $unitCustom   = (!$unitIsPreset && $initUnit !== '') ? $initUnit : '';
+    $unitSelected = $unitIsPreset ? strtolower($initUnit) : ($initUnit !== '' ? '__custom__' : 'km');
     $latestReading = $isEdit && $reminder?->threshold_unit
         ? $asset->latestMeterReading($reminder->threshold_unit)
         : null;
@@ -30,8 +35,10 @@
 @endphp
 
 <div x-data="{
-        mode: '{{ $initMode }}',
-        unit: '{{ old('threshold_unit', $reminder?->threshold_unit ?? '') }}',
+        mode:       '{{ $initMode }}',
+        unitSel:    '{{ $unitSelected }}',
+        customUnit: '{{ $unitCustom }}',
+        get unit() { return this.unitSel === '__custom__' ? this.customUnit : this.unitSel; },
         get thresholdLabel() {
             if (this.mode === 'time') return 'days before expiry';
             return (this.unit || 'units') + ' remaining';
@@ -110,39 +117,53 @@
 
     {{-- ── Meter / Count Mode Fields ── --}}
     <div x-show="mode !== 'time'" x-cloak class="space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-            {{-- Unit --}}
-            <div class="relative">
-                <input type="text" name="threshold_unit" id="threshold_unit_{{ $uid }}"
-                       placeholder=" " value="{{ $old('threshold_unit') }}"
-                       list="threshold-unit-list-{{ $uid }}"
-                       x-model="unit" autocomplete="off"
-                       class="{{ $inp }}" />
-                <label for="threshold_unit_{{ $uid }}" class="{{ $lbl }}">
-                    Unit <span class="text-red-400">*</span>
-                    <span class="font-normal text-zinc-400">(km, hours, prints…)</span>
-                </label>
-                <datalist id="threshold-unit-list-{{ $uid }}">
-                    <option value="km">
-                    <option value="hours">
-                    <option value="prints">
-                    <option value="cycles">
-                    <option value="litres">
-                </datalist>
-                @error('threshold_unit') <p class="{{ $err }}">{{ $message }}</p> @enderror
+        {{-- Unit pills --}}
+        <div>
+            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                Unit <span class="text-red-400">*</span>
+            </p>
+            <div class="flex flex-wrap items-center gap-2">
+                @foreach (['km', 'hours', 'prints', 'cycles', 'litres'] as $preset)
+                    <button type="button"
+                        @click="unitSel = '{{ $preset }}'"
+                        :class="unitSel === '{{ $preset }}'
+                            ? 'bg-accent text-accent-foreground shadow-sm'
+                            : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'"
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors capitalize">
+                        {{ $preset }}
+                    </button>
+                @endforeach
+                <button type="button"
+                    @click="unitSel = '__custom__'; $nextTick(() => $refs.srCustomUnit_{{ $uid }}.focus())"
+                    :class="unitSel === '__custom__'
+                        ? 'bg-accent text-accent-foreground shadow-sm'
+                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'"
+                    class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">
+                    Other…
+                </button>
+                <input type="text"
+                       x-ref="srCustomUnit_{{ $uid }}"
+                       x-show="unitSel === '__custom__'"
+                       x-cloak
+                       x-model="customUnit"
+                       placeholder="e.g. miles…"
+                       class="w-32 rounded-lg border border-accent bg-white px-2.5 py-1.5 text-xs text-zinc-900 shadow-sm placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-accent dark:bg-zinc-800 dark:text-zinc-100" />
             </div>
-            {{-- Counter Limit --}}
-            <div class="relative">
-                <input type="number" name="counter_limit" id="counter_limit_{{ $uid }}"
-                       placeholder=" " min="1"
-                       value="{{ $old('counter_limit') }}"
-                       class="{{ $inp }}" />
-                <label for="counter_limit_{{ $uid }}" class="{{ $lbl }}">
-                    Total Limit <span class="text-red-400">*</span>
-                    <span class="font-normal text-zinc-400">(e.g. 100000)</span>
-                </label>
-                @error('counter_limit') <p class="{{ $err }}">{{ $message }}</p> @enderror
-            </div>
+            <input type="hidden" name="threshold_unit" :value="unit">
+            @error('threshold_unit') <p class="{{ $err }} mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Counter Limit --}}
+        <div class="relative">
+            <input type="number" name="counter_limit" id="counter_limit_{{ $uid }}"
+                   placeholder=" " min="1"
+                   value="{{ $old('counter_limit') }}"
+                   class="{{ $inp }}" />
+            <label for="counter_limit_{{ $uid }}" class="{{ $lbl }}">
+                Total Limit <span class="text-red-400">*</span>
+                <span class="font-normal text-zinc-400">(e.g. 100000)</span>
+            </label>
+            @error('counter_limit') <p class="{{ $err }}">{{ $message }}</p> @enderror
         </div>
 
         {{-- Latest reading hint --}}

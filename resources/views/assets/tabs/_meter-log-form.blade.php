@@ -98,4 +98,37 @@ $initSelected = $isPreset ? strtolower($initUnit) : ($initUnit !== '' ? '__custo
         <label for="notes_{{ $uid }}" class="{{ $lbl }}">Notes</label>
         @error('notes') <p class="{{ $err }}">{{ $message }}</p> @enderror
     </div>
+
+    {{-- Evidence upload --}}
+    <style>
+        .meter-evidence-upload .filepond--panel-root {
+            border: 1px dashed #4b4b4c;
+            border-radius: 10px;
+        }
+    </style>
+    <div x-data="{ removeEvidence: 0 }">
+        <input type="hidden" name="remove_evidence" :value="removeEvidence">
+        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            Evidence <span class="font-normal normal-case text-zinc-400">(optional — photo or PDF)</span>
+        </p>
+        <div class="meter-evidence-upload" x-init="initUploadPond($refs.evidencePond, {
+            allowMultiple: false,
+            maxFiles: 1,
+            acceptedFileTypes: ['image/*', 'application/pdf'],
+            labelIdle: 'Attach evidence — drag &amp; drop or <span class=\'filepond--label-action\'>browse</span>',
+            @if ($isEdit && $log?->evidence_path)
+            existingFiles: [{
+                source: '{{ basename($log->evidence_path) }}',
+                options: {
+                    type: 'local',
+                    file: { name: '{{ $log->evidence_original_name ?? basename($log->evidence_path) }}', size: 0 }
+                }
+            }],
+            @endif
+            onremovefile: () => { removeEvidence = 1; }
+        })">
+            <input type="file" name="evidence" x-ref="evidencePond" class="filepond">
+        </div>
+        @error('evidence') <p class="{{ $err }} mt-1">{{ $message }}</p> @enderror
+    </div>
 </div>
