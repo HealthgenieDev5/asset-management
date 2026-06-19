@@ -13,9 +13,6 @@ document.addEventListener('alpine:init', () => {
         subcategories: {!! json_encode($subcategories->map(fn($s) => ['id' => $s->id, 'name' => $s->name])->values()) !!},
         selectedSubcategoryId: null,
         _initialSubcategoryId: {{ old('asset_subcategory_id', $isEdit ? ($asset->asset_subcategory_id ?? 'null') : 'null') }},
-        maintenanceType: '{{ $old('maintenance_schedule_type', 'none') }}',
-        inspectionRequired: {{ $old('inspection_required', false) ? 'true' : 'false' }},
-
         // Location searchable dropdown
         allLocations: {!! json_encode(($locations ?? collect())->map(fn($l) => ['id' => $l->id, 'name' => $l->name])->values()) !!},
         locationSearch: '{{ addslashes($old('location')) }}',
@@ -435,87 +432,6 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 <input type="file" name="purchase_bill_file"
                        accept=".pdf,.jpg,.jpeg,.png,.webp" />
                 <flux:error name="purchase_bill_file" />
-            </div>
-        </div>
-    </div>
-
-    {{-- Section: Maintenance Schedule --}}
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-        <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Maintenance Schedule</flux:heading>
-
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="relative">
-                <select name="maintenance_schedule_type" id="maintenance_schedule_type"
-                    class="{{ $selectCls }}"
-                    x-model="maintenanceType">
-                    <option value="none" @selected($old('maintenance_schedule_type', 'none') === 'none')>None</option>
-                    <option value="date_based" @selected($old('maintenance_schedule_type') === 'date_based')>Date Based</option>
-                    <option value="hours_based" @selected($old('maintenance_schedule_type') === 'hours_based')>Hours Based</option>
-                    <option value="mileage_based" @selected($old('maintenance_schedule_type') === 'mileage_based')>Mileage Based</option>
-                    <option value="custom" @selected($old('maintenance_schedule_type') === 'custom')>Custom</option>
-                </select>
-                <label for="maintenance_schedule_type" class="{{ $labelSelCls }}">Schedule Type</label>
-                <flux:error name="maintenance_schedule_type" />
-            </div>
-
-            <div class="relative" x-show="maintenanceType !== 'none'">
-                <input type="number" name="maintenance_interval_value" id="maintenance_interval_value"
-                    value="{{ $old('maintenance_interval_value') }}" placeholder=" "
-                    min="1"
-                    class="{{ $inputCls }}" />
-                <label for="maintenance_interval_value" class="{{ $labelCls }}">Interval Value</label>
-                <flux:error name="maintenance_interval_value" />
-            </div>
-
-            <div class="relative" x-show="maintenanceType !== 'none'">
-                <select name="maintenance_interval_unit" id="maintenance_interval_unit"
-                    class="{{ $selectCls }}">
-                    <option value="">Select Unit</option>
-                    <option value="days" @selected($old('maintenance_interval_unit') === 'days')>Days</option>
-                    <option value="weeks" @selected($old('maintenance_interval_unit') === 'weeks')>Weeks</option>
-                    <option value="months" @selected($old('maintenance_interval_unit') === 'months')>Months</option>
-                    <option value="years" @selected($old('maintenance_interval_unit') === 'years')>Years</option>
-                    <option value="operating_hours" @selected($old('maintenance_interval_unit') === 'operating_hours')>Operating Hours</option>
-                    <option value="miles" @selected($old('maintenance_interval_unit') === 'miles')>Miles</option>
-                    <option value="kilometers" @selected($old('maintenance_interval_unit') === 'kilometers')>Kilometers</option>
-                </select>
-                <label for="maintenance_interval_unit" class="{{ $labelSelCls }}">Interval Unit</label>
-                <flux:error name="maintenance_interval_unit" />
-            </div>
-        </div>
-
-        {{-- Inspection --}}
-        <div class="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-            <div class="flex items-center gap-3 mb-4">
-                <input type="checkbox" name="inspection_required" id="inspection_required" value="1"
-                    x-model="inspectionRequired"
-                    @checked($old('inspection_required', false))
-                    class="size-4 rounded border-zinc-400 bg-white text-accent focus:ring-accent dark:border-zinc-600 dark:bg-zinc-700" />
-                <label for="inspection_required" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Inspection Required</label>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2" x-show="inspectionRequired">
-                <div class="relative">
-                    <input type="number" name="inspection_frequency_value" id="inspection_frequency_value"
-                        value="{{ $old('inspection_frequency_value') }}" placeholder=" "
-                        min="1"
-                        class="{{ $inputCls }}" />
-                    <label for="inspection_frequency_value" class="{{ $labelCls }}">Inspection Frequency</label>
-                    <flux:error name="inspection_frequency_value" />
-                </div>
-
-                <div class="relative">
-                    <select name="inspection_frequency_unit" id="inspection_frequency_unit"
-                        class="{{ $selectCls }}">
-                        <option value="">Select Unit</option>
-                        <option value="days" @selected($old('inspection_frequency_unit') === 'days')>Days</option>
-                        <option value="weeks" @selected($old('inspection_frequency_unit') === 'weeks')>Weeks</option>
-                        <option value="months" @selected($old('inspection_frequency_unit') === 'months')>Months</option>
-                        <option value="years" @selected($old('inspection_frequency_unit') === 'years')>Years</option>
-                    </select>
-                    <label for="inspection_frequency_unit" class="{{ $labelSelCls }}">Frequency Unit</label>
-                    <flux:error name="inspection_frequency_unit" />
-                </div>
             </div>
         </div>
     </div>

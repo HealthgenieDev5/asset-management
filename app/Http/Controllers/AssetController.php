@@ -69,7 +69,6 @@ class AssetController extends Controller
 
         $validated['asset_code'] = Asset::generateAssetCode((int) $validated['asset_category_id']);
         $validated['created_by'] = auth()->id();
-        $validated['inspection_required'] = $request->boolean('inspection_required');
 
         if (! $isVehicle) {
             $validated['registration_number']             = null;
@@ -149,7 +148,6 @@ class AssetController extends Controller
         $validated = $request->validate($this->rules($isVehicle, $asset->id));
 
         $validated['updated_by'] = auth()->id();
-        $validated['inspection_required'] = $request->boolean('inspection_required');
 
         if (! $isVehicle) {
             $validated['registration_number']             = null;
@@ -214,12 +212,6 @@ class AssetController extends Controller
             'bill_amount'                  => ['nullable', 'numeric', 'min:0'],
             'bill_date'                    => ['nullable', 'date'],
             'purchase_date'                => ['nullable', 'date'],
-            'maintenance_schedule_type'    => ['required', 'in:date_based,hours_based,mileage_based,custom,none'],
-            'maintenance_interval_value'   => ['nullable', 'integer', 'min:1'],
-            'maintenance_interval_unit'    => ['nullable', 'in:days,weeks,months,years,operating_hours,miles,kilometers'],
-            'inspection_required'          => ['nullable', 'boolean'],
-            'inspection_frequency_value'   => ['nullable', 'integer', 'min:1'],
-            'inspection_frequency_unit'    => ['nullable', 'in:days,weeks,months,years'],
             'status'                       => ['required', 'in:active,under_repair,disposed,scrapped,inactive'],
             'remarks'                      => ['nullable', 'string'],
             'purchase_bill_file'           => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
