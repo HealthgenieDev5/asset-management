@@ -36,6 +36,15 @@ Route::middleware(['auth'])->get('/api/subcategories', function (Request $reques
     return response()->json($subs);
 });
 
+Route::middleware(['auth'])->post('/api/locations', function (Request $request) {
+    $request->validate(['name' => ['required', 'string', 'max:255']]);
+    $loc = \App\Models\Location::firstOrCreate(
+        ['name' => trim($request->name)],
+        ['is_active' => true, 'created_by' => auth()->id()]
+    );
+    return response()->json($loc);
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

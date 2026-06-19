@@ -16,6 +16,50 @@ document.addEventListener('alpine:init', () => {
         maintenanceType: '{{ $old('maintenance_schedule_type', 'none') }}',
         inspectionRequired: {{ $old('inspection_required', false) ? 'true' : 'false' }},
 
+        // Location searchable dropdown
+        allLocations: {!! json_encode(($locations ?? collect())->map(fn($l) => ['id' => $l->id, 'name' => $l->name])->values()) !!},
+        locationSearch: '{{ addslashes($old('location')) }}',
+        locationValue: '{{ addslashes($old('location')) }}',
+        locationOpen: false,
+        locationResults: [],
+        showAddLocation: false,
+        newLocationName: '',
+        locationSaving: false,
+        filterLocations() {
+            const q = this.locationSearch.toLowerCase();
+            this.locationResults = q.length === 0
+                ? this.allLocations
+                : this.allLocations.filter(l => l.name.toLowerCase().includes(q));
+            this.showAddLocation = q.length > 1
+                && !this.allLocations.some(l => l.name.toLowerCase() === q.toLowerCase());
+            if (q.length > 1 && this.showAddLocation) this.newLocationName = this.locationSearch;
+        },
+        selectLocation(name) {
+            this.locationSearch = name;
+            this.locationValue  = name;
+            this.locationOpen   = false;
+        },
+        async saveNewLocation() {
+            if (!this.newLocationName.trim()) return;
+            this.locationSaving = true;
+            try {
+                const xsrf = decodeURIComponent(document.cookie.split(';').find(c => c.trim().startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+                const res = await fetch('/api/locations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf },
+                    body: JSON.stringify({ name: this.newLocationName.trim() })
+                });
+                const loc = await res.json();
+                this.allLocations.push(loc);
+                this.allLocations.sort((a, b) => a.name.localeCompare(b.name));
+                this.selectLocation(loc.name);
+                this.newLocationName  = '';
+                this.showAddLocation  = false;
+            } finally {
+                this.locationSaving = false;
+            }
+        },
+
         init() {
             this.$nextTick(() => {
                 // Apply after x-for has rendered the options
@@ -187,12 +231,53 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                 <flux:error name="serial_number" />
             </div>
 
-            <div class="relative">
-                <input type="text" name="location" id="location"
-                    value="{{ $old('location') }}" placeholder=" "
-                    class="{{ $inputCls }}" />
+            {{-- Location searchable dropdown --}}
+            <div class="relative" x-on:click.outside="locationOpen = false">
+                <input type="hidden" name="location" :value="locationValue">
+                <input type="text" placeholder=" " autocomplete="off" id="location"
+                       x-model="locationSearch"
+                       x-on:focus="locationOpen = true; filterLocations()"
+                       x-on:input="locationOpen = true; filterLocations()"
+                       x-on:keydown.escape="locationOpen = false"
+                       class="{{ $inputCls }}" />
                 <label for="location" class="{{ $labelCls }}">Location</label>
                 <flux:error name="location" />
+
+                <div x-show="locationOpen" x-cloak
+                     class="absolute z-50 mt-1 w-full rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                     style="max-height: 220px; overflow-y: auto;">
+
+                    {{-- Results --}}
+                    <template x-for="loc in locationResults" :key="loc.id">
+                        <button type="button" x-on:click="selectLocation(loc.name)"
+                                class="flex w-full items-center px-3 py-2 text-sm text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                :class="locationValue === loc.name ? 'text-accent font-semibold bg-accent/5' : 'text-zinc-700 dark:text-zinc-300'"
+                                x-text="loc.name">
+                        </button>
+                    </template>
+
+                    {{-- No results --}}
+                    <p x-show="locationResults.length === 0 && !showAddLocation"
+                       class="px-3 py-2 text-xs text-zinc-400">No locations found.</p>
+
+                    {{-- Inline Add --}}
+                    <div x-show="showAddLocation"
+                         class="border-t border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
+                        <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Add New Location</p>
+                        <div class="flex items-center gap-2">
+                            <input type="text" x-model="newLocationName"
+                                   placeholder="Location name…"
+                                   x-on:keydown.enter.prevent="saveNewLocation()"
+                                   class="flex-1 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-sm focus:border-accent focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
+                            <button type="button" x-on:click="saveNewLocation()"
+                                    :disabled="locationSaving"
+                                    class="rounded-md bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground disabled:opacity-50 transition-opacity">
+                                <span x-show="!locationSaving">Add</span>
+                                <span x-show="locationSaving" x-cloak>Saving…</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="relative">

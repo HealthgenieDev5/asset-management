@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\AssetDocument;
 use App\Models\AssetSubcategory;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -53,8 +54,9 @@ class AssetController extends Controller
     public function create()
     {
         $categories = AssetCategory::active()->orderBy('name')->get();
+        $locations  = Location::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('assets.create', compact('categories'));
+        return view('assets.create', compact('categories', 'locations'));
     }
 
     public function store(Request $request)
@@ -129,11 +131,12 @@ class AssetController extends Controller
     public function edit(Asset $asset)
     {
         $asset->load(['category', 'documents', 'extendedWarranties.documents']);
-        $categories = AssetCategory::active()->orderBy('name')->get();
+        $categories    = AssetCategory::active()->orderBy('name')->get();
         $subcategories = AssetSubcategory::where('asset_category_id', $asset->asset_category_id)
             ->active()->orderBy('name')->get();
+        $locations     = Location::active()->orderBy('name')->get(['id', 'name']);
 
-        return view('assets.edit', compact('asset', 'categories', 'subcategories'));
+        return view('assets.edit', compact('asset', 'categories', 'subcategories', 'locations'));
     }
 
     public function update(Request $request, Asset $asset)
