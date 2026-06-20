@@ -240,7 +240,7 @@
                         <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
                         <dd class="mt-0.5 text-sm">
                             @if ($date)
-                                @php $expired = $date->isPast(); $soon = !$expired && $date->diffInDays(now()) <= 30; @endphp
+                                @php $expired = $date->isPast(); $daysLeft = (int) now()->diffInDays($date, false); $soon = !$expired && $daysLeft <= ($reminderDays ?? 30); @endphp
                                 <span class="{{ $expired ? 'text-red-400' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }}">
                                     {{ $date->format('d M Y') }}
                                     @if ($expired) <span class="text-xs">(expired)</span>

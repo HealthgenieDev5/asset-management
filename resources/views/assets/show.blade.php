@@ -42,6 +42,7 @@
             'documents'  => ['label' => 'Documents',    'icon' => 'paper-clip'],
             'amc'        => ['label' => 'AMC',          'icon' => 'wrench-screwdriver'],
             'insurance'  => ['label' => 'Insurance',    'icon' => 'building-library'],
+            'history'    => ['label' => 'History',      'icon' => 'clock'],
         ];
     @endphp
 

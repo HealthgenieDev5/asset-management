@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\AssetAmcContract;
 use App\Models\AssetCategory;
-use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetService;
 use App\Models\AssetSubcategory;
@@ -142,18 +141,13 @@ class ReportController extends Controller
 
     public function purchaseBills(Request $request)
     {
-        $assets = $this->baseAssetQuery($request)
+        $query = $this->baseAssetQuery($request)
             ->whereNotNull('bill_no')
             ->when($request->date_from, fn($q, $v) => $q->whereDate('bill_date', '>=', $v))
-            ->when($request->date_to,   fn($q, $v) => $q->whereDate('bill_date', '<=', $v))
-            ->orderByDesc('bill_date')
-            ->paginate(50)->withQueryString();
+            ->when($request->date_to,   fn($q, $v) => $q->whereDate('bill_date', '<=', $v));
 
-        $totalAmount = $this->baseAssetQuery($request)
-            ->whereNotNull('bill_no')
-            ->when($request->date_from, fn($q, $v) => $q->whereDate('bill_date', '>=', $v))
-            ->when($request->date_to,   fn($q, $v) => $q->whereDate('bill_date', '<=', $v))
-            ->sum('bill_amount');
+        $assets      = (clone $query)->orderByDesc('bill_date')->paginate(50)->withQueryString();
+        $totalAmount = $query->sum('bill_amount');
 
         return view('reports.purchase-bills', array_merge(
             $this->filterOptions(),
@@ -222,57 +216,7 @@ class ReportController extends Controller
         ], $rows);
     }
 
-    // ── 4. Extended Warranty Expiry ───────────────────────────────────────────
-
-    public function extendedWarrantyExpiry(Request $request)
-    {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetExtendedWarranty::with(['asset.category', 'asset.subcategory'])
-            ->whereHas('asset')
-            ->whereNotNull('extended_warranty_date_to')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('extended_warranty_date_to', '<', today()),
-            'in30'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
-        $records = $query->orderBy('extended_warranty_date_to')->paginate(50)->withQueryString();
-        return view('reports.extended-warranty-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
-    }
-
-    public function exportExtendedWarrantyExpiry(Request $request): StreamedResponse
-    {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetExtendedWarranty::with(['asset.category'])
-            ->whereHas('asset')
-            ->whereNotNull('extended_warranty_date_to')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('extended_warranty_date_to', '<', today()),
-            'in30'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('extended_warranty_date_to', '>=', today())->whereDate('extended_warranty_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
-        $rows = $query->orderBy('extended_warranty_date_to')->get()->map(fn($r) => [
-            $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
-            $r->extended_warranty_vendor,
-            $r->extended_warranty_date_from?->format('d/m/Y'),
-            $r->extended_warranty_date_to?->format('d/m/Y'),
-            (int) now()->startOfDay()->diffInDays($r->extended_warranty_date_to->startOfDay(), false),
-            $r->extended_warranty_amount ? number_format($r->extended_warranty_amount, 2) : '',
-        ]);
-        return $this->csvResponse('extended-warranty-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Ext. Warranty Vendor',
-            'Date From', 'Date To', 'Days Remaining', 'Amount (₹)',
-        ], $rows);
-    }
-
-    // ── 5. AMC Expiry ─────────────────────────────────────────────────────────
+    // ── 4. AMC Expiry ─────────────────────────────────────────────────────────
 
     public function amcExpiry(Request $request)
     {

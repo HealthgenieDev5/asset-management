@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AssetSmartReminder extends Model
 {
+    use HasAuditLog;
     protected $fillable = [
         'asset_id',
         'remindable_type',
@@ -42,8 +44,9 @@ class AssetSmartReminder extends Model
         'road_tax'           => 'Road Tax',
         'service_due'        => 'Service Due',
         'certification'      => 'Certification Expiry',
-        'part_warranty'      => 'Part Warranty',
-        'custom'             => 'Custom',
+        'part_warranty'        => 'Part Warranty',
+        'maintenance_schedule' => 'Maintenance Schedule',
+        'custom'               => 'Custom',
     ];
 
     public function asset(): BelongsTo
@@ -123,5 +126,20 @@ class AssetSmartReminder extends Model
     public function scopeActive(\Illuminate\Database\Eloquent\Builder $query)
     {
         return $query->where('is_active', true);
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Smart Reminder';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'reminder_name' => 'Name',
+            'is_active'     => 'Active',
+            'expiry_date'   => 'Expiry Date',
+            'reminder_days' => 'Reminder Days',
+        ];
     }
 }

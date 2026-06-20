@@ -19,7 +19,7 @@
         <h2 class="mb-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Warranty & Contracts</h2>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <x-reports.card href="{{ route('reports.warranty-expiry') }}" title="Warranty Expiry" description="Manufacturer warranty expiry dates." icon="shield-check" color="yellow" />
-            <x-reports.card href="{{ route('reports.extended-warranty-expiry') }}" title="Extended Warranty" description="Extended warranty contract expiry." icon="shield-exclamation" color="yellow" />
+            <x-reports.card href="{{ route('reports.warranty-expiry') }}" title="Extended Warranty" description="Extended warranty contract expiry." icon="shield-exclamation" color="yellow" />
             <x-reports.card href="{{ route('reports.amc-expiry') }}" title="AMC Expiry" description="Annual maintenance contract expiry dates." icon="wrench-screwdriver" color="yellow" />
             <x-reports.card href="{{ route('reports.insurance-expiry') }}" title="Insurance Expiry" description="Insurance policy expiry and premium details." icon="building-library" color="yellow" />
         </div>

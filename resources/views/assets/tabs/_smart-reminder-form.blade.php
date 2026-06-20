@@ -1,19 +1,21 @@
 @php
     $typeOptions = [
-        'warranty'          => 'Original Warranty',
-        'extended_warranty' => 'Extended Warranty',
-        'amc'               => 'AMC Contract',
-        'insurance'         => 'Insurance Policy',
-        'puc'               => 'PUC Expiry',
-        'fitness'           => 'Fitness Certificate',
-        'road_tax'          => 'Road Tax',
-        'service_due'       => 'Service Due',
-        'certification'     => 'Certification Expiry',
-        'part_warranty'     => 'Part Warranty',
-        'custom'            => 'Custom',
+        'warranty'             => 'Original Warranty',
+        'extended_warranty'    => 'Extended Warranty',
+        'amc'                  => 'AMC Contract',
+        'insurance'            => 'Insurance Policy',
+        'puc'                  => 'PUC Expiry',
+        'fitness'              => 'Fitness Certificate',
+        'road_tax'             => 'Road Tax',
+        'service_due'          => 'Service Due',
+        'certification'        => 'Certification Expiry',
+        'part_warranty'        => 'Part Warranty',
+        'maintenance_schedule' => 'Maintenance Schedule',
+        'custom'               => 'Custom',
     ];
-    $isEdit      = isset($reminder) && $reminder !== null;
-    $old         = fn($field, $default = '') => old($field, $isEdit ? ($reminder?->$field ?? $default) : $default);
+    $isEdit        = isset($reminder) && $reminder !== null;
+    $isAutoCreated = $isEdit && ! empty($reminder->remindable_type);
+    $old           = fn($field, $default = '') => old($field, $isEdit ? ($reminder?->$field ?? $default) : $default);
     $initMode    = old('reminder_mode', $isEdit ? ($reminder?->reminder_mode ?? 'time') : 'time');
     $initDays    = old('reminder_days_input', $isEdit ? implode(', ', $reminder?->reminder_days ?? []) : '');
     $initDaysArr = array_values(array_filter(array_map('intval', array_filter(explode(',', str_replace(' ', '', $initDays))))));
@@ -88,15 +90,33 @@
     </div>
 
     <div class="relative">
-        <select name="reminder_type" id="reminder_type_{{ $uid }}" class="{{ $sel }}">
-            @foreach ($typeOptions as $val => $label)
-                <option value="{{ $val }}" @selected($old('reminder_type') === $val)>{{ $label }}</option>
-            @endforeach
-        </select>
-        <label for="reminder_type_{{ $uid }}" class="{{ $lbs }}">
-            Reminder Type <span class="text-red-400">*</span>
-        </label>
-        @error('reminder_type') <p class="{{ $err }}">{{ $message }}</p> @enderror
+        @if ($isAutoCreated)
+            {{-- Auto-created reminders: lock the type so editing doesn't break the link --}}
+            <input type="hidden" name="reminder_type" value="{{ $reminder->reminder_type }}">
+            <div class="{{ $sel }} cursor-not-allowed opacity-70 bg-zinc-50 dark:bg-zinc-900">
+                {{ $typeOptions[$reminder->reminder_type] ?? ucfirst(str_replace('_', ' ', $reminder->reminder_type)) }}
+            </div>
+            <label class="{{ $lbs }}">Reminder Type</label>
+            @php
+                $linkedLabel = match(class_basename($reminder->remindable_type ?? '')) {
+                    'AssetWarranty'             => 'a Warranty record',
+                    'AssetServicePart'          => 'a Service Part record',
+                    'AssetMaintenanceSchedule'  => 'a Maintenance Schedule',
+                    default                     => 'a linked record',
+                };
+            @endphp
+            <p class="mt-1 text-[10px] text-zinc-400">Auto-managed — type is locked because this reminder is linked to {{ $linkedLabel }}.</p>
+        @else
+            <select name="reminder_type" id="reminder_type_{{ $uid }}" class="{{ $sel }}">
+                @foreach ($typeOptions as $val => $label)
+                    <option value="{{ $val }}" @selected($old('reminder_type') === $val)>{{ $label }}</option>
+                @endforeach
+            </select>
+            <label for="reminder_type_{{ $uid }}" class="{{ $lbs }}">
+                Reminder Type <span class="text-red-400">*</span>
+            </label>
+            @error('reminder_type') <p class="{{ $err }}">{{ $message }}</p> @enderror
+        @endif
     </div>
 
     {{-- ── Date Mode Fields ── --}}

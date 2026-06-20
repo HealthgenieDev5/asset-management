@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class AssetWarranty extends Model
 {
+    use HasAuditLog;
+    protected static function booted(): void
+    {
+        static::deleting(function (AssetWarranty $warranty) {
+            foreach ($warranty->documents as $doc) {
+                Storage::disk('public')->delete($doc->file_path);
+                $doc->delete();
+            }
+        });
+    }
+
     protected $fillable = [
         'asset_id',
         'warranty_type',
@@ -69,6 +82,29 @@ class AssetWarranty extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    protected function auditModelLabel(): string
+    {
+        return 'Warranty';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'warranty_type' => 'Warranty Type',
+            'scope'         => 'Scope',
+            'expiry_date'   => 'Expiry Date',
+            'status'        => 'Status',
+            'vendor'        => 'Vendor',
+            'bill_amount'   => 'Bill Amount',
+        ];
+    }
+
+    public function smartReminders(): HasMany
+    {
+        return $this->hasMany(AssetSmartReminder::class, 'remindable_id')
+            ->where('remindable_type', self::class);
+    }
+
     public function isTimeBased(): bool
     {
         return ($this->tracking_mode ?? 'time') === 'time';
@@ -97,6 +133,18 @@ class AssetWarranty extends Model
     public function isDisposed(): bool
     {
         return $this->status === 'disposed';
+    }
+
+    public function linkedReminderThreshold(): ?int
+    {
+        if ($this->relationLoaded('smartReminders')) {
+            $days = $this->smartReminders->first()?->reminder_days ?? [];
+        } else {
+            $days = AssetSmartReminder::where('remindable_type', self::class)
+                ->where('remindable_id', $this->id)
+                ->value('reminder_days') ?? [];
+        }
+        return empty($days) ? null : max($days);
     }
 
     public function latestCounter(): ?int

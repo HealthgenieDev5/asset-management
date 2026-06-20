@@ -78,7 +78,7 @@ class AssetSmartReminderController extends Controller
 
     private function rules(string $mode): array
     {
-        $typeEnum = 'in:warranty,extended_warranty,amc,insurance,puc,fitness,road_tax,service_due,certification,part_warranty,custom';
+        $typeEnum = 'in:warranty,extended_warranty,amc,insurance,puc,fitness,road_tax,service_due,certification,part_warranty,maintenance_schedule,custom';
 
         return [
             'reminder_name'       => ['required', 'string', 'max:255'],

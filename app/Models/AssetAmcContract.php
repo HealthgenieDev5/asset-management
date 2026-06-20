@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssetAmcContract extends Model
 {
+    use HasAuditLog;
     protected $fillable = [
         'asset_id',
         'contract_number',
@@ -77,5 +79,22 @@ class AssetAmcContract extends Model
             'labour_only'       => 'Labour Only',
             default             => ucfirst($this->coverage_type ?? ''),
         };
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'AMC Contract';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'contract_number' => 'Contract No.',
+            'vendor_name'     => 'Vendor',
+            'amc_date_from'   => 'Start Date',
+            'amc_date_to'     => 'End Date',
+            'amc_amount'      => 'Amount',
+            'coverage_type'   => 'Coverage Type',
+        ];
     }
 }

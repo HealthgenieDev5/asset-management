@@ -219,13 +219,6 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                     @error('counter_limit')<p class="{{ $err }}">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="relative">
-                    <input type="number" name="reminder_before_units" id="{{ $formId }}_reminder_units"
-                           value="{{ old('reminder_before_units', $w?->reminder_before_units) }}"
-                           placeholder=" " min="1" class="{{ $inp }}" />
-                    <label for="{{ $formId }}_reminder_units" class="{{ $lbl }}">Remind when within (<span x-text="unit || 'units'"></span>)</label>
-                    @error('reminder_before_units')<p class="{{ $err }}">{{ $message }}</p>@enderror
-                </div>
 
                 @if ($currentCounter !== null)
                     <div class="col-span-2 sm:col-span-4 rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400 flex items-center gap-3 flex-wrap">
@@ -235,7 +228,7 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                         </span>
                         @if ($remainingUnits !== null)
                             <span class="text-zinc-300 dark:text-zinc-600">·</span>
-                            <span class="{{ $remainingUnits <= ($w->reminder_before_units ?? 0) ? 'text-yellow-500 font-semibold' : '' }}">
+                            <span class="{{ $remainingUnits <= ($w->reminder_before_units ?? $w->linkedReminderThreshold() ?? 0) ? 'text-yellow-500 font-semibold' : '' }}">
                                 <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ number_format($remainingUnits) }} {{ $w->unit }}</span> remaining before warranty expires
                             </span>
                         @endif
@@ -245,6 +238,105 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                         No meter readings logged yet for <strong>{{ $w->unit }}</strong>. Log readings in the <strong>Meter Logs</strong> tab to track warranty progress.
                     </div>
                 @endif
+
+                {{-- ── Warranty Smart Reminder ── --}}
+                @php
+                    $linkedReminder = $w?->id
+                        ? \App\Models\AssetSmartReminder::where('remindable_type', \App\Models\AssetWarranty::class)
+                            ->where('remindable_id', $w->id)->first()
+                        : null;
+                    $srDaysArr = $linkedReminder?->reminder_days ?? [];
+                @endphp
+                <div class="col-span-2 sm:col-span-4"
+                     x-data="{
+                         open: {{ $linkedReminder ? 'true' : 'false' }},
+                         days: {{ json_encode($srDaysArr) }},
+                         inputVal: null,
+                         add() {
+                             const v = parseInt(this.inputVal);
+                             if (v > 0 && !this.days.includes(v)) {
+                                 this.days.push(v);
+                                 this.days.sort((a, b) => b - a);
+                             }
+                             this.inputVal = null;
+                         },
+                         addPreset(v) {
+                             if (!this.days.includes(v)) {
+                                 this.days.push(v);
+                                 this.days.sort((a, b) => b - a);
+                             }
+                         },
+                         remove(i) { this.days.splice(i, 1); }
+                     }">
+
+                    {{-- Toggle --}}
+                    <button type="button" @click="open = !open"
+                            class="flex w-full items-center justify-between rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-500 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-400">
+                        <span class="flex items-center gap-1.5">
+                            <flux:icon.bell-alert class="size-3.5" />
+                            Smart Reminder for this Warranty
+                            <template x-if="days.length > 0">
+                                <span class="ml-1 rounded-full bg-blue-400/10 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400" x-text="days.length + ' threshold' + (days.length > 1 ? 's' : '') + ' set'"></span>
+                            </template>
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
+                             class="size-3.5 transition-transform" :class="open ? 'rotate-180' : ''">
+                            <path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+
+                    {{-- Collapsible body --}}
+                    <div x-show="open" x-collapse x-cloak class="mt-2">
+                        <input type="hidden" name="sr_reminder_days" :value="days.join(',')">
+                        <p class="mb-1.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                            Remind when within
+                            <span class="font-semibold" x-text="'N ' + (unit || 'units') + ' remaining'"></span>
+                        </p>
+                        <div class="rounded-lg border border-zinc-300 bg-white p-2.5 dark:border-zinc-700 dark:bg-zinc-900">
+                            {{-- Tags --}}
+                            <div class="flex flex-wrap gap-1.5 mb-2 min-h-5.5">
+                                <template x-for="(day, i) in days" :key="i">
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2.5 py-0.5 text-xs font-semibold text-blue-400">
+                                        <span x-text="day + ' ' + (unit || 'units') + ' remaining'"></span>
+                                        <button type="button" @click="remove(i)"
+                                                class="ml-0.5 rounded-full text-blue-400 hover:text-red-400 transition-colors leading-none">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-3.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
+                                        </button>
+                                    </span>
+                                </template>
+                                <span x-show="days.length === 0" class="text-[11px] text-zinc-400 italic">No thresholds set</span>
+                            </div>
+                            {{-- Input row --}}
+                            <div class="flex items-center gap-2">
+                                <input type="number" min="1" x-model.number="inputVal"
+                                       @keydown.enter.prevent="add()"
+                                       placeholder="e.g. 5000"
+                                       class="w-28 rounded-md border border-zinc-300 bg-zinc-50 px-2.5 py-1 text-sm text-zinc-900 focus:border-accent focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100" />
+                                <span class="text-xs text-zinc-500" x-text="unit || 'units'"></span>
+                                <button type="button" @click="add()"
+                                        class="inline-flex items-center gap-1 rounded-md border border-zinc-300 px-2 py-1 text-xs font-medium text-zinc-600 hover:border-accent hover:text-accent transition-colors dark:border-zinc-700 dark:text-zinc-300">
+                                    <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                    Add
+                                </button>
+                            </div>
+                            {{-- Quick add presets --}}
+                            <div class="mt-1.5 text-[11px] text-zinc-500">
+                                Quick add:
+                                @foreach ([500, 1000, 2000, 5000, 10000] as $p)
+                                    <button type="button" @click="addPreset({{ $p }})"
+                                            class="ml-1 rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] font-mono text-zinc-600 hover:bg-blue-100 hover:text-blue-600 transition-colors dark:bg-zinc-800 dark:text-zinc-400">
+                                        {{ number_format($p) }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                        @if ($linkedReminder)
+                            <p class="mt-1 text-[11px] text-zinc-400">Updating thresholds will update the existing Smart Reminder "{{ $linkedReminder->reminder_name }}".</p>
+                        @else
+                            <p class="mt-1 text-[11px] text-zinc-400">A Smart Reminder linked to this warranty will be created automatically when you save.</p>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>

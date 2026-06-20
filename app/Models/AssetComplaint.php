@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 
 class AssetComplaint extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasAuditLog;
 
     protected static function booted(): void
     {
@@ -154,5 +155,20 @@ class AssetComplaint extends Model
             'critical' => 'text-red-400 bg-red-400/10',
             default => 'text-zinc-400 bg-zinc-400/10',
         };
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Complaint';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'title'       => 'Title',
+            'status'      => 'Status',
+            'priority'    => 'Priority',
+            'resolved_at' => 'Resolved At',
+        ];
     }
 }

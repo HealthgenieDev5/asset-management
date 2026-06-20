@@ -178,8 +178,28 @@
                         @php
                             $srRemaining = $sr->remainingUnits();
                             $srLimit     = $sr->counter_limit;
-                            $srPct       = ($srLimit && $srRemaining !== null) ? round(($latest->reading_value / $srLimit) * 100) : null;
-                            $srBar       = match(true) {
+
+                            // Maintenance-schedule reminders store thresholds, not a counter_limit.
+                            // Derive the effective limit from the linked schedule's next-due point.
+                            if (! $srLimit && $sr->remindable_type === \App\Models\AssetMaintenanceSchedule::class) {
+                                $linkedSched = $sr->remindable;
+                                if ($linkedSched) {
+                                    if ($linkedSched->schedule_type === 'mileage' && $linkedSched->interval_km) {
+                                        $lastKm  = $linkedSched->effectiveLastDoneKm() ?? 0;
+                                        $srLimit = $lastKm + $linkedSched->interval_km;
+                                        $srRemaining = max(0, $srLimit - $latest->reading_value);
+                                    } elseif ($linkedSched->schedule_type === 'operating_hours' && $linkedSched->interval_hours) {
+                                        $lastHrs = $linkedSched->effectiveLastDoneHours() ?? 0;
+                                        $srLimit = $lastHrs + $linkedSched->interval_hours;
+                                        $srRemaining = max(0, $srLimit - $latest->reading_value);
+                                    }
+                                }
+                            }
+
+                            $srPct = ($srLimit && $srRemaining !== null)
+                                ? round(($latest->reading_value / $srLimit) * 100)
+                                : null;
+                            $srBar = match(true) {
                                 $srPct === null => 'bg-zinc-300 dark:bg-zinc-600',
                                 $srPct >= 90    => 'bg-red-400',
                                 $srPct >= 70    => 'bg-yellow-400',
@@ -193,7 +213,7 @@
                                     <p class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 truncate max-w-36" title="{{ $sr->reminder_name }}">{{ $sr->reminder_name }}</p>
                                 </div>
                                 <p class="text-[11px] shrink-0 ml-1 {{ $srPct >= 90 ? 'text-red-400 font-semibold' : ($srPct >= 70 ? 'text-yellow-500 font-semibold' : 'text-zinc-400') }}">
-                                    @if ($srRemaining !== null)
+                                    @if ($srRemaining !== null && $srLimit)
                                         {{ number_format($srRemaining) }} left / {{ number_format($srLimit) }}
                                     @elseif ($srLimit)
                                         {{ number_format($srLimit) }} limit

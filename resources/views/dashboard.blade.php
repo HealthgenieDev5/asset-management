@@ -250,7 +250,7 @@
         @php
             $coverageCards = [
                 ['label' => 'Warranty',          'icon' => 'shield-check',       'accent' => 'text-violet-500',  'bg' => 'bg-violet-50 dark:bg-violet-950/20',  'border' => 'border-violet-200 dark:border-violet-900/40', 'data' => $warranty,    'href' => route('reports.warranty-expiry')],
-                ['label' => 'Extended Warranty',  'icon' => 'shield-exclamation', 'accent' => 'text-indigo-500',  'bg' => 'bg-indigo-50 dark:bg-indigo-950/20',  'border' => 'border-indigo-200 dark:border-indigo-900/40', 'data' => $extWarranty, 'href' => route('reports.extended-warranty-expiry')],
+                ['label' => 'Extended Warranty',  'icon' => 'shield-exclamation', 'accent' => 'text-indigo-500',  'bg' => 'bg-indigo-50 dark:bg-indigo-950/20',  'border' => 'border-indigo-200 dark:border-indigo-900/40', 'data' => $extWarranty, 'href' => route('reports.warranty-expiry')],
                 ['label' => 'AMC Contract',       'icon' => 'document-text',      'accent' => 'text-blue-500',    'bg' => 'bg-blue-50 dark:bg-blue-950/20',      'border' => 'border-blue-200 dark:border-blue-900/40',     'data' => $amc,         'href' => route('reports.amc-expiry')],
                 ['label' => 'Insurance',          'icon' => 'banknotes',          'accent' => 'text-teal-500',    'bg' => 'bg-teal-50 dark:bg-teal-950/20',      'border' => 'border-teal-200 dark:border-teal-900/40',     'data' => $insurance,   'href' => route('reports.insurance-expiry')],
             ];

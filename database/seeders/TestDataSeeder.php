@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Asset;
 use App\Models\AssetAmcContract;
 use App\Models\AssetCategory;
-use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetService;
 use App\Models\AssetServicePart;
@@ -284,41 +283,6 @@ class TestDataSeeder extends Seeder
             'sum_insured'         => 50000,
             'created_by'          => $user->id,
         ]);
-
-        // ── Extended Warranties ────────────────────────────────────────────────
-
-        if (! AssetExtendedWarranty::where('asset_id', $ac1->id)->exists()) {
-            AssetExtendedWarranty::create([
-                'asset_id'                    => $ac1->id,
-                'extended_warranty_vendor'    => 'Voltas Care',
-                'extended_warranty_date_from' => '2022-04-01',
-                'extended_warranty_date_to'   => today()->subDays(60),
-                'extended_warranty_amount'    => 8000,
-                'reminder_before_days'        => 30,
-            ]);
-        }
-
-        if (! AssetExtendedWarranty::where('asset_id', $laptop1->id)->exists()) {
-            AssetExtendedWarranty::create([
-                'asset_id'                    => $laptop1->id,
-                'extended_warranty_vendor'    => 'Dell Extended Care',
-                'extended_warranty_date_from' => today()->subYear()->addDays(10),
-                'extended_warranty_date_to'   => today()->addDays(15),
-                'extended_warranty_amount'    => 15000,
-                'reminder_before_days'        => 30,
-            ]);
-        }
-
-        if (! AssetExtendedWarranty::where('asset_id', $car1->id)->exists()) {
-            AssetExtendedWarranty::create([
-                'asset_id'                    => $car1->id,
-                'extended_warranty_vendor'    => 'Toyota Warranty Plus',
-                'extended_warranty_date_from' => today()->subMonths(6),
-                'extended_warranty_date_to'   => today()->addMonths(18),
-                'extended_warranty_amount'    => 35000,
-                'reminder_before_days'        => 30,
-            ]);
-        }
 
         // ── Services ───────────────────────────────────────────────────────────
         $skipServices = AssetService::where('asset_id', $car1->id)->exists();

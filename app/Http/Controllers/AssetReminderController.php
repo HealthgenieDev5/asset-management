@@ -26,7 +26,6 @@ class AssetReminderController extends Controller
         $assets = Asset::with([
             'category',
             'warranties',
-            'extendedWarranties',
             'amcContracts',
             'insurancePolicies',
             'services.parts',
@@ -79,23 +78,7 @@ class AssetReminderController extends Controller
                 $items->push($this->item($asset, $cat, $label, $color, $icon, $name, $source, $w->expiry_date, 'warranty'));
             }
 
-            // 3. Extended warranties (legacy)
-            foreach ($asset->extendedWarranties as $ew) {
-                if (! $ew->extended_warranty_date_to) continue;
-                $items->push($this->item(
-                    $asset,
-                    'extended_warranty',
-                    'Extended Warranty',
-                    'bg-indigo-400/10 text-indigo-400',
-                    'shield-exclamation',
-                    $ew->extended_warranty_vendor ?: 'No vendor',
-                    null,
-                    $ew->extended_warranty_date_to,
-                    'warranty'
-                ));
-            }
-
-            // 4. AMC contracts
+            // 3. AMC contracts
             foreach ($asset->amcContracts as $amc) {
                 if (! $amc->amc_date_to) continue;
                 $name   = $amc->vendor_name ?: ($amc->contract_number ?: 'No vendor');

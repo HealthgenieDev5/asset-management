@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Asset extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasAuditLog;
 
     protected static function booted(): void
     {
@@ -18,8 +19,8 @@ class Asset extends Model
             $asset->services()->each(fn ($s) => $s->delete());
             $asset->amcContracts()->delete();
             $asset->insurancePolicies()->delete();
-            $asset->extendedWarranties()->delete();
-            $asset->warranties()->delete();
+            // Use each() so AssetWarranty model events fire and its documents/files are cleaned up
+            $asset->warranties()->each(fn ($w) => $w->delete());
             $asset->documents()->delete();
             $asset->smartReminders()->delete();
             $asset->maintenanceSchedules()->delete();
@@ -108,11 +109,6 @@ class Asset extends Model
         return $this->hasMany(AssetDocument::class);
     }
 
-    public function extendedWarranties(): HasMany
-    {
-        return $this->hasMany(AssetExtendedWarranty::class);
-    }
-
     public function warranties(): HasMany
     {
         return $this->hasMany(AssetWarranty::class);
@@ -171,6 +167,37 @@ class Asset extends Model
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AssetAuditLog::class)->latest('created_at');
+    }
+
+    protected function auditAssetId(): ?int
+    {
+        return $this->id;
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Asset';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'asset_name'    => 'Name',
+            'status'        => 'Status',
+            'location'      => 'Location',
+            'department'    => 'Department',
+            'custodian'     => 'Custodian',
+            'bill_amount'   => 'Bill Amount',
+            'manufacturer'  => 'Manufacturer',
+            'model'         => 'Model',
+            'serial_number' => 'Serial No.',
+            'purchase_date' => 'Purchase Date',
+        ];
     }
 
     public function scopeActive($query)

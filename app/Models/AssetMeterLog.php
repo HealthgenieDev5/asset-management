@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssetMeterLog extends Model
 {
+    use HasAuditLog;
     protected $fillable = [
         'asset_id',
         'unit',
@@ -31,5 +33,19 @@ class AssetMeterLog extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Meter Log';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'unit'          => 'Unit',
+            'reading_value' => 'Reading',
+            'logged_at'     => 'Logged At',
+        ];
     }
 }

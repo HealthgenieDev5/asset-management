@@ -34,7 +34,6 @@ class AssetFullExport implements
             'category',
             'subcategory',
             'documents',
-            'extendedWarranties',
             'amcContracts',
             'amcContracts.documents',
             'insurancePolicies',

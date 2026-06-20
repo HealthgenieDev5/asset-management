@@ -48,6 +48,13 @@
         </button>
     </div>
 
+    <style>
+        .doc-upload .filepond--panel-root {
+            border: 1px dashed #4b4b4c;
+            border-radius: 10px;
+        }
+    </style>
+
     {{-- Upload Modal --}}
     <x-modal name="upload-document" title="Upload Document" :dismissible="false"
         :auto-open="$errors->any() && old('document_type')">
@@ -76,16 +83,37 @@
                 </div>
             </div>
 
-            <div>
+            <div class="doc-upload"
+                x-data="{
+                    pond: null,
+                    mountPond() {
+                        this.$nextTick(() => {
+                            const el = this.$refs.fileInput;
+                            if (el && !this.pond) {
+                                this.pond = initUploadPond(el, {
+                                    acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+                                    labelIdle: 'Drag & Drop your file or <span class=\'filepond--label-action\'>Browse</span>',
+                                });
+                            }
+                        });
+                    },
+                    destroy() {
+                        if (this.pond) { destroyUploadPond(this.pond); this.pond = null; }
+                    },
+                    init() {
+                        @if($errors->any() && old('document_type'))
+                            this.mountPond();
+                        @endif
+                    }
+                }"
+                x-on:close-modal-upload-document.window="destroy()"
+                x-on:open-modal-upload-document.window="mountPond()"
+            >
                 <p class="mb-1.5 text-xs font-medium text-zinc-500">File <span class="text-red-400">*</span>
                     <span class="ml-1 font-normal">(PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX — max 10 MB)</span>
                 </p>
-                <input type="file" name="file" required
-                       accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
-                       class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700
-                              file:mr-3 file:rounded file:border-0 file:bg-zinc-100 file:px-3 file:py-1 file:text-xs file:text-zinc-700
-                              focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent
-                              dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:file:bg-zinc-700 dark:file:text-zinc-200" />
+                <input type="file" name="file" x-ref="fileInput"
+                       accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" />
                 @error('file') <p class="mt-0.5 text-[11px] text-red-400">{{ $message }}</p> @enderror
             </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetDocument;
+use App\Models\AssetSmartReminder;
 use App\Models\AssetWarranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,7 @@ class AssetWarrantyController extends Controller
         $warranty = AssetWarranty::create($validated);
 
         $this->storeDocuments($request, $asset, $warranty);
+        $this->syncSmartReminder($request, $asset, $warranty);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
             ->with('success', 'Warranty added successfully.');
@@ -31,6 +33,11 @@ class AssetWarrantyController extends Controller
     {
         abort_if($warranty->asset_id !== $asset->id, 403);
 
+        // FilePond submits the existing file URL as a string when no new file is chosen — remove it so the file rule is never triggered
+        if ($request->has('warranty_doc') && ! $request->hasFile('warranty_doc')) {
+            $request->request->remove('warranty_doc');
+        }
+
         $validated = $request->validate($this->rules());
         $this->applyModeNullOut($validated);
         $validated['updated_by'] = auth()->id();
@@ -38,6 +45,7 @@ class AssetWarrantyController extends Controller
         $warranty->update($validated);
 
         $this->storeDocuments($request, $asset, $warranty);
+        $this->syncSmartReminder($request, $asset, $warranty);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
             ->with('success', 'Warranty updated successfully.');
@@ -110,7 +118,7 @@ class AssetWarrantyController extends Controller
             'counter_limit'         => ['nullable', 'integer', 'min:1'],
             'reminder_before_units' => ['nullable', 'integer', 'min:1'],
             'remarks'               => ['nullable', 'string'],
-            'warranty_doc'          => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+            'warranty_doc'          => ['sometimes', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 
@@ -129,6 +137,48 @@ class AssetWarrantyController extends Controller
             if ($mode !== 'meter') {
                 $validated['meter_source']      = null;
             }
+        }
+    }
+
+    private function syncSmartReminder(Request $request, Asset $asset, AssetWarranty $warranty): void
+    {
+        $raw = $request->input('sr_reminder_days', '');
+        $days = array_values(array_unique(array_filter(
+            array_map('intval', preg_split('/[\s,]+/', trim($raw))),
+            fn($d) => $d > 0
+        )));
+
+        $existing = AssetSmartReminder::where('remindable_type', AssetWarranty::class)
+            ->where('remindable_id', $warranty->id)
+            ->first();
+
+        if (empty($days)) {
+            $existing?->delete();
+            return;
+        }
+
+        $scopeLabel = $warranty->scope === 'part' ? ($warranty->part_name . ' — ') : '';
+        $name = $scopeLabel . $warranty->warrantyTypeLabel() . ' Warranty Reminder';
+
+        $data = [
+            'reminder_name'   => $name,
+            'reminder_type'   => 'warranty',
+            'reminder_mode'   => $warranty->tracking_mode === 'time' ? 'time' : $warranty->tracking_mode,
+            'counter_limit'   => $warranty->counter_limit,
+            'threshold_unit'  => $warranty->unit,
+            'reminder_days'   => $days,
+            'is_active'       => true,
+            'remindable_type' => AssetWarranty::class,
+            'remindable_id'   => $warranty->id,
+        ];
+
+        if ($existing) {
+            $existing->update(array_merge($data, ['updated_by' => auth()->id()]));
+        } else {
+            $asset->smartReminders()->create(array_merge($data, [
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]));
         }
     }
 

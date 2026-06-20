@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\AssetAmcContractController;
+use App\Http\Controllers\AssetAuditLogController;
 use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\AssetComplaintCommentController;
 use App\Http\Controllers\AssetComplaintController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
-use App\Http\Controllers\AssetExtendedWarrantyController;
 use App\Http\Controllers\AssetInsurancePolicyController;
 use App\Http\Controllers\AssetMaintenanceScheduleController;
 use App\Http\Controllers\AssetMeterLogController;
@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('asset-subcategories', AssetSubcategoryController::class);
     Route::get('assets/export', [AssetController::class, 'export'])->name('assets.export');
     Route::resource('assets', AssetController::class);
+    Route::get('assets/{asset}/history', [AssetAuditLogController::class, 'index'])->name('assets.history');
     Route::post('assets/{asset}/documents', [AssetDocumentController::class, 'store'])->name('assets.documents.store');
     Route::delete('assets/{asset}/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('assets.documents.destroy');
 
@@ -68,12 +69,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('assets/{asset}/amc', [AssetAmcContractController::class, 'store'])->name('assets.amc.store');
     Route::put('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'update'])->name('assets.amc.update');
     Route::delete('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'destroy'])->name('assets.amc.destroy');
-
-    // Extended Warranty (nested under asset)
-    Route::post('assets/{asset}/extended-warranty', [AssetExtendedWarrantyController::class, 'store'])->name('assets.ext-warranty.store');
-    Route::put('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'update'])->name('assets.ext-warranty.update');
-    Route::delete('assets/{asset}/extended-warranty/{ew}', [AssetExtendedWarrantyController::class, 'destroy'])->name('assets.ext-warranty.destroy');
-    Route::delete('assets/{asset}/extended-warranty/documents/{document}', [AssetExtendedWarrantyController::class, 'destroyDocument'])->name('assets.ext-warranty.documents.destroy');
 
     // Unified Warranty Entries
     Route::post('assets/{asset}/warranties',                          [AssetWarrantyController::class, 'store'])->name('assets.warranties.store');
@@ -145,7 +140,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/purchase-bills', [ReportController::class, 'purchaseBills'])->name('reports.purchase-bills');
     Route::get('reports/expiry', [ReportController::class, 'expiry'])->name('reports.expiry');
     Route::get('reports/warranty-expiry', [ReportController::class, 'warrantyExpiry'])->name('reports.warranty-expiry');
-    Route::get('reports/extended-warranty-expiry', [ReportController::class, 'extendedWarrantyExpiry'])->name('reports.extended-warranty-expiry');
     Route::get('reports/insurance-expiry', [ReportController::class, 'insuranceExpiry'])->name('reports.insurance-expiry');
     Route::get('reports/puc-expiry', [ReportController::class, 'pucExpiry'])->name('reports.puc-expiry');
     Route::get('reports/amc-expiry', [ReportController::class, 'amcExpiry'])->name('reports.amc-expiry');
@@ -162,7 +156,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/asset-register/export', [ReportController::class, 'exportAssetRegister'])->name('reports.asset-register.export');
     Route::get('reports/purchase-bills/export', [ReportController::class, 'exportPurchaseBills'])->name('reports.purchase-bills.export');
     Route::get('reports/warranty-expiry/export', [ReportController::class, 'exportWarrantyExpiry'])->name('reports.warranty-expiry.export');
-    Route::get('reports/extended-warranty-expiry/export', [ReportController::class, 'exportExtendedWarrantyExpiry'])->name('reports.extended-warranty-expiry.export');
     Route::get('reports/amc-expiry/export', [ReportController::class, 'exportAmcExpiry'])->name('reports.amc-expiry.export');
     Route::get('reports/insurance-expiry/export', [ReportController::class, 'exportInsuranceExpiry'])->name('reports.insurance-expiry.export');
     Route::get('reports/puc-expiry/export', [ReportController::class, 'exportPucExpiry'])->name('reports.puc-expiry.export');

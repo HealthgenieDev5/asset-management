@@ -201,13 +201,28 @@ $serviceTypeColors = [
                         @endif
 
                         {{-- Reminder thresholds --}}
-                        @if ($sch->reminder_thresholds)
-                            <div class="flex flex-wrap gap-1">
-                                @foreach (array_reverse(array_values(array_unique($sch->reminder_thresholds))) as $t)
-                                    <span class="inline-flex items-center rounded-full bg-blue-400/10 px-2 py-0.5 text-[11px] font-medium text-blue-400">
-                                        {{ $t }}{{ $sch->reminder_unit === 'km' ? 'km' : ($sch->reminder_unit === 'hours' ? 'h' : 'd') }}
-                                    </span>
-                                @endforeach
+                        @if (! empty($sch->reminder_thresholds))
+                            @php
+                                $rUnit = $sch->reminder_unit ?? 'days';
+                                $rSuffix = match ($rUnit) {
+                                    'km'    => 'km remaining',
+                                    'hours' => 'hrs remaining',
+                                    default => 'days before',
+                                };
+                            @endphp
+                            <div class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800/50">
+                                <div class="mb-1.5 flex items-center gap-1.5">
+                                    <flux:icon.bell-alert class="size-3 text-blue-400" />
+                                    <span class="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Smart Reminder</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach (array_reverse(array_values(array_unique($sch->reminder_thresholds))) as $t)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-2.5 opacity-70"><path fill-rule="evenodd" d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.03 7.78a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z" clip-rule="evenodd"/></svg>
+                                            {{ number_format($t) }} {{ $rSuffix }}
+                                        </span>
+                                    @endforeach
+                                </div>
                             </div>
                         @endif
 

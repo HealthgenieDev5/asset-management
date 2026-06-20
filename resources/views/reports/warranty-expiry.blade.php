@@ -7,7 +7,7 @@
     <div class="mb-5 flex items-center justify-between flex-wrap gap-3">
         <div>
             <flux:heading size="xl" class="font-extrabold">Warranty <span class="text-accent">Expiry</span></flux:heading>
-            <flux:text class="text-zinc-500 dark:text-zinc-400 mt-1">Original manufacturer warranty expiry dates.</flux:text>
+            <flux:text class="text-zinc-500 dark:text-zinc-400 mt-1">Manufacturer and extended warranty expiry dates.</flux:text>
         </div>
         <span class="text-xs text-zinc-500">{{ $assets->total() }} {{ Str::plural('record', $assets->total()) }}</span>
     </div>

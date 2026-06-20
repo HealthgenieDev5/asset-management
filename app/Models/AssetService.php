@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Collection;
 
 class AssetService extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasAuditLog;
 
     protected $fillable = [
         'asset_id',
@@ -68,7 +68,7 @@ class AssetService extends Model
 
     public function totalPartsCost(): float
     {
-        return (float) $this->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
+        return (float) $this->parts->sum(fn($p) => (float) ($p->part_cost ?? 0));
     }
 
     public function grandTotalCost(): float
@@ -156,5 +156,22 @@ class AssetService extends Model
             return null;
         }
         return (int) now()->startOfDay()->diffInDays($this->certification_expiry->startOfDay(), false);
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Service Record';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'service_type'      => 'Service Type',
+            'service_date'      => 'Service Date',
+            'service_agency'    => 'Agency',
+            'service_cost'      => 'Cost',
+            'condition_rating'  => 'Condition',
+            'next_service_date' => 'Next Service Date',
+        ];
     }
 }

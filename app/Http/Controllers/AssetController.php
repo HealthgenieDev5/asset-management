@@ -112,7 +112,8 @@ class AssetController extends Controller
             'category',
             'subcategory',
             'documents.uploader',
-            'extendedWarranties.documents.uploader',
+            'warranties.documents',
+            'warranties.smartReminders',
             'amcContracts.documents',
             'insurancePolicies.documents',
             'services.documents',
@@ -120,18 +121,24 @@ class AssetController extends Controller
             'complaints.comments.user',
             'complaints.documents',
             'complaints.service',
-            'smartReminders',
+            'smartReminders.remindable',
             'maintenanceSchedules',
             'meterLogs',
         ]);
         $tab = request('tab', 'overview');
 
-        return view('assets.show', compact('asset', 'tab'));
+        $auditLogs = \App\Models\AssetAuditLog::where('asset_id', $asset->id)
+            ->with('causer:id,name')
+            ->latest('created_at')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('assets.show', compact('asset', 'tab', 'auditLogs'));
     }
 
     public function edit(Asset $asset)
     {
-        $asset->load(['category', 'documents', 'extendedWarranties.documents']);
+        $asset->load(['category', 'documents']);
         $categories    = AssetCategory::active()->orderBy('name')->get();
         $subcategories = AssetSubcategory::where('asset_category_id', $asset->asset_category_id)
             ->active()->orderBy('name')->get();
@@ -248,7 +255,11 @@ class AssetController extends Controller
         if (! $categoryId) {
             return false;
         }
-        $cat = AssetCategory::find($categoryId);
-        return $cat && $cat->code === 'VE';
+        static $cache = [];
+        if (! isset($cache[$categoryId])) {
+            $cat = AssetCategory::find($categoryId);
+            $cache[$categoryId] = $cat && $cat->code === 'VE';
+        }
+        return $cache[$categoryId];
     }
 }

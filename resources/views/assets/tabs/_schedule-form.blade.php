@@ -45,18 +45,30 @@
         </label>
     </div>
 
-    {{-- Schedule Type — always visible for all service types --}}
+    {{-- Schedule Type — pill selector --}}
     <div class="mt-4">
-        <div class="relative">
-            <select name="schedule_type" x-model="type"
-                    class="peer block w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 focus:border-accent focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                <option value="date"            @selected($oldType === 'date')>Date / Time Based</option>
-                <option value="mileage"         @selected($oldType === 'mileage')>Mileage Based (km)</option>
-                <option value="operating_hours" @selected($oldType === 'operating_hours')>Operating Hours Based</option>
-            </select>
-            <label class="absolute left-3 top-2 text-[10px] font-medium text-zinc-500">Schedule Type <span class="text-red-400">*</span></label>
-            @error('schedule_type') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
+        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            Schedule Type <span class="text-red-400">*</span>
+        </p>
+        <div class="flex flex-wrap gap-2">
+            @foreach ([
+                'date'            => ['Date / Time', 'calendar-days'],
+                'mileage'         => ['Mileage (km)', 'map'],
+                'operating_hours' => ['Operating Hours', 'clock'],
+            ] as $val => [$label, $icon])
+                <button type="button"
+                    @click="type = '{{ $val }}'"
+                    :class="type === '{{ $val }}'
+                        ? 'bg-accent text-accent-foreground shadow-sm'
+                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'"
+                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">
+                    <flux:icon :icon="$icon" class="size-3.5" />
+                    {{ $label }}
+                </button>
+            @endforeach
         </div>
+        <input type="hidden" name="schedule_type" :value="type">
+        @error('schedule_type') <p class="mt-1 text-xs text-red-400">{{ $message }}</p> @enderror
     </div>
 
     {{-- Date-based fields --}}

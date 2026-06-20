@@ -43,6 +43,8 @@ class GlobalSmartReminderController extends Controller
 
     public function update(Request $request, AssetSmartReminder $smartReminder): RedirectResponse
     {
+        abort_unless(Asset::find($smartReminder->asset_id), 404);
+
         $mode = $request->input('reminder_mode', 'time');
 
         $validated = $request->validate($this->rules($mode));
@@ -69,6 +71,8 @@ class GlobalSmartReminderController extends Controller
 
     public function destroy(AssetSmartReminder $smartReminder): RedirectResponse
     {
+        abort_unless(Asset::find($smartReminder->asset_id), 404);
+
         $smartReminder->delete();
 
         return redirect()->route('asset-reminders.index')
@@ -77,7 +81,7 @@ class GlobalSmartReminderController extends Controller
 
     private function rules(string $mode): array
     {
-        $typeEnum = 'in:warranty,extended_warranty,amc,insurance,puc,fitness,road_tax,service_due,certification,part_warranty,custom';
+        $typeEnum = 'in:warranty,extended_warranty,amc,insurance,puc,fitness,road_tax,service_due,certification,part_warranty,maintenance_schedule,custom';
 
         return [
             'reminder_name'       => ['required', 'string', 'max:255'],

@@ -39,21 +39,6 @@
         }
     }
 
-    // Extended warranties (legacy)
-    foreach ($asset->extendedWarranties as $ew) {
-        if ($ew->extended_warranty_date_to) {
-            $items->push([
-                'category'       => 'Extended Warranty',
-                'category_color' => 'bg-indigo-400/10 text-indigo-400',
-                'icon'           => 'shield-exclamation',
-                'name'           => $ew->extended_warranty_vendor ?: 'No vendor',
-                'source'         => null,
-                'expiry'         => $ew->extended_warranty_date_to,
-                'edit_tab'       => 'warranty',
-            ]);
-        }
-    }
-
     // AMC contracts
     foreach ($asset->amcContracts as $amc) {
         if ($amc->amc_date_to) {
@@ -140,7 +125,7 @@
                         @foreach ($items as $item)
                             @php
                                 $expStart = $item['expiry']->copy()->startOfDay();
-                                $days     = (int) ($expStart->diffInDays(now()->startOfDay()) * ($expStart->gte(now()->startOfDay()) ? 1 : -1));
+                                $days     = (int) now()->startOfDay()->diffInDays($expStart, false);
                                 $expired  = $days < 0;
                                 $soon     = ! $expired && $days <= 30;
 
@@ -316,6 +301,23 @@
                                     $expiryLine = $sr->expiry_date?->format('d M Y') ?? '—';
                                     $subLine    = $expired ? abs($daysLeft) . 'd ago' : $daysLeft . 'd left';
                                     $subClass   = $expired ? 'text-red-400' : 'text-zinc-500';
+                                } elseif ($sr->reminder_type === 'maintenance_schedule' && $sr->remindable) {
+                                    $sch        = $sr->remindable;
+                                    $unit       = $sr->threshold_unit ?? '';
+                                    $remaining  = $sr->remainingUnits();
+                                    if ($sch->schedule_type === 'mileage') {
+                                        $expiryLine = 'Every ' . number_format($sch->interval_km) . ' ' . $unit;
+                                        $nextDue    = ($sch->effectiveLastDoneKm() !== null && $sch->interval_km)
+                                            ? 'Next at ' . number_format($sch->effectiveLastDoneKm() + $sch->interval_km) . ' ' . $unit
+                                            : 'No reading logged';
+                                    } else {
+                                        $expiryLine = 'Every ' . number_format($sch->interval_hours) . ' ' . $unit;
+                                        $nextDue    = ($sch->effectiveLastDoneHours() !== null && $sch->interval_hours)
+                                            ? 'Next at ' . number_format($sch->effectiveLastDoneHours() + $sch->interval_hours) . ' ' . $unit
+                                            : 'No reading logged';
+                                    }
+                                    $subLine  = $nextDue;
+                                    $subClass = 'text-zinc-500';
                                 } else {
                                     $remaining  = $sr->remainingUnits();
                                     $unit       = $sr->threshold_unit ?? '';

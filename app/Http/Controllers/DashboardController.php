@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\AssetAmcContract;
 use App\Models\AssetComplaint;
-use App\Models\AssetExtendedWarranty;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetService;
+use App\Models\AssetWarranty;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -37,7 +37,7 @@ class DashboardController extends Controller
 
         // ── Expiry counts per source ─────────────────────────────────────────
         $warranty    = $this->expiryBuckets('assets', 'warranty_lapse_date', $now, $in7, $in30, 'deleted_at IS NULL');
-        $extWarranty = $this->expiryBuckets('asset_extended_warranties', 'extended_warranty_date_to', $now, $in7, $in30);
+        $extWarranty = $this->expiryBuckets('asset_warranties', 'expiry_date', $now, $in7, $in30, "warranty_type = 'extended'");
         $amc         = $this->expiryBuckets('asset_amc_contracts', 'amc_date_to', $now, $in7, $in30);
         $insurance   = $this->expiryBuckets('asset_insurance_policies', 'policy_date_to', $now, $in7, $in30);
 
@@ -171,11 +171,12 @@ class DashboardController extends Controller
             ->get()
             ->each(fn($a) => $items->push(['asset_id' => $a->id, 'asset_code' => $a->asset_code, 'asset_name' => $a->asset_name, 'type' => 'Warranty', 'expiry_date' => $a->expiry_date, 'tab' => 'warranty']));
 
-        AssetExtendedWarranty::whereNotNull('extended_warranty_date_to')
-            ->whereBetween('extended_warranty_date_to', [$now, $in30])
+        AssetWarranty::where('warranty_type', 'extended')
+            ->whereNotNull('expiry_date')
+            ->whereBetween('expiry_date', [$now, $in30])
             ->with('asset:id,asset_code,asset_name')
             ->get()
-            ->each(fn($ew) => $items->push(['asset_id' => $ew->asset_id, 'asset_code' => $ew->asset?->asset_code, 'asset_name' => $ew->asset?->asset_name, 'type' => 'Ext. Warranty', 'expiry_date' => $ew->extended_warranty_date_to, 'tab' => 'ext-warranty']));
+            ->each(fn($w) => $items->push(['asset_id' => $w->asset_id, 'asset_code' => $w->asset?->asset_code, 'asset_name' => $w->asset?->asset_name, 'type' => 'Ext. Warranty', 'expiry_date' => $w->expiry_date, 'tab' => 'warranty']));
 
         AssetAmcContract::whereNotNull('amc_date_to')
             ->whereBetween('amc_date_to', [$now, $in30])

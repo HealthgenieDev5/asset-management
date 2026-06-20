@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssetMaintenanceSchedule extends Model
 {
+    use HasAuditLog;
     protected $fillable = [
         'asset_id',
         'schedule_category',
@@ -238,5 +240,21 @@ class AssetMaintenanceSchedule extends Model
     public function scopeByServiceType($query, string $serviceType)
     {
         return $query->where('service_type', $serviceType);
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Maintenance Schedule';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'schedule_name' => 'Schedule Name',
+            'next_due_date' => 'Next Due Date',
+            'is_active'     => 'Active',
+            'service_type'  => 'Service Type',
+            'last_done_date' => 'Last Done Date',
+        ];
     }
 }

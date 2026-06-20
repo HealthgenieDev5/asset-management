@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AssetCategory;
 use App\Models\ComplaintEscalationRule;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ComplaintEscalationRuleController extends Controller
 {
@@ -25,7 +26,7 @@ class ComplaintEscalationRuleController extends Controller
             'remarks'           => ['nullable', 'string'],
         ]);
 
-        $emails = array_values(array_filter(array_map('trim', explode(',', $validated['notify_emails']))));
+        $emails = $this->parseAndValidateEmails($request, $validated['notify_emails']);
 
         ComplaintEscalationRule::create([
             'location'          => $validated['location'],
@@ -48,7 +49,7 @@ class ComplaintEscalationRuleController extends Controller
             'remarks'           => ['nullable', 'string'],
         ]);
 
-        $emails = array_values(array_filter(array_map('trim', explode(',', $validated['notify_emails']))));
+        $emails = $this->parseAndValidateEmails($request, $validated['notify_emails']);
 
         $complaintEscalationRule->update([
             'location'          => $validated['location'],
@@ -60,6 +61,20 @@ class ComplaintEscalationRuleController extends Controller
 
         return redirect()->route('complaint-escalation-rules.index')
             ->with('success', 'Escalation rule updated.');
+    }
+
+    private function parseAndValidateEmails(Request $request, string $raw): array
+    {
+        $emails = array_values(array_filter(array_map('trim', explode(',', $raw))));
+
+        $invalid = array_filter($emails, fn($e) => ! filter_var($e, FILTER_VALIDATE_EMAIL));
+        if (! empty($invalid)) {
+            throw ValidationException::withMessages([
+                'notify_emails' => 'Invalid email address(es): ' . implode(', ', $invalid),
+            ]);
+        }
+
+        return $emails;
     }
 
     public function destroy(ComplaintEscalationRule $complaintEscalationRule)

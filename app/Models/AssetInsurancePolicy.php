@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssetInsurancePolicy extends Model
 {
+    use HasAuditLog;
     protected $fillable = [
         'asset_id',
         'policy_number',
@@ -67,5 +69,22 @@ class AssetInsurancePolicy extends Model
             return null;
         }
         return (int) now()->startOfDay()->diffInDays($this->policy_date_to->startOfDay(), false);
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Insurance Policy';
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'policy_number'    => 'Policy No.',
+            'insurer_name'     => 'Insurer',
+            'policy_date_from' => 'Start Date',
+            'policy_date_to'   => 'End Date',
+            'premium_amount'   => 'Premium',
+            'sum_insured'      => 'Sum Insured',
+        ];
     }
 }

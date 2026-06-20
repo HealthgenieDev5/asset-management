@@ -1,7 +1,7 @@
 @php
 use Illuminate\Support\Facades\Storage;
 
-$warranties  = $asset->warranties()->with('documents')->orderBy('scope')->orderBy('warranty_type')->orderBy('id')->get();
+$warranties  = $asset->warranties->sortBy([['scope', 'asc'], ['warranty_type', 'asc'], ['id', 'asc']]);
 $overallWars = $warranties->where('scope', 'overall');
 $partWars    = $warranties->where('scope', 'part');
 $prefillPart = request('prefill_part');
@@ -202,8 +202,11 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                     @endif
                                     @if ($w->isTimeBased() && $w->reminder_before_days)
                                         <div><dt class="{{ $dt }}">Reminder</dt><dd class="{{ $dd }}">{{ $w->reminder_before_days }} days before</dd></div>
-                                    @elseif (! $w->isTimeBased() && $w->reminder_before_units)
-                                        <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($w->reminder_before_units) }} {{ $w->unitLabel() }}</dd></div>
+                                    @elseif (! $w->isTimeBased())
+                                        @php $srThreshold = $w->linkedReminderThreshold(); @endphp
+                                        @if ($srThreshold)
+                                            <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($srThreshold) }} {{ $w->unitLabel() }}</dd></div>
+                                        @endif
                                     @endif
                                     @if (! $w->isTimeBased())
                                         @php
@@ -219,7 +222,7 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                         @if ($remaining !== null)
                                             <div>
                                                 <dt class="{{ $dt }}">Remaining</dt>
-                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($w->reminder_before_units ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
+                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($srThreshold ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
                                                     {{ number_format($remaining) }} {{ $w->unitLabel() }}
                                                 </dd>
                                             </div>
@@ -369,8 +372,11 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                     @endif
                                     @if ($w->isTimeBased() && $w->reminder_before_days)
                                         <div><dt class="{{ $dt }}">Reminder</dt><dd class="{{ $dd }}">{{ $w->reminder_before_days }} days before</dd></div>
-                                    @elseif (! $w->isTimeBased() && $w->reminder_before_units)
-                                        <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($w->reminder_before_units) }} {{ $w->unitLabel() }}</dd></div>
+                                    @elseif (! $w->isTimeBased())
+                                        @php $srThreshold = $w->linkedReminderThreshold(); @endphp
+                                        @if ($srThreshold)
+                                            <div><dt class="{{ $dt }}">Remind within</dt><dd class="{{ $dd }}">{{ number_format($srThreshold) }} {{ $w->unitLabel() }}</dd></div>
+                                        @endif
                                     @endif
                                     @if (! $w->isTimeBased())
                                         @php
@@ -386,7 +392,7 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                         @if ($remaining !== null)
                                             <div>
                                                 <dt class="{{ $dt }}">Remaining</dt>
-                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($w->reminder_before_units ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
+                                                <dd class="mt-0.5 text-sm font-semibold {{ $remaining <= ($srThreshold ?? 0) ? 'text-yellow-400' : ($remaining === 0 ? 'text-red-400' : 'text-green-400') }}">
                                                     {{ number_format($remaining) }} {{ $w->unitLabel() }}
                                                 </dd>
                                             </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetMaintenanceSchedule;
+use App\Models\AssetSmartReminder;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 
@@ -18,7 +19,7 @@ class AssetMaintenanceScheduleController extends Controller
 
         $validated = $request->validate($rules);
 
-        $days = $this->parseThresholds($request->input('reminder_thresholds_input', ''));
+        $days = $this->parseThresholds($request->string('reminder_thresholds_input')->toString());
 
         $schedule = $asset->maintenanceSchedules()->create([
             'service_type'        => $validated['service_type'],
@@ -47,6 +48,22 @@ class AssetMaintenanceScheduleController extends Controller
             }
         }
 
+        if (! empty($days)) {
+            $asset->smartReminders()->create([
+                'reminder_name'   => $schedule->schedule_name . ' Schedule Reminder',
+                'reminder_type'   => 'maintenance_schedule',
+                'reminder_mode'   => $type === 'date' ? 'time' : 'meter',
+                'counter_limit'   => null,
+                'threshold_unit'  => $this->reminderUnit($type),
+                'reminder_days'   => array_values($days),
+                'is_active'       => true,
+                'remindable_type' => AssetMaintenanceSchedule::class,
+                'remindable_id'   => $schedule->id,
+                'created_by'      => auth()->id(),
+                'updated_by'      => auth()->id(),
+            ]);
+        }
+
         return redirect()->route('assets.show', [$asset, 'tab' => 'schedules'])
             ->with('success', 'Maintenance schedule created.');
     }
@@ -62,7 +79,7 @@ class AssetMaintenanceScheduleController extends Controller
 
         $validated = $request->validate($rules);
 
-        $days = $this->parseThresholds($request->input('reminder_thresholds_input', ''));
+        $days = $this->parseThresholds($request->string('reminder_thresholds_input')->toString());
 
         $schedule->update([
             'service_type'        => $validated['service_type'],
@@ -87,6 +104,34 @@ class AssetMaintenanceScheduleController extends Controller
             $schedule->refresh();
             $next = $schedule->computeNextDueDate();
             $schedule->update(['next_due_date' => $next]);
+        }
+
+        $schedule->refresh();
+        $existingReminder = AssetSmartReminder::where('remindable_type', AssetMaintenanceSchedule::class)
+            ->where('remindable_id', $schedule->id)
+            ->first();
+
+        $updatedDays = $schedule->reminder_thresholds ?? [];
+        if (! empty($updatedDays)) {
+            $reminderData = [
+                'reminder_name'   => $schedule->schedule_name . ' Schedule Reminder',
+                'reminder_type'   => 'maintenance_schedule',
+                'reminder_mode'   => $type === 'date' ? 'time' : 'meter',
+                'counter_limit'   => null,
+                'threshold_unit'  => $this->reminderUnit($type),
+                'reminder_days'   => array_values($updatedDays),
+                'is_active'       => (bool) $schedule->is_active,
+                'remindable_type' => AssetMaintenanceSchedule::class,
+                'remindable_id'   => $schedule->id,
+                'updated_by'      => auth()->id(),
+            ];
+            if ($existingReminder) {
+                $existingReminder->update($reminderData);
+            } else {
+                $asset->smartReminders()->create(array_merge($reminderData, ['created_by' => auth()->id()]));
+            }
+        } else {
+            $existingReminder?->delete();
         }
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'schedules'])
