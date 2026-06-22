@@ -286,17 +286,17 @@
                                 {{ $amc->reminder_before_days ? $amc->reminder_before_days . ' days' : '—' }}
                             </dd>
                         </div>
-                        @if ($amc->vendor || $amc->vendor_contact_person || $amc->vendor_phone || $amc->vendor_email)
+                        @if ($amc->vendor || $amc->vendor_phone || $amc->vendor_email)
                             <div class="sm:col-span-2 lg:col-span-3">
                                 <dt class="text-xs font-medium text-zinc-500">Vendor Contact</dt>
                                 <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
                                     @if ($amc->vendor)
                                         <a href="{{ route('vendors.show', $amc->vendor) }}" wire:navigate class="text-accent hover:underline">{{ $amc->vendor->name }}</a>
-                                        @if ($amc->vendor->contact_person || $amc->vendor->phone)
-                                            <span class="ml-1 text-zinc-500">— {{ implode(' · ', array_filter([$amc->vendor->contact_person, $amc->vendor->phone])) }}</span>
+                                        @if ($amc->vendor->phone)
+                                            <span class="ml-1 text-zinc-500">— {{ $amc->vendor->phone }}</span>
                                         @endif
                                     @else
-                                        {{ implode(' · ', array_filter([$amc->vendor_contact_person, $amc->vendor_phone, $amc->vendor_email])) }}
+                                        {{ implode(' · ', array_filter([$amc->vendor_phone, $amc->vendor_email])) }}
                                     @endif
                                 </dd>
                             </div>

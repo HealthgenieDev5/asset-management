@@ -13,51 +13,25 @@ class Vendor extends Model
 
     protected $fillable = [
         'name',
-        'code',
-        'contact_person',
+        'type',
         'phone',
+        'alt_phone',
         'email',
+        'alt_email',
         'address',
-        'service_types',
-        'sla_response_hours',
-        'sla_resolution_days',
-        'notes',
         'status',
         'created_by',
         'updated_by',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'service_types' => 'array',
-        ];
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (Vendor $vendor) {
-            if (empty($vendor->code)) {
-                $vendor->code = static::generateCode();
-            }
-        });
-    }
-
-    protected static function generateCode(): string
-    {
-        $last = static::withTrashed()
-            ->where('code', 'like', 'VEN-%')
-            ->orderByDesc('id')
-            ->value('code');
-
-        $next = $last ? ((int) substr($last, 4)) + 1 : 1;
-
-        return 'VEN-' . str_pad($next, 3, '0', STR_PAD_LEFT);
-    }
-
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
+    }
+
+    public function typeLabel(): string
+    {
+        return $this->type === 'individual' ? 'Individual' : 'Company';
     }
 
     public function warranties(): HasMany
@@ -83,34 +57,5 @@ class Vendor extends Model
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function serviceTypesLabel(): string
-    {
-        if (empty($this->service_types)) {
-            return '—';
-        }
-
-        $labels = [
-            'warranty' => 'Warranty',
-            'amc'      => 'AMC',
-            'service'  => 'Service',
-            'all'      => 'All',
-        ];
-
-        return implode(', ', array_map(fn ($t) => $labels[$t] ?? ucfirst($t), $this->service_types));
-    }
-
-    public function slaLabel(): string
-    {
-        $parts = [];
-        if ($this->sla_response_hours !== null) {
-            $parts[] = $this->sla_response_hours . 'h';
-        }
-        if ($this->sla_resolution_days !== null) {
-            $parts[] = $this->sla_resolution_days . 'd';
-        }
-
-        return $parts ? implode(' / ', $parts) : '—';
     }
 }

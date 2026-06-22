@@ -1,125 +1,132 @@
-@php $vendor ??= null; @endphp
+@php
+    $vendor      ??= null;
+    $fieldPrefix ??= '';
 
-{{-- Basic Info --}}
-<div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-    <h3 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Basic Information</h3>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <flux:field class="sm:col-span-2">
-            <flux:label for="name">Vendor Name <span class="text-red-400">*</span></flux:label>
-            <flux:input id="name" name="name" type="text" value="{{ old('name', $vendor?->name) }}"
-                        placeholder="e.g. Acme Tech Services" required autofocus />
-            @error('name') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+    $inputCls    = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+    $selectCls   = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+    $labelCls    = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-accent dark:text-zinc-400 dark:peer-focus:text-accent';
+    $labelSelCls = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+    $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
 
-        <flux:field>
-            <flux:label for="code">Vendor Code</flux:label>
-            <flux:input id="code" name="code" type="text" value="{{ old('code', $vendor?->code) }}"
-                        placeholder="Auto-generated (e.g. VEN-001)" class="font-mono uppercase" />
-            <flux:description>Leave blank to auto-generate.</flux:description>
-            @error('code') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+    $selectedType = old('type', $vendor?->type ?? 'company');
+@endphp
 
-        <flux:field>
-            <flux:label for="status">Status <span class="text-red-400">*</span></flux:label>
-            <flux:select id="status" name="status">
-                <flux:select.option value="active"   :selected="old('status', $vendor?->status ?? 'active') === 'active'">Active</flux:select.option>
-                <flux:select.option value="inactive" :selected="old('status', $vendor?->status) === 'inactive'">Inactive</flux:select.option>
-            </flux:select>
-            @error('status') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+{{-- Basic Information --}}
+<div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Basic Information</flux:heading>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+
+        {{-- Vendor Name --}}
+        <div class="sm:col-span-2">
+            <div class="relative">
+                <input type="text" name="name" id="{{ $fieldPrefix }}name"
+                    value="{{ old('name', $vendor?->name) }}" placeholder=" " required
+                    class="{{ $inputCls }}" />
+                <label for="{{ $fieldPrefix }}name" class="{{ $labelCls }}">Vendor Name <span class="text-red-400">*</span></label>
+            </div>
+            @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Type pill radios --}}
+        <div>
+            <p class="mb-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Type <span class="text-red-400">*</span></p>
+            <div class="flex gap-2" x-data="{ type: '{{ $selectedType }}' }">
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="company" class="sr-only peer"
+                           x-model="type" {{ $selectedType === 'company' ? 'checked' : '' }}>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition
+                        border-zinc-300 bg-zinc-50 text-zinc-600
+                        peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white
+                        dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300
+                        dark:peer-checked:border-accent dark:peer-checked:bg-accent dark:peer-checked:text-white">
+                        <svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                        </svg>
+                        Company
+                    </span>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="individual" class="sr-only peer"
+                           x-model="type" {{ $selectedType === 'individual' ? 'checked' : '' }}>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition
+                        border-zinc-300 bg-zinc-50 text-zinc-600
+                        peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white
+                        dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300
+                        dark:peer-checked:border-accent dark:peer-checked:bg-accent dark:peer-checked:text-white">
+                        <svg class="size-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                        Individual
+                    </span>
+                </label>
+            </div>
+            @error('type') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Status --}}
+        <div class="relative">
+            <select name="status" id="{{ $fieldPrefix }}status" class="{{ $selectCls }}">
+                <option value="active"   @selected(old('status', $vendor?->status ?? 'active') === 'active')>Active</option>
+                <option value="inactive" @selected(old('status', $vendor?->status) === 'inactive')>Inactive</option>
+            </select>
+            <label for="{{ $fieldPrefix }}status" class="{{ $labelSelCls }}">Status <span class="text-red-400">*</span></label>
+            @error('status') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
     </div>
 </div>
 
-{{-- Contact --}}
-<div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-    <h3 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Contact Details</h3>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <flux:field>
-            <flux:label for="contact_person">Contact Person</flux:label>
-            <flux:input id="contact_person" name="contact_person" type="text"
-                        value="{{ old('contact_person', $vendor?->contact_person) }}"
-                        placeholder="Full name" />
-            @error('contact_person') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+{{-- Contact Details --}}
+<div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <flux:heading class="mb-5 font-semibold text-zinc-800 dark:text-zinc-200">Contact Details</flux:heading>
 
-        <flux:field>
-            <flux:label for="phone">Phone</flux:label>
-            <flux:input id="phone" name="phone" type="text"
-                        value="{{ old('phone', $vendor?->phone) }}"
-                        placeholder="+91 98765 43210" />
-            @error('phone') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+    <div class="grid gap-4 sm:grid-cols-2">
 
-        <flux:field>
-            <flux:label for="email">Email</flux:label>
-            <flux:input id="email" name="email" type="email"
-                        value="{{ old('email', $vendor?->email) }}"
-                        placeholder="vendor@example.com" />
-            @error('email') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
+        {{-- Phone --}}
+        <div class="relative">
+            <input type="text" name="phone" id="{{ $fieldPrefix }}phone"
+                value="{{ old('phone', $vendor?->phone) }}" placeholder=" "
+                class="{{ $inputCls }}" />
+            <label for="{{ $fieldPrefix }}phone" class="{{ $labelCls }}">Phone</label>
+            @error('phone') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Alt Phone --}}
+        <div class="relative">
+            <input type="text" name="alt_phone" id="{{ $fieldPrefix }}alt_phone"
+                value="{{ old('alt_phone', $vendor?->alt_phone) }}" placeholder=" "
+                class="{{ $inputCls }}" />
+            <label for="{{ $fieldPrefix }}alt_phone" class="{{ $labelCls }}">Alternate Phone</label>
+            @error('alt_phone') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Email --}}
+        <div class="relative">
+            <input type="email" name="email" id="{{ $fieldPrefix }}email"
+                value="{{ old('email', $vendor?->email) }}" placeholder=" "
+                class="{{ $inputCls }}" />
+            <label for="{{ $fieldPrefix }}email" class="{{ $labelCls }}">Email</label>
+            @error('email') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Alt Email --}}
+        <div class="relative">
+            <input type="email" name="alt_email" id="{{ $fieldPrefix }}alt_email"
+                value="{{ old('alt_email', $vendor?->alt_email) }}" placeholder=" "
+                class="{{ $inputCls }}" />
+            <label for="{{ $fieldPrefix }}alt_email" class="{{ $labelCls }}">Alternate Email</label>
+            @error('alt_email') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
+        {{-- Address --}}
+        <div class="relative sm:col-span-2">
+            <textarea name="address" id="{{ $fieldPrefix }}address" rows="2"
+                placeholder=" "
+                class="{{ $textareaCls }}">{{ old('address', $vendor?->address) }}</textarea>
+            <label for="{{ $fieldPrefix }}address" class="{{ $labelCls }}">Address</label>
+            @error('address') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+        </div>
+
     </div>
-
-    <div class="mt-4">
-        <flux:field>
-            <flux:label for="address">Address</flux:label>
-            <flux:textarea id="address" name="address" rows="2"
-                           placeholder="Street, city, state…">{{ old('address', $vendor?->address) }}</flux:textarea>
-            @error('address') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
-    </div>
-</div>
-
-{{-- Service Scope --}}
-<div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-    <h3 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Service Scope</h3>
-    <p class="mb-3 text-xs text-zinc-500 dark:text-zinc-400">What types of services does this vendor provide?</p>
-    @php
-        $selectedTypes = old('service_types', $vendor?->service_types ?? []);
-    @endphp
-    <div class="flex flex-wrap gap-4">
-        @foreach (['warranty' => 'Warranty', 'amc' => 'AMC', 'service' => 'Service', 'all' => 'All Types'] as $value => $label)
-            <label class="flex cursor-pointer items-center gap-2">
-                <input type="checkbox" name="service_types[]" value="{{ $value }}"
-                       @checked(in_array($value, $selectedTypes))
-                       class="size-4 rounded border-zinc-300 text-accent focus:ring-accent dark:border-zinc-600" />
-                <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $label }}</span>
-            </label>
-        @endforeach
-    </div>
-    @error('service_types') <p class="mt-2 text-xs text-red-500">{{ $message }}</p> @enderror
-    @error('service_types.*') <p class="mt-2 text-xs text-red-500">{{ $message }}</p> @enderror
-</div>
-
-{{-- SLA --}}
-<div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-    <h3 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">SLA Terms</h3>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <flux:field>
-            <flux:label for="sla_response_hours">Response Time (hours)</flux:label>
-            <flux:input id="sla_response_hours" name="sla_response_hours" type="number" min="0" max="9999"
-                        value="{{ old('sla_response_hours', $vendor?->sla_response_hours) }}"
-                        placeholder="e.g. 4" />
-            <flux:description>Maximum hours until first response.</flux:description>
-            @error('sla_response_hours') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
-
-        <flux:field>
-            <flux:label for="sla_resolution_days">Resolution Time (days)</flux:label>
-            <flux:input id="sla_resolution_days" name="sla_resolution_days" type="number" min="0" max="9999"
-                        value="{{ old('sla_resolution_days', $vendor?->sla_resolution_days) }}"
-                        placeholder="e.g. 2" />
-            <flux:description>Maximum days until issue is resolved.</flux:description>
-            @error('sla_resolution_days') <flux:error>{{ $message }}</flux:error> @enderror
-        </flux:field>
-    </div>
-</div>
-
-{{-- Notes --}}
-<div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-    <h3 class="mb-4 text-sm font-semibold text-zinc-700 dark:text-zinc-300">Notes</h3>
-    <flux:field>
-        <flux:textarea id="notes" name="notes" rows="3"
-                       placeholder="Any additional notes about this vendor…">{{ old('notes', $vendor?->notes) }}</flux:textarea>
-        @error('notes') <flux:error>{{ $message }}</flux:error> @enderror
-    </flux:field>
 </div>

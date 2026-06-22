@@ -57,7 +57,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 @error('next_service_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
             @php
-                $vendorMapSvc = ($vendors ?? collect())->mapWithKeys(fn($v) => [$v->id => ['id' => $v->id, 'contact_person' => $v->contact_person, 'phone' => $v->phone, 'email' => $v->email]])->toJson();
+                $vendorMapSvc = ($vendors ?? collect())->mapWithKeys(fn($v) => [$v->id => ['id' => $v->id, 'phone' => $v->phone, 'email' => $v->email]])->toJson();
             @endphp
             <div class="relative sm:col-span-2"
                  x-data="{
@@ -69,7 +69,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                     <option value=""></option>
                     @foreach ($vendors ?? [] as $vnd)
                         <option value="{{ $vnd->id }}" @selected((int) old('vendor_id', $service?->vendor_id) === $vnd->id)>
-                            [{{ $vnd->code }}] {{ $vnd->name }}
+                            {{ $vnd->name }}
                         </option>
                     @endforeach
                 </select>
@@ -77,7 +77,6 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 @error('vendor_id')<p class="{{ $err }}">{{ $message }}</p>@enderror
                 <template x-if="info">
                     <div class="mt-1 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:bg-zinc-800 space-y-0.5">
-                        <p x-text="info.contact_person"></p>
                         <p x-text="info.phone"></p>
                         <p x-text="info.email"></p>
                     </div>

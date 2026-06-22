@@ -697,15 +697,9 @@ class ReportController extends Controller
             ])
             ->withSum('services', 'service_cost')
             ->when($request->search, fn ($q, $s) =>
-                $q->where(fn ($q) =>
-                    $q->where('name', 'like', "%{$s}%")
-                      ->orWhere('code', 'like', "%{$s}%")
-                )
+                $q->where('name', 'like', "%{$s}%")
             )
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
-            ->when($request->service_type, fn ($q, $s) =>
-                $q->whereJsonContains('service_types', $s)
-            )
             ->orderBy('name')
             ->paginate(25)
             ->withQueryString();
@@ -724,26 +718,16 @@ class ReportController extends Controller
             ])
             ->withSum('services', 'service_cost')
             ->when($request->search, fn ($q, $s) =>
-                $q->where(fn ($q) =>
-                    $q->where('name', 'like', "%{$s}%")
-                      ->orWhere('code', 'like', "%{$s}%")
-                )
+                $q->where('name', 'like', "%{$s}%")
             )
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
-            ->when($request->service_type, fn ($q, $s) =>
-                $q->whereJsonContains('service_types', $s)
-            )
             ->orderBy('name')
             ->get();
 
         $rows = $vendors->map(fn ($v) => [
-            $v->code,
             $v->name,
-            $v->contact_person ?? '',
+            $v->typeLabel(),
             $v->phone ?? '',
-            $v->serviceTypesLabel(),
-            $v->sla_response_hours !== null ? $v->sla_response_hours . 'h' : '—',
-            $v->sla_resolution_days !== null ? $v->sla_resolution_days . 'd' : '—',
             $v->warranties_count,
             $v->amc_contracts_count,
             $v->active_amc_count,
@@ -753,8 +737,7 @@ class ReportController extends Controller
         ]);
 
         return $this->csvResponse('vendor-performance-' . today()->format('Y-m-d') . '.csv', [
-            'Code', 'Name', 'Contact', 'Phone', 'Service Types',
-            'SLA Response', 'SLA Resolution',
+            'Name', 'Type', 'Phone',
             'Warranties', 'Total AMC', 'Active AMC', 'Service Incidents',
             'Total Service Cost (₹)', 'Status',
         ], $rows);

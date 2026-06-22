@@ -128,6 +128,7 @@ class AssetController extends Controller
         $tab = request('tab', 'overview');
         $showReminderForm   = request('showform') === '1' && $tab === 'reminders';
         $prefillInsuranceId = request('insuranceid');
+        $prefillWarrantyId  = request('warrantyid');
 
         $reminderPrefill = null;
         if ($showReminderForm && $prefillInsuranceId) {
@@ -145,13 +146,27 @@ class AssetController extends Controller
             }
         }
 
+        if ($showReminderForm && $prefillWarrantyId && ! $reminderPrefill) {
+            $warranty = $asset->warranties->firstWhere('id', (int) $prefillWarrantyId);
+            if ($warranty) {
+                $scopeLabel  = $warranty->scope === 'part' ? ($warranty->part_name . ' — ') : '';
+                $reminderType = $warranty->scope === 'part' ? 'part_warranty'
+                    : ($warranty->warranty_type === 'extended' ? 'extended_warranty' : 'warranty');
+                $reminderPrefill = [
+                    'reminder_name' => $scopeLabel . $warranty->warrantyTypeLabel() . ' Warranty Reminder',
+                    'reminder_type' => $reminderType,
+                    'expiry_date'   => $warranty->expiry_date?->format('Y-m-d'),
+                ];
+            }
+        }
+
         $auditLogs = \App\Models\AssetAuditLog::where('asset_id', $asset->id)
             ->with('causer:id,name')
             ->orderByDesc('created_at')
             ->paginate(25);
 
         $vendors = \App\Models\Vendor::active()->orderBy('name')
-            ->get(['id', 'code', 'name', 'contact_person', 'phone', 'email', 'sla_response_hours']);
+            ->get(['id', 'name', 'type', 'phone', 'email']);
 
         return view('assets.show', compact('asset', 'tab', 'auditLogs', 'vendors', 'showReminderForm', 'prefillInsuranceId', 'reminderPrefill'));
     }

@@ -7,8 +7,8 @@
             </flux:button>
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-accent dark:bg-zinc-800">
-                        {{ $vendor->code }}
+                    <span class="inline-flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        {{ $vendor->typeLabel() }}
                     </span>
                     @if ($vendor->status === 'active')
                         <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-300 dark:bg-green-900/40 dark:text-green-400 dark:ring-green-700">Active</span>
@@ -19,9 +19,9 @@
                 <flux:heading size="xl" class="mt-1 font-extrabold">{{ $vendor->name }}</flux:heading>
             </div>
         </div>
-        <flux:button href="{{ route('vendors.edit', $vendor) }}" wire:navigate variant="ghost" size="sm">
-            <flux:icon.pencil class="size-4" />
-            Edit
+        <flux:button href="{{ route('vendors.index') }}" wire:navigate variant="ghost" size="sm">
+            <flux:icon.arrow-left class="size-4" />
+            Back
         </flux:button>
     </div>
 
@@ -29,15 +29,14 @@
 
         {{-- Info Card --}}
         <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900 lg:col-span-1">
-            <h3 class="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Vendor Details</h3>
+            <h3 class="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Contact Details</h3>
             <dl class="space-y-3 text-sm">
-                <div>
-                    <dt class="text-xs text-zinc-400">Contact Person</dt>
-                    <dd class="mt-0.5 font-medium text-zinc-800 dark:text-zinc-100">{{ $vendor->contact_person ?: '—' }}</dd>
-                </div>
                 <div>
                     <dt class="text-xs text-zinc-400">Phone</dt>
                     <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $vendor->phone ?: '—' }}</dd>
+                    @if ($vendor->alt_phone)
+                        <dd class="mt-0.5 text-xs text-zinc-400">{{ $vendor->alt_phone }} <span class="text-[10px]">(alt)</span></dd>
+                    @endif
                 </div>
                 <div>
                     <dt class="text-xs text-zinc-400">Email</dt>
@@ -48,56 +47,38 @@
                             —
                         @endif
                     </dd>
+                    @if ($vendor->alt_email)
+                        <dd class="mt-0.5 text-xs text-zinc-400">
+                            <a href="mailto:{{ $vendor->alt_email }}" class="hover:underline">{{ $vendor->alt_email }}</a>
+                            <span class="text-[10px]">(alt)</span>
+                        </dd>
+                    @endif
                 </div>
                 <div>
                     <dt class="text-xs text-zinc-400">Address</dt>
-                    <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $vendor->address ?: '—' }}</dd>
+                    <dd class="mt-0.5 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $vendor->address ?: '—' }}</dd>
                 </div>
-                <div>
-                    <dt class="text-xs text-zinc-400">Service Types</dt>
-                    <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $vendor->serviceTypesLabel() }}</dd>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <dt class="text-xs text-zinc-400">SLA Response</dt>
-                        <dd class="mt-0.5 font-mono text-zinc-700 dark:text-zinc-300">
-                            {{ $vendor->sla_response_hours !== null ? $vendor->sla_response_hours . ' hrs' : '—' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs text-zinc-400">SLA Resolution</dt>
-                        <dd class="mt-0.5 font-mono text-zinc-700 dark:text-zinc-300">
-                            {{ $vendor->sla_resolution_days !== null ? $vendor->sla_resolution_days . ' days' : '—' }}
-                        </dd>
-                    </div>
-                </div>
-                @if ($vendor->notes)
-                    <div>
-                        <dt class="text-xs text-zinc-400">Notes</dt>
-                        <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $vendor->notes }}</dd>
-                    </div>
-                @endif
             </dl>
 
             {{-- Stat cards --}}
             <div class="mt-5 grid grid-cols-3 gap-2">
                 <div class="rounded-lg bg-zinc-50 px-3 py-2 text-center dark:bg-zinc-800">
                     <p class="text-lg font-bold text-zinc-900 dark:text-zinc-100">{{ $vendor->warranties->count() }}</p>
-                    <p class="text-[10px] text-zinc-400 uppercase tracking-wide">Warranties</p>
+                    <p class="text-[10px] uppercase tracking-wide text-zinc-400">Warranties</p>
                 </div>
                 <div class="rounded-lg bg-zinc-50 px-3 py-2 text-center dark:bg-zinc-800">
                     <p class="text-lg font-bold text-zinc-900 dark:text-zinc-100">{{ $activeAmcCount }}</p>
-                    <p class="text-[10px] text-zinc-400 uppercase tracking-wide">Active AMC</p>
+                    <p class="text-[10px] uppercase tracking-wide text-zinc-400">Active AMC</p>
                 </div>
                 <div class="rounded-lg bg-zinc-50 px-3 py-2 text-center dark:bg-zinc-800">
                     <p class="text-lg font-bold text-zinc-900 dark:text-zinc-100">{{ $vendor->services->count() }}</p>
-                    <p class="text-[10px] text-zinc-400 uppercase tracking-wide">Services</p>
+                    <p class="text-[10px] uppercase tracking-wide text-zinc-400">Services</p>
                 </div>
             </div>
             @if ($totalServiceCost > 0)
                 <div class="mt-2 rounded-lg bg-accent/5 px-3 py-2 text-center">
                     <p class="text-sm font-bold text-accent">₹ {{ number_format($totalServiceCost, 2) }}</p>
-                    <p class="text-[10px] text-zinc-400 uppercase tracking-wide">Total Service Cost</p>
+                    <p class="text-[10px] uppercase tracking-wide text-zinc-400">Total Service Cost</p>
                 </div>
             @endif
         </div>

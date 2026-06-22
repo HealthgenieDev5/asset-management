@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetDocument;
-use App\Models\AssetSmartReminder;
 use App\Models\AssetWarranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,8 +22,6 @@ class AssetWarrantyController extends Controller
         $warranty = AssetWarranty::create($validated);
 
         $this->storeDocuments($request, $asset, $warranty);
-        $this->syncSmartReminder($request, $asset, $warranty);
-        
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
             ->with('success', 'Warranty added successfully.');
@@ -46,7 +43,6 @@ class AssetWarrantyController extends Controller
         $warranty->update($validated);
 
         $this->storeDocuments($request, $asset, $warranty);
-        $this->syncSmartReminder($request, $asset, $warranty);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
             ->with('success', 'Warranty updated successfully.');
@@ -138,48 +134,6 @@ class AssetWarrantyController extends Controller
             if ($mode !== 'meter') {
                 $validated['meter_source']      = null;
             }
-        }
-    }
-
-    private function syncSmartReminder(Request $request, Asset $asset, AssetWarranty $warranty): void
-    {
-        $raw = $request->input('sr_reminder_days', '');
-        $days = array_values(array_unique(array_filter(
-            array_map('intval', preg_split('/[\s,]+/', trim($raw))),
-            fn($d) => $d > 0
-        )));
-
-        $existing = AssetSmartReminder::where('remindable_type', AssetWarranty::class)
-            ->where('remindable_id', $warranty->id)
-            ->first();
-
-        if (empty($days)) {
-            $existing?->delete();
-            return;
-        }
-
-        $scopeLabel = $warranty->scope === 'part' ? ($warranty->part_name . ' — ') : '';
-        $name = $scopeLabel . $warranty->warrantyTypeLabel() . ' Warranty Reminder';
-
-        $data = [
-            'reminder_name'   => $name,
-            'reminder_type'   => 'warranty',
-            'reminder_mode'   => $warranty->tracking_mode === 'time' ? 'time' : $warranty->tracking_mode,
-            'counter_limit'   => $warranty->counter_limit,
-            'threshold_unit'  => $warranty->unit,
-            'reminder_days'   => $days,
-            'is_active'       => true,
-            'remindable_type' => AssetWarranty::class,
-            'remindable_id'   => $warranty->id,
-        ];
-
-        if ($existing) {
-            $existing->update(array_merge($data, ['updated_by' => auth()->id()]));
-        } else {
-            $asset->smartReminders()->create(array_merge($data, [
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]));
         }
     }
 

@@ -137,7 +137,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Vendors
     Route::get('vendors/export', [VendorController::class, 'export'])->name('vendors.export');
-    Route::resource('vendors', VendorController::class);
+    Route::resource('vendors', VendorController::class)->except(['create', 'edit']);
+    Route::get('vendors/create', fn () => redirect()->route('vendors.index'))->name('vendors.create');
+    Route::get('vendors/{vendor}/edit', fn () => redirect()->route('vendors.index'))->name('vendors.edit');
 
     // Reports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

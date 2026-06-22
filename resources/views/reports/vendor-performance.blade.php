@@ -11,7 +11,7 @@
 
     {{-- Filters --}}
     @php
-        $activeFilters = array_filter(request()->only(['search', 'status', 'service_type']));
+        $activeFilters = array_filter(request()->only(['search', 'status']));
         $hasFilters    = count($activeFilters) > 0;
     @endphp
 
@@ -58,17 +58,6 @@
                         <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
                     </select>
                 </div>
-                <div class="flex flex-col gap-1">
-                    <label class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Service Type</label>
-                    <select name="service_type"
-                            class="h-8 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 text-xs text-zinc-700 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 {{ request('service_type') ? 'border-accent/60 bg-accent/5 font-semibold text-accent dark:bg-accent/10' : '' }}">
-                        <option value="">All Types</option>
-                        <option value="warranty" @selected(request('service_type') === 'warranty')>Warranty</option>
-                        <option value="amc"      @selected(request('service_type') === 'amc')>AMC</option>
-                        <option value="service"  @selected(request('service_type') === 'service')>Service</option>
-                        <option value="all"      @selected(request('service_type') === 'all')>All</option>
-                    </select>
-                </div>
             </div>
         </div>
     </form>
@@ -78,11 +67,9 @@
             <thead>
                 <tr class="border-b border-zinc-200 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:border-zinc-800">
                     <th class="px-4 py-3">#</th>
-                    <th class="px-4 py-3">Code</th>
                     <th class="px-4 py-3">Vendor Name</th>
-                    <th class="px-4 py-3">Contact</th>
-                    <th class="px-4 py-3">Service Types</th>
-                    <th class="px-4 py-3">SLA</th>
+                    <th class="px-4 py-3">Type</th>
+                    <th class="px-4 py-3">Phone</th>
                     <th class="px-4 py-3 text-center">Warranties</th>
                     <th class="px-4 py-3 text-center">AMC (Active/Total)</th>
                     <th class="px-4 py-3 text-center">Services</th>
@@ -95,21 +82,12 @@
                     <tr class="hover:bg-accent/5 transition-colors">
                         <td class="px-4 py-3 text-zinc-500">{{ $vendors->firstItem() + $loop->index }}</td>
                         <td class="px-4 py-3">
-                            <span class="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-accent dark:bg-zinc-800">
-                                {{ $vendor->code }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3">
                             <a href="{{ route('vendors.show', $vendor) }}" wire:navigate class="font-medium text-zinc-900 hover:text-accent dark:text-zinc-100 hover:underline">
                                 {{ $vendor->name }}
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">
-                            <div>{{ $vendor->contact_person ?? '—' }}</div>
-                            @if ($vendor->phone) <div class="text-zinc-400">{{ $vendor->phone }}</div> @endif
-                        </td>
-                        <td class="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">{{ $vendor->serviceTypesLabel() }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-zinc-500 dark:text-zinc-400">{{ $vendor->slaLabel() }}</td>
+                        <td class="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">{{ $vendor->typeLabel() }}</td>
+                        <td class="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">{{ $vendor->phone ?: '—' }}</td>
                         <td class="px-4 py-3 text-center text-zinc-700 dark:text-zinc-300">{{ $vendor->warranties_count }}</td>
                         <td class="px-4 py-3 text-center text-zinc-700 dark:text-zinc-300">
                             <span class="{{ $vendor->active_amc_count > 0 ? 'text-green-500' : 'text-zinc-400' }}">{{ $vendor->active_amc_count }}</span>
@@ -129,7 +107,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="11" class="px-4 py-12 text-center text-zinc-500">No vendors found.</td>
+                        <td colspan="8" class="px-4 py-12 text-center text-zinc-500">No vendors found.</td>
                     </tr>
                 @endforelse
             </tbody>
