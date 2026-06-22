@@ -262,6 +262,11 @@
                                             @endif
                                         </div>
                                         <div class="flex shrink-0 items-center gap-1.5">
+                                            <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'partid' => $part->id]) }}"
+                                               title="{{ $part->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                                               class="inline-flex size-5 items-center justify-center rounded border border-accent text-accent hover:bg-accent/10 transition-colors">
+                                                <flux:icon.bell-alert class="size-3" />
+                                            </a>
                                             <button type="button"
                                                     x-on:click="$dispatch('open-modal-view-part-{{ $part->id }}')"
                                                     aria-label="View part record"

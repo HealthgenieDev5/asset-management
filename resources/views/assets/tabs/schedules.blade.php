@@ -243,6 +243,11 @@ $serviceTypeColors = [
                             Done
                         </button>
                         <div class="flex items-center gap-1.5">
+                            <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'scheduleid' => $sch->id]) }}"
+                               title="{{ $sch->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                               class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
+                                <flux:icon.bell-alert class="size-3.5" />
+                            </a>
                             <button type="button" x-on:click="$dispatch('open-modal-edit-schedule-{{ $sch->id }}')"
                                     title="Edit"
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">

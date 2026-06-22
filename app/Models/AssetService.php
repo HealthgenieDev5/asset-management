@@ -73,6 +73,12 @@ class AssetService extends Model
             ->where('documentable_type', self::class);
     }
 
+    public function smartReminders(): HasMany
+    {
+        return $this->hasMany(AssetSmartReminder::class, 'remindable_id')
+            ->where('remindable_type', self::class);
+    }
+
     public function totalPartsCost(): float
     {
         return (float) $this->parts->sum(fn($p) => (float) ($p->part_cost ?? 0));

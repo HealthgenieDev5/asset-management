@@ -115,20 +115,28 @@ class AssetController extends Controller
             'warranties.documents',
             'warranties.smartReminders',
             'amcContracts.documents',
+            'amcContracts.smartReminders',
             'insurancePolicies.documents',
+            'insurancePolicies.smartReminders',
             'services.documents',
+            'services.smartReminders',
             'services.parts.documents',
+            'services.parts.smartReminders',
             'complaints.comments.user',
             'complaints.documents',
             'complaints.service',
             'smartReminders.remindable',
-            'maintenanceSchedules',
+            'maintenanceSchedules.smartReminders',
             'meterLogs',
         ]);
-        $tab = request('tab', 'overview');
+        $tab = request('tab', 'insights');
         $showReminderForm   = request('showform') === '1' && $tab === 'reminders';
         $prefillInsuranceId = request('insuranceid');
         $prefillWarrantyId  = request('warrantyid');
+        $prefillScheduleId  = request('scheduleid');
+        $prefillAmcId       = request('amcid');
+        $prefillServiceId   = request('serviceid');
+        $prefillPartId      = request('partid');
 
         $reminderPrefill = null;
         if ($showReminderForm && $prefillInsuranceId) {
@@ -156,6 +164,54 @@ class AssetController extends Controller
                     'reminder_name' => $scopeLabel . $warranty->warrantyTypeLabel() . ' Warranty Reminder',
                     'reminder_type' => $reminderType,
                     'expiry_date'   => $warranty->expiry_date?->format('Y-m-d'),
+                ];
+            }
+        }
+
+        if ($showReminderForm && $prefillAmcId && ! $reminderPrefill) {
+            $amcContract = $asset->amcContracts->firstWhere('id', (int) $prefillAmcId);
+            if ($amcContract) {
+                $amcName = trim(implode(' – ', array_filter([
+                    $amcContract->vendor?->name ?? $amcContract->vendor_name,
+                    $amcContract->contract_number ? 'Contract #' . $amcContract->contract_number : null,
+                ]))) ?: 'AMC Contract';
+                $reminderPrefill = [
+                    'reminder_name' => $amcName . ' Renewal Reminder',
+                    'reminder_type' => 'amc',
+                    'expiry_date'   => $amcContract->amc_date_to?->format('Y-m-d'),
+                ];
+            }
+        }
+
+        if ($showReminderForm && $prefillScheduleId && ! $reminderPrefill) {
+            $schedule = $asset->maintenanceSchedules->firstWhere('id', (int) $prefillScheduleId);
+            if ($schedule) {
+                $reminderPrefill = [
+                    'reminder_name' => $schedule->schedule_name . ' Reminder',
+                    'reminder_type' => 'maintenance_schedule',
+                    'expiry_date'   => $schedule->next_due_date?->format('Y-m-d'),
+                ];
+            }
+        }
+
+        if ($showReminderForm && $prefillServiceId && ! $reminderPrefill) {
+            $service = $asset->services->firstWhere('id', (int) $prefillServiceId);
+            if ($service) {
+                $reminderPrefill = [
+                    'reminder_name' => $service->service_type_label . ' — ' . $service->service_date->format('d M Y') . ' Reminder',
+                    'reminder_type' => 'service_due',
+                    'expiry_date'   => $service->next_service_date?->format('Y-m-d'),
+                ];
+            }
+        }
+
+        if ($showReminderForm && $prefillPartId && ! $reminderPrefill) {
+            $part = $asset->services->flatMap->parts->firstWhere('id', (int) $prefillPartId);
+            if ($part) {
+                $reminderPrefill = [
+                    'reminder_name' => $part->part_name . ' Part Warranty Reminder',
+                    'reminder_type' => 'part_warranty',
+                    'expiry_date'   => $part->warranty_till?->format('Y-m-d'),
                 ];
             }
         }

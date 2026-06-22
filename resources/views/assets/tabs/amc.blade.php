@@ -223,6 +223,11 @@
                         @elseif ($days !== null)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
+                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'amcid' => $amc->id]) }}"
+                           title="{{ $amc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                           class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
+                            <flux:icon.bell-alert class="size-3.5" />
+                        </a>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-view-amc-{{ $amc->id }}')"
                                 aria-label="View AMC contract"

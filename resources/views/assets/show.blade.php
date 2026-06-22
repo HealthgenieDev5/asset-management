@@ -31,6 +31,7 @@
 
     @php
         $tabs = [
+            'insights' => ['label' => 'Insights',          'icon' => 'chart-pie'],
             'overview'  => ['label' => 'Overview',          'icon' => 'information-circle'],
             'reminders' => ['label' => 'Reminders',          'icon' => 'bell-alert'],
             'warranty'  => ['label' => 'Warranty',           'icon' => 'shield-check'],
@@ -54,7 +55,7 @@
             url.searchParams.set('tab', key);
             history.pushState(null, '', url.toString());
         }
-    }" @popstate.window="tab = new URLSearchParams(window.location.search).get('tab') || 'overview'"
+    }" @popstate.window="tab = new URLSearchParams(window.location.search).get('tab') || 'insights'"
        @set-tab.window="setTab($event.detail)">
         {{-- Vertical Tab List --}}
         <nav class="lg:w-48 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible shrink-0

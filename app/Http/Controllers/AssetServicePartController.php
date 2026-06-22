@@ -6,7 +6,6 @@ use App\Models\Asset;
 use App\Models\AssetDocument;
 use App\Models\AssetService;
 use App\Models\AssetServicePart;
-use App\Models\AssetSmartReminder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -24,7 +23,6 @@ class AssetServicePartController extends Controller
 
         $part = AssetServicePart::create($validated);
         $this->storeDocument($request, $asset, $part);
-        $this->syncSmartReminder($request, $asset, $part);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'parts'])
             ->with('success', 'Part record added successfully.');
@@ -40,7 +38,6 @@ class AssetServicePartController extends Controller
 
         $part->update($validated);
         $this->storeDocument($request, $asset, $part);
-        $this->syncSmartReminder($request, $asset, $part);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'parts'])
             ->with('success', 'Part record updated successfully.');
@@ -116,45 +113,6 @@ class AssetServicePartController extends Controller
             'file_size'          => $file->getSize(),
             'uploaded_by'        => auth()->id(),
         ]);
-    }
-
-    private function syncSmartReminder(Request $request, Asset $asset, AssetServicePart $part): void
-    {
-        $raw = $request->input('sr_reminder_days', '');
-        $days = array_values(array_unique(array_filter(
-            array_map('intval', preg_split('/[\s,]+/', trim($raw))),
-            fn($d) => $d > 0
-        )));
-
-        $existing = AssetSmartReminder::where('remindable_type', AssetServicePart::class)
-            ->where('remindable_id', $part->id)
-            ->first();
-
-        if (empty($days)) {
-            $existing?->delete();
-            return;
-        }
-
-        $data = [
-            'reminder_name'   => $part->part_name . ' Part Warranty Reminder',
-            'reminder_type'   => 'part_warranty',
-            'reminder_mode'   => $part->warranty_tracking_mode === 'time' ? 'time' : ($part->warranty_tracking_mode ?? 'meter'),
-            'counter_limit'   => $part->warranty_counter_limit,
-            'threshold_unit'  => $part->warranty_unit,
-            'reminder_days'   => $days,
-            'is_active'       => true,
-            'remindable_type' => AssetServicePart::class,
-            'remindable_id'   => $part->id,
-        ];
-
-        if ($existing) {
-            $existing->update(array_merge($data, ['updated_by' => auth()->id()]));
-        } else {
-            $asset->smartReminders()->create(array_merge($data, [
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]));
-        }
     }
 
     private function nullOutTrackingFields(array $data): array

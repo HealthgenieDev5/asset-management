@@ -357,6 +357,11 @@
                         @elseif ($certDays !== null && $certDays <= 30)
                             <span class="rounded-full bg-orange-400/10 px-2 py-0.5 text-xs font-medium text-orange-400">Cert in {{ $certDays }}d</span>
                         @endif
+                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'serviceid' => $svc->id]) }}"
+                           title="{{ $svc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                           class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
+                            <flux:icon.bell-alert class="size-3.5" />
+                        </a>
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-view-service-{{ $svc->id }}')"
                                 aria-label="View service record"

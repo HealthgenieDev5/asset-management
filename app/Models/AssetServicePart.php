@@ -68,6 +68,12 @@ class AssetServicePart extends Model
             ->where('documentable_type', self::class);
     }
 
+    public function smartReminders(): HasMany
+    {
+        return $this->hasMany(AssetSmartReminder::class, 'remindable_id')
+            ->where('remindable_type', self::class);
+    }
+
     protected function auditModelLabel(): string
     {
         return 'Service Part';
