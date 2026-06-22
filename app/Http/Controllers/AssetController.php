@@ -126,14 +126,34 @@ class AssetController extends Controller
             'meterLogs',
         ]);
         $tab = request('tab', 'overview');
+        $showReminderForm   = request('showform') === '1' && $tab === 'reminders';
+        $prefillInsuranceId = request('insuranceid');
+
+        $reminderPrefill = null;
+        if ($showReminderForm && $prefillInsuranceId) {
+            $policy = $asset->insurancePolicies->firstWhere('id', $prefillInsuranceId);
+            if ($policy) {
+                $name = trim(implode(' – ', array_filter([
+                    $policy->insurer_name,
+                    $policy->policy_number ? 'Policy #' . $policy->policy_number : null,
+                ]))) ?: 'Insurance Reminder';
+                $reminderPrefill = [
+                    'reminder_name' => $name . ' Renewal Reminder',
+                    'reminder_type' => 'insurance',
+                    'expiry_date'   => $policy->policy_date_to?->format('Y-m-d'),
+                ];
+            }
+        }
 
         $auditLogs = \App\Models\AssetAuditLog::where('asset_id', $asset->id)
             ->with('causer:id,name')
-            ->latest('created_at')
-            ->paginate(25)
-            ->withQueryString();
+            ->orderByDesc('created_at')
+            ->paginate(25);
 
-        return view('assets.show', compact('asset', 'tab', 'auditLogs'));
+        $vendors = \App\Models\Vendor::active()->orderBy('name')
+            ->get(['id', 'code', 'name', 'contact_person', 'phone', 'email', 'sla_response_hours']);
+
+        return view('assets.show', compact('asset', 'tab', 'auditLogs', 'vendors', 'showReminderForm', 'prefillInsuranceId', 'reminderPrefill'));
     }
 
     public function edit(Asset $asset)
@@ -250,16 +270,23 @@ class AssetController extends Controller
         return $rules;
     }
 
-    private function isVehicleCategory(?string $categoryId): bool
+    // private function isVehicleCategory(?string $categoryId): bool
+    // {
+    //     if (! $categoryId) {
+    //         return false;
+    //     }
+    //     static $cache = [];
+    //     if (! isset($cache[$categoryId])) {
+    //         $cat = AssetCategory::find($categoryId);
+    //         $cache[$categoryId] = $cat && $cat->code === 'VE';
+    //     }
+    //     return $cache[$categoryId];
+    // }
+
+    private function isVehicleCategory(?string $categoryId = '0'): bool
     {
-        if (! $categoryId) {
-            return false;
-        }
-        static $cache = [];
-        if (! isset($cache[$categoryId])) {
-            $cat = AssetCategory::find($categoryId);
-            $cache[$categoryId] = $cat && $cat->code === 'VE';
-        }
-        return $cache[$categoryId];
+        #find the vehicle category id from env variable. 
+        $vehicle_category_id = config('app.vehicle_category_id');
+        return $vehicle_category_id == $categoryId;
     }
 }

@@ -79,7 +79,7 @@
                         <div class="flex items-center gap-2">
                             <flux:icon.wrench-screwdriver class="size-4 shrink-0 text-zinc-400" />
                             <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                {{ $amc->vendor_name ?: 'AMC Contract' }}
+                                {{ $amc->vendor?->name ?? $amc->vendor_name ?: 'AMC Contract' }}
                             </h3>
                         </div>
                         @if ($amc->contract_number)
@@ -134,16 +134,24 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium text-zinc-500">Contact Person</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $amc->vendor_contact_person ?: '--' }}</dd>
+                        <dt class="text-xs font-medium text-zinc-500">Vendor</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
+                            @if ($amc->vendor)
+                                <a href="{{ route('vendors.show', $amc->vendor) }}" wire:navigate class="text-accent hover:underline">
+                                    {{ $amc->vendor->name }}
+                                </a>
+                            @else
+                                {{ $amc->vendor_contact_person ?: '--' }}
+                            @endif
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">Phone</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $amc->vendor_phone ?: '--' }}</dd>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $amc->vendor?->phone ?? $amc->vendor_phone ?: '--' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">Email</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $amc->vendor_email ?: '--' }}</dd>
+                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $amc->vendor?->email ?? $amc->vendor_email ?: '--' }}</dd>
                     </div>
                     <div class="sm:col-span-2 lg:col-span-3">
                         <dt class="text-xs font-medium text-zinc-500">Coverage Details</dt>
@@ -201,7 +209,7 @@
                     <div class="flex items-center gap-3 min-w-0">
                         <flux:icon.wrench-screwdriver class="size-4 shrink-0 text-zinc-400" />
                         <span class="truncate text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                            {{ $amc->vendor_name ?: 'AMC Contract' }}
+                            {{ $amc->vendor?->name ?? $amc->vendor_name ?: 'AMC Contract' }}
                         </span>
                         @if ($amc->contract_number)
                             <span class="font-mono text-xs text-zinc-500 dark:text-zinc-500">{{ $amc->contract_number }}</span>
@@ -278,11 +286,18 @@
                                 {{ $amc->reminder_before_days ? $amc->reminder_before_days . ' days' : '—' }}
                             </dd>
                         </div>
-                        @if ($amc->vendor_contact_person || $amc->vendor_phone || $amc->vendor_email)
+                        @if ($amc->vendor || $amc->vendor_contact_person || $amc->vendor_phone || $amc->vendor_email)
                             <div class="sm:col-span-2 lg:col-span-3">
                                 <dt class="text-xs font-medium text-zinc-500">Vendor Contact</dt>
                                 <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
-                                    {{ implode(' · ', array_filter([$amc->vendor_contact_person, $amc->vendor_phone, $amc->vendor_email])) }}
+                                    @if ($amc->vendor)
+                                        <a href="{{ route('vendors.show', $amc->vendor) }}" wire:navigate class="text-accent hover:underline">{{ $amc->vendor->name }}</a>
+                                        @if ($amc->vendor->contact_person || $amc->vendor->phone)
+                                            <span class="ml-1 text-zinc-500">— {{ implode(' · ', array_filter([$amc->vendor->contact_person, $amc->vendor->phone])) }}</span>
+                                        @endif
+                                    @else
+                                        {{ implode(' · ', array_filter([$amc->vendor_contact_person, $amc->vendor_phone, $amc->vendor_email])) }}
+                                    @endif
                                 </dd>
                             </div>
                         @endif

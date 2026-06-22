@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Vendor;
 
 class AssetWarranty extends Model
 {
@@ -28,6 +29,7 @@ class AssetWarranty extends Model
         'part_name',
         'part_serial_number',
         'vendor',
+        'vendor_id',
         'bill_no',
         'bill_amount',
         'details',
@@ -64,6 +66,11 @@ class AssetWarranty extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    public function vendorRecord(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
     public function documents(): HasMany

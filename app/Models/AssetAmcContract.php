@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasAuditLog;
+use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,7 @@ class AssetAmcContract extends Model
     protected $fillable = [
         'asset_id',
         'contract_number',
+        'vendor_id',
         'vendor_name',
         'vendor_contact_person',
         'vendor_phone',
@@ -44,6 +46,11 @@ class AssetAmcContract extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function documents(): HasMany

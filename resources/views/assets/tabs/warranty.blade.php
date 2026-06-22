@@ -166,7 +166,15 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                             <div class="flex items-center gap-2 min-w-0">
                                 <flux:icon.shield-check class="size-4 shrink-0 text-zinc-400" />
                                 <span class="rounded-full {{ $w->warranty_type === 'original' ? 'bg-blue-400/10 text-blue-400' : 'bg-purple-400/10 text-purple-400' }} px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">{{ $w->warrantyTypeLabel() }}</span>
-                                @if ($w->vendor)<span class="text-xs text-zinc-500">{{ $w->vendor }}</span>@endif
+                                @if ($w->vendorRecord || $w->vendor)
+                                    <span class="text-xs text-zinc-500">
+                                        @if ($w->vendorRecord)
+                                            <a href="{{ route('vendors.show', $w->vendorRecord) }}" wire:navigate class="text-accent hover:underline">{{ $w->vendorRecord->name }}</a>
+                                        @else
+                                            {{ $w->vendor }}
+                                        @endif
+                                    </span>
+                                @endif
                                 @if ($isDisposed && $w->disposed_at)
                                     <span class="text-[11px] text-zinc-500">Disposed {{ $w->disposed_at->format('d M Y') }}@if($w->disposed_reason) — {{ $w->disposed_reason }}@endif</span>
                                 @endif
@@ -330,7 +338,15 @@ $dd = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
                                 <div class="flex items-center gap-2 min-w-0">
                                     <flux:icon.shield-check class="size-4 shrink-0 text-zinc-400" />
                                     <span class="rounded-full {{ $w->warranty_type === 'original' ? 'bg-blue-400/10 text-blue-400' : 'bg-purple-400/10 text-purple-400' }} px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">{{ $w->warrantyTypeLabel() }}</span>
-                                    @if ($w->vendor)<span class="truncate text-xs text-zinc-500">{{ $w->vendor }}</span>@endif
+                                    @if ($w->vendorRecord || $w->vendor)
+                                        <span class="truncate text-xs text-zinc-500">
+                                            @if ($w->vendorRecord)
+                                                <a href="{{ route('vendors.show', $w->vendorRecord) }}" wire:navigate class="text-accent hover:underline">{{ $w->vendorRecord->name }}</a>
+                                            @else
+                                                {{ $w->vendor }}
+                                            @endif
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="flex shrink-0 items-center gap-1.5">
                                     <span class="rounded-full px-2 py-0.5 text-[11px] font-medium {{ $badgeClass }}">{{ $badgeLabel }}</span>

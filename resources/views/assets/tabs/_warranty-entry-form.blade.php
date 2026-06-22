@@ -7,6 +7,8 @@ $inp    = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5
 $txa    = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition placeholder:text-transparent focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
 $lbl    = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 transition-all peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-zinc-500 dark:text-zinc-400 dark:peer-focus:text-zinc-400';
 $sec    = 'mb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500';
+$sel    = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2 pt-5 text-sm text-zinc-900 shadow-sm transition focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-accent';
+$lbs    = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
 $err    = 'mt-0.5 text-[11px] text-red-400';
 $cal    = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" /></svg>';
 
@@ -345,11 +347,32 @@ $formId = 'wf_' . ($w?->id ?? 'new');
     <div x-show="!(wtype === 'original' && scope === 'overall')" style="display:none">
         <p class="{{ $sec }}">Vendor & Billing</p>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div class="relative sm:col-span-2">
-                <input type="text" name="vendor" id="{{ $formId }}_vendor"
-                       value="{{ $v('vendor') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="{{ $formId }}_vendor" class="{{ $lbl }}">Vendor / Provider</label>
-                @error('vendor')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            @php
+                $vendorMapWty = ($vendors ?? collect())->mapWithKeys(fn($v) => [$v->id => ['id' => $v->id, 'contact_person' => $v->contact_person, 'phone' => $v->phone, 'email' => $v->email]])->toJson();
+            @endphp
+            <div class="relative sm:col-span-2"
+                 x-data="{
+                     selectedId: '{{ old('vendor_id', $warranty?->vendor_id ?? '') }}',
+                     vendors: {{ $vendorMapWty }},
+                     get info() { return this.vendors[this.selectedId] ?? null; }
+                 }">
+                <select name="vendor_id" id="{{ $formId }}_vendor_id" class="{{ $sel }}" x-model="selectedId">
+                    <option value=""></option>
+                    @foreach ($vendors ?? [] as $vnd)
+                        <option value="{{ $vnd->id }}" @selected((int) old('vendor_id', $warranty?->vendor_id) === $vnd->id)>
+                            [{{ $vnd->code }}] {{ $vnd->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <label for="{{ $formId }}_vendor_id" class="{{ $lbs }}">Vendor / Provider</label>
+                @error('vendor_id')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                <template x-if="info">
+                    <div class="mt-1 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:bg-zinc-800 space-y-0.5">
+                        <p x-text="info.contact_person"></p>
+                        <p x-text="info.phone"></p>
+                        <p x-text="info.email"></p>
+                    </div>
+                </template>
             </div>
             <div class="relative">
                 <input type="text" name="bill_no" id="{{ $formId }}_bill_no"

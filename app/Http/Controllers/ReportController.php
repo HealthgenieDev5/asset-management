@@ -8,6 +8,7 @@ use App\Models\AssetCategory;
 use App\Models\AssetInsurancePolicy;
 use App\Models\AssetService;
 use App\Models\AssetSubcategory;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -680,6 +681,82 @@ class ReportController extends Controller
         return $this->csvResponse('vehicle-depreciation-' . today()->format('Y-m-d') . '.csv', [
             'Asset Code', 'Asset Name', 'Reg. No.', 'Category', 'Department', 'Custodian',
             'Purchase Date', 'OBV (₹)', 'Dep %', 'Book Value (₹)', 'Status',
+        ], $rows);
+    }
+
+    // ── 16. Vendor Performance ────────────────────────────────────────────────
+
+    public function vendorPerformance(Request $request)
+    {
+        $vendors = Vendor::withCount([
+                'warranties',
+                'amcContracts',
+                'amcContracts as active_amc_count' => fn ($q) =>
+                    $q->whereDate('amc_date_to', '>=', today()),
+                'services',
+            ])
+            ->withSum('services', 'service_cost')
+            ->when($request->search, fn ($q, $s) =>
+                $q->where(fn ($q) =>
+                    $q->where('name', 'like', "%{$s}%")
+                      ->orWhere('code', 'like', "%{$s}%")
+                )
+            )
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->when($request->service_type, fn ($q, $s) =>
+                $q->whereJsonContains('service_types', $s)
+            )
+            ->orderBy('name')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('reports.vendor-performance', compact('vendors'));
+    }
+
+    public function exportVendorPerformance(Request $request): StreamedResponse
+    {
+        $vendors = Vendor::withCount([
+                'warranties',
+                'amcContracts',
+                'amcContracts as active_amc_count' => fn ($q) =>
+                    $q->whereDate('amc_date_to', '>=', today()),
+                'services',
+            ])
+            ->withSum('services', 'service_cost')
+            ->when($request->search, fn ($q, $s) =>
+                $q->where(fn ($q) =>
+                    $q->where('name', 'like', "%{$s}%")
+                      ->orWhere('code', 'like', "%{$s}%")
+                )
+            )
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->when($request->service_type, fn ($q, $s) =>
+                $q->whereJsonContains('service_types', $s)
+            )
+            ->orderBy('name')
+            ->get();
+
+        $rows = $vendors->map(fn ($v) => [
+            $v->code,
+            $v->name,
+            $v->contact_person ?? '',
+            $v->phone ?? '',
+            $v->serviceTypesLabel(),
+            $v->sla_response_hours !== null ? $v->sla_response_hours . 'h' : '—',
+            $v->sla_resolution_days !== null ? $v->sla_resolution_days . 'd' : '—',
+            $v->warranties_count,
+            $v->amc_contracts_count,
+            $v->active_amc_count,
+            $v->services_count,
+            $v->services_sum_service_cost ? number_format($v->services_sum_service_cost, 2) : '—',
+            ucfirst($v->status),
+        ]);
+
+        return $this->csvResponse('vendor-performance-' . today()->format('Y-m-d') . '.csv', [
+            'Code', 'Name', 'Contact', 'Phone', 'Service Types',
+            'SLA Response', 'SLA Resolution',
+            'Warranties', 'Total AMC', 'Active AMC', 'Service Incidents',
+            'Total Service Cost (₹)', 'Status',
         ], $rows);
     }
 

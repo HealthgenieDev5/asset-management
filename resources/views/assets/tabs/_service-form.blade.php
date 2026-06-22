@@ -56,10 +56,32 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 </div>
                 @error('next_service_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="relative sm:col-span-2">
-                <input type="text" name="service_agency" id="service_agency" value="{{ $v('service_agency') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="service_agency" class="{{ $lbl }}">Service Agency / Company</label>
-                @error('service_agency')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            @php
+                $vendorMapSvc = ($vendors ?? collect())->mapWithKeys(fn($v) => [$v->id => ['id' => $v->id, 'contact_person' => $v->contact_person, 'phone' => $v->phone, 'email' => $v->email]])->toJson();
+            @endphp
+            <div class="relative sm:col-span-2"
+                 x-data="{
+                     selectedId: '{{ old('vendor_id', $service?->vendor_id ?? '') }}',
+                     vendors: {{ $vendorMapSvc }},
+                     get info() { return this.vendors[this.selectedId] ?? null; }
+                 }">
+                <select name="vendor_id" id="vendor_id_service" class="{{ $sel }}" x-model="selectedId">
+                    <option value=""></option>
+                    @foreach ($vendors ?? [] as $vnd)
+                        <option value="{{ $vnd->id }}" @selected((int) old('vendor_id', $service?->vendor_id) === $vnd->id)>
+                            [{{ $vnd->code }}] {{ $vnd->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <label for="vendor_id_service" class="{{ $lbs }}">Service Agency / Vendor</label>
+                @error('vendor_id')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                <template x-if="info">
+                    <div class="mt-1 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:bg-zinc-800 space-y-0.5">
+                        <p x-text="info.contact_person"></p>
+                        <p x-text="info.phone"></p>
+                        <p x-text="info.email"></p>
+                    </div>
+                </template>
             </div>
         </div>
     </div>

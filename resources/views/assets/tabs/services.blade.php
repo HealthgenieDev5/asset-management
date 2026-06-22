@@ -117,8 +117,14 @@
                             </span>
                             <h3 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $svc->service_date->format('d M Y') }}</h3>
                         </div>
-                        @if ($svc->service_agency)
-                            <p class="mt-1 text-xs text-zinc-500">{{ $svc->service_agency }}</p>
+                        @if ($svc->vendor || $svc->service_agency)
+                            <p class="mt-1 text-xs text-zinc-500">
+                                @if ($svc->vendor)
+                                    <a href="{{ route('vendors.show', $svc->vendor) }}" wire:navigate class="text-accent hover:underline">{{ $svc->vendor->name }}</a>
+                                @else
+                                    {{ $svc->service_agency }}
+                                @endif
+                            </p>
                         @endif
                     </div>
                     <div class="flex flex-wrap justify-end gap-1.5">
@@ -327,8 +333,14 @@
                         <span class="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                             {{ $svc->service_date->format('d M Y') }}
                         </span>
-                        @if ($svc->service_agency)
-                            <span class="text-xs text-zinc-500 dark:text-zinc-500">{{ $svc->service_agency }}</span>
+                        @if ($svc->vendor || $svc->service_agency)
+                            <span class="text-xs text-zinc-500 dark:text-zinc-500">
+                                @if ($svc->vendor)
+                                    <a href="{{ route('vendors.show', $svc->vendor) }}" wire:navigate class="text-accent hover:underline">{{ $svc->vendor->name }}</a>
+                                @else
+                                    {{ $svc->service_agency }}
+                                @endif
+                            </span>
                         @endif
                         @if ($svc->service_cost)
                             <span class="text-xs font-mono text-zinc-400">₹ {{ number_format($svc->service_cost, 2) }}</span>

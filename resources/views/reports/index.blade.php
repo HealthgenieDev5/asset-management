@@ -46,4 +46,12 @@
             <x-reports.card href="{{ route('reports.maintenance-cost') }}" title="Maintenance Cost" description="Labour and parts cost analysis by asset." icon="currency-rupee" color="cyan" />
         </div>
     </div>
+
+    {{-- Vendor --}}
+    <div class="mb-8">
+        <h2 class="mb-3 text-xs font-bold uppercase tracking-widest text-zinc-500">Vendor Performance</h2>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <x-reports.card href="{{ route('reports.vendor-performance') }}" title="Vendor Performance" description="Per-vendor contract counts, service incidents, and SLA summary." icon="building-storefront" color="green" />
+        </div>
+    </div>
 </x-layouts::app>

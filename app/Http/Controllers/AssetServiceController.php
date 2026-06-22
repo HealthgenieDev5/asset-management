@@ -71,7 +71,7 @@ class AssetServiceController extends Controller
         return [
             'service_type'                      => ['required', 'in:preventive_maintenance,corrective_maintenance,inspection,repair,calibration,cleaning,other'],
             'service_date'                      => ['required', 'date'],
-            'service_agency'                    => ['nullable', 'string', 'max:255'],
+            'vendor_id'                         => ['nullable', 'integer', 'exists:vendors,id'],
             'technician_name'                   => ['nullable', 'string', 'max:255'],
             'work_done'                         => ['nullable', 'string'],
             'service_cost'                      => ['nullable', 'numeric', 'min:0'],

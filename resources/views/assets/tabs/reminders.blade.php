@@ -205,12 +205,12 @@
 
         {{-- Add Modal --}}
         <x-modal name="add-smart-reminder" title="New Smart Reminder" :dismissible="false"
-            :auto-open="$errors->any() && old('_form') === 'smart_reminder' && !old('_reminder_id')">
+            :auto-open="($errors->any() && old('_form') === 'smart_reminder' && !old('_reminder_id')) || ($showReminderForm ?? false)">
             <form method="POST" action="{{ route('assets.smart-reminders.store', $asset) }}"
                   class="mt-4 space-y-4">
                 @csrf
                 <input type="hidden" name="_form" value="smart_reminder">
-                @include('assets.tabs._smart-reminder-form', ['reminder' => null])
+                @include('assets.tabs._smart-reminder-form', ['reminder' => null, 'reminderPrefill' => $reminderPrefill ?? null])
                 <div class="flex items-center gap-3 pt-1">
                     <button type="submit"
                         class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">

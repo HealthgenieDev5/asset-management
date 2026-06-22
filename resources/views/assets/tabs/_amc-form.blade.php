@@ -20,10 +20,32 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="contract_number" class="{{ $lbl }}">Contract Number</label>
                 @error('contract_number')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
-            <div class="relative sm:col-span-2">
-                <input type="text" name="vendor_name" id="vendor_name" value="{{ $v('vendor_name') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="vendor_name" class="{{ $lbl }}">Vendor / Provider</label>
-                @error('vendor_name')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            @php
+                $vendorMapAmc = ($vendors ?? collect())->mapWithKeys(fn($v) => [$v->id => ['id' => $v->id, 'contact_person' => $v->contact_person, 'phone' => $v->phone, 'email' => $v->email]])->toJson();
+            @endphp
+            <div class="relative sm:col-span-2"
+                 x-data="{
+                     selectedId: '{{ old('vendor_id', $amc?->vendor_id ?? '') }}',
+                     vendors: {{ $vendorMapAmc }},
+                     get info() { return this.vendors[this.selectedId] ?? null; }
+                 }">
+                <select name="vendor_id" id="vendor_id" class="{{ $sel }}" x-model="selectedId">
+                    <option value=""></option>
+                    @foreach ($vendors ?? [] as $vnd)
+                        <option value="{{ $vnd->id }}" @selected((int) old('vendor_id', $amc?->vendor_id) === $vnd->id)>
+                            [{{ $vnd->code }}] {{ $vnd->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <label for="vendor_id" class="{{ $lbs }}">Vendor</label>
+                @error('vendor_id')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                <template x-if="info">
+                    <div class="mt-1 rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-500 dark:bg-zinc-800 space-y-0.5">
+                        <p x-text="info.contact_person"></p>
+                        <p x-text="info.phone"></p>
+                        <p x-text="info.email"></p>
+                    </div>
+                </template>
             </div>
             <div class="relative">
                 <select name="coverage_type" id="coverage_type" class="{{ $sel }}">
@@ -75,28 +97,6 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" /></svg></span>
                 </div>
                 @error('amc_bill_date')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-        </div>
-    </div>
-
-    {{-- ── Contact ── --}}
-    <div>
-        <p class="{{ $sec }}">Vendor Contact</p>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div class="relative">
-                <input type="text" name="vendor_contact_person" id="vendor_contact_person" value="{{ $v('vendor_contact_person') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="vendor_contact_person" class="{{ $lbl }}">Contact Person</label>
-                @error('vendor_contact_person')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            <div class="relative">
-                <input type="text" name="vendor_phone" id="vendor_phone" value="{{ $v('vendor_phone') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="vendor_phone" class="{{ $lbl }}">Phone</label>
-                @error('vendor_phone')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            <div class="relative sm:col-span-2">
-                <input type="email" name="vendor_email" id="vendor_email" value="{{ $v('vendor_email') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="vendor_email" class="{{ $lbl }}">Email</label>
-                @error('vendor_email')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
         </div>
     </div>

@@ -15,7 +15,8 @@
     ];
     $isEdit        = isset($reminder) && $reminder !== null;
     $isAutoCreated = $isEdit && ! empty($reminder->remindable_type);
-    $old           = fn($field, $default = '') => old($field, $isEdit ? ($reminder?->$field ?? $default) : $default);
+    $prefill       = $reminderPrefill ?? [];
+    $old           = fn($field, $default = '') => old($field, $isEdit ? ($reminder?->$field ?? $default) : ($prefill[$field] ?? $default));
     $initMode    = old('reminder_mode', $isEdit ? ($reminder?->reminder_mode ?? 'time') : 'time');
     $initDays    = old('reminder_days_input', $isEdit ? implode(', ', $reminder?->reminder_days ?? []) : '');
     $initDaysArr = array_values(array_filter(array_map('intval', array_filter(explode(',', str_replace(' ', '', $initDays))))));

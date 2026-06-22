@@ -11,7 +11,7 @@
                 <div class="flex size-7 items-center justify-center rounded-lg bg-accent">
                     <flux:icon.cube class="size-4 text-zinc-950" />
                 </div>
-                <span class="font-extrabold text-zinc-900 dark:text-zinc-100">AssetManager</span>
+                <span class="font-extrabold text-zinc-900 dark:text-zinc-100">AMMS</span>
             </div>
             <button id="mobile-menu-toggle" class="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100">
                 <flux:icon.bars-3 class="size-5" />
@@ -32,8 +32,8 @@
                         <flux:icon.cube class="size-5 text-zinc-950" />
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-extrabold text-zinc-900 leading-tight dark:text-zinc-100">AssetManager</p>
-                        <p class="truncate text-xs text-zinc-500 leading-tight">Fixed Asset System</p>
+                        <p class="truncate text-sm font-extrabold text-zinc-900 leading-tight dark:text-zinc-100">AMMS </p>
+                        <p class="truncate text-xs text-zinc-500 leading-tight">Asset & Maintenance Management System</p>
                     </div>
                 </div>
 
@@ -63,12 +63,17 @@
                             $item('bell-alert', 'Reminders', 'asset-reminders.index', 'asset-reminders.*'),
                         ];
 
+                        $masterItems = [
+                            $item('building-storefront', 'Vendors', 'vendors.index', 'vendors.*'),
+                        ];
+
                         $reportItems = [
                             $item('squares-2x2',        'All Reports',          'reports.index',              'reports.*'),
                             $item('document-text',      'Asset Reports',        'reports.asset-register'),
                             $item('receipt-percent',    'Purchase / Bills',     'reports.purchase-bills'),
                             $item('wrench-screwdriver', 'Service Reports',      'reports.service-due',        'reports.service-*'),
                             $item('truck',              'Vehicle Depreciation', 'reports.vehicle-depreciation'),
+                            $item('building-storefront','Vendor Performance',   'reports.vendor-performance', 'reports.vendor-performance*'),
                         ];
                     @endphp
 
@@ -83,6 +88,14 @@
                     <div class="mb-1">
                         <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Assets</p>
                         @foreach ($assetItems as $nav)
+                            @include('layouts.app._nav-item', $nav)
+                        @endforeach
+                    </div>
+
+                    {{-- Master Data --}}
+                    <div class="mb-1">
+                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Master Data</p>
+                        @foreach ($masterItems as $nav)
                             @include('layouts.app._nav-item', $nav)
                         @endforeach
                     </div>

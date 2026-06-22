@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             AssetCategorySeeder::class,
+            VendorSeeder::class,
         ]);
     }
 }

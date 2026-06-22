@@ -24,6 +24,7 @@ class AssetWarrantyController extends Controller
 
         $this->storeDocuments($request, $asset, $warranty);
         $this->syncSmartReminder($request, $asset, $warranty);
+        
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
             ->with('success', 'Warranty added successfully.');
@@ -104,7 +105,7 @@ class AssetWarrantyController extends Controller
             'scope'                 => ['required', 'in:overall,part'],
             'part_name'             => ['required_if:scope,part', 'nullable', 'string', 'max:100'],
             'part_serial_number'    => ['nullable', 'string', 'max:100'],
-            'vendor'                => ['nullable', 'string', 'max:255'],
+            'vendor_id'             => ['nullable', 'integer', 'exists:vendors,id'],
             'bill_no'               => ['nullable', 'string', 'max:255'],
             'bill_amount'           => ['nullable', 'numeric', 'min:0'],
             'details'               => ['nullable', 'string'],

@@ -272,8 +272,13 @@
                         </div>
                         <div>
                             <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
-                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">
+                            <dd class="mt-0.5 flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
                                 {{ $policy->reminder_before_days ? $policy->reminder_before_days . ' days' : '—' }}
+                                <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'insuranceid' => $policy->id]) }}"
+                                   class="inline-flex items-center gap-1 rounded-md border border-accent px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/10 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
+                                    Add Reminder
+                                </a>
                             </dd>
                         </div>
                         @if ($policy->bill_no)

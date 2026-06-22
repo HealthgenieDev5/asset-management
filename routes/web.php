@@ -20,6 +20,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\ComplaintEscalationRuleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\VendorController;
 use App\Models\AssetSubcategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -134,6 +135,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('asset-reminders', AssetReminderController::class);
 
+    // Vendors
+    Route::get('vendors/export', [VendorController::class, 'export'])->name('vendors.export');
+    Route::resource('vendors', VendorController::class);
+
     // Reports
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/asset-register', [ReportController::class, 'assetRegister'])->name('reports.asset-register');
@@ -167,6 +172,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/service-history/export', [ReportController::class, 'exportServiceHistory'])->name('reports.service-history.export');
     Route::get('reports/maintenance-cost/export', [ReportController::class, 'exportMaintenanceCost'])->name('reports.maintenance-cost.export');
     Route::get('reports/vehicle-depreciation/export', [ReportController::class, 'exportVehicleDepreciation'])->name('reports.vehicle-depreciation.export');
+    Route::get('reports/vendor-performance', [ReportController::class, 'vendorPerformance'])->name('reports.vendor-performance');
+    Route::get('reports/vendor-performance/export', [ReportController::class, 'exportVendorPerformance'])->name('reports.vendor-performance.export');
 });
 
 require __DIR__ . '/settings.php';

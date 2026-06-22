@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | App Level configurations
+    |--------------------------------------------------------------------------
+    |
+    | These configuration options are set for this particular app connected to env variable. 
+    |
+    */
+
+    'vehicle_category_id' => env('APP.VEHICLE_CATEGORY_ID', '1'),
+
 ];

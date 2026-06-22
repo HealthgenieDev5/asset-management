@@ -59,10 +59,7 @@ class AssetAmcContractController extends Controller
     {
         return [
             'contract_number'       => ['nullable', 'string', 'max:255'],
-            'vendor_name'           => ['nullable', 'string', 'max:255'],
-            'vendor_contact_person' => ['nullable', 'string', 'max:255'],
-            'vendor_phone'          => ['nullable', 'string', 'max:30'],
-            'vendor_email'          => ['nullable', 'email', 'max:255'],
+            'vendor_id'             => ['nullable', 'integer', 'exists:vendors,id'],
             'amc_date_from'         => ['nullable', 'date'],
             'amc_date_to'           => ['nullable', 'date', 'after_or_equal:amc_date_from'],
             'amc_amount'            => ['nullable', 'numeric', 'min:0'],
