@@ -58,18 +58,26 @@ class AssetDocumentController extends Controller
             'uploaded_by'        => auth()->id(),
         ]);
 
-        return redirect()->route('assets.show', [$asset, 'tab' => 'documents'])
+        $tab = $request->input('_tab', 'documents');
+
+        return redirect()->route('assets.show', [$asset, 'tab' => $tab])
             ->with('success', 'Document uploaded successfully.');
     }
 
-    public function destroy(Asset $asset, AssetDocument $document)
+    public function destroy(Request $request, Asset $asset, AssetDocument $document)
     {
         abort_if($document->asset_id !== $asset->id, 403);
 
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
-        return redirect()->route('assets.show', [$asset, 'tab' => 'documents'])
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        $tab = $request->input('_tab', 'documents');
+
+        return redirect()->route('assets.show', [$asset, 'tab' => $tab])
             ->with('success', 'Document deleted.');
     }
 }

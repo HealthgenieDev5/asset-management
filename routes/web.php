@@ -62,6 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('asset-subcategories', AssetSubcategoryController::class);
     Route::get('assets/export', [AssetController::class, 'export'])->name('assets.export');
     Route::resource('assets', AssetController::class);
+    Route::patch('assets/{asset}/field', [AssetController::class, 'patchField'])->name('assets.patch-field');
     Route::get('assets/{asset}/history', [AssetAuditLogController::class, 'index'])->name('assets.history');
     Route::post('assets/{asset}/documents', [AssetDocumentController::class, 'store'])->name('assets.documents.store');
     Route::delete('assets/{asset}/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('assets.documents.destroy');

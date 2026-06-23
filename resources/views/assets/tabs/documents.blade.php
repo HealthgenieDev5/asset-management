@@ -135,7 +135,7 @@
 
     {{-- Document List --}}
     @if ($allDocs->isEmpty())
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-5 gap-4">
             <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
                 <flux:icon.paper-clip class="mx-auto size-10 text-zinc-600" />
                 <flux:heading class="mt-4 text-zinc-400">No documents yet</flux:heading>
@@ -158,7 +158,7 @@
             $partModels      = \App\Models\AssetServicePart::whereIn('id', $partBillsByPart->keys())->get()->keyBy('id');
         @endphp
 
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-5 gap-4">
             {{-- One card per service part that has documents --}}
             @foreach ($partBillsByPart as $partId => $docs)
                 @php

@@ -224,7 +224,9 @@ class AssetController extends Controller
         $vendors = \App\Models\Vendor::active()->orderBy('name')
             ->get(['id', 'name', 'type', 'phone', 'email']);
 
-        return view('assets.show', compact('asset', 'tab', 'auditLogs', 'vendors', 'showReminderForm', 'prefillInsuranceId', 'reminderPrefill'));
+        $categories = \App\Models\AssetCategory::active()->orderBy('name')->get(['id', 'name', 'code']);
+
+        return view('assets.show', compact('asset', 'tab', 'auditLogs', 'vendors', 'showReminderForm', 'prefillInsuranceId', 'reminderPrefill', 'categories'));
     }
 
     public function edit(Asset $asset)
@@ -281,6 +283,75 @@ class AssetController extends Controller
 
         return redirect()->route('assets.show', $asset)
             ->with('success', 'Asset updated successfully.');
+    }
+
+    public function patchField(Request $request, Asset $asset)
+    {
+        $allowed = [
+            // Core
+            'asset_name'                    => ['required', 'string', 'max:255'],
+            'asset_category_id'             => ['required', 'exists:asset_categories,id'],
+            'asset_subcategory_id'          => ['nullable', 'exists:asset_subcategories,id'],
+            'manufacturer'                  => ['nullable', 'string', 'max:255'],
+            'model'                         => ['nullable', 'string', 'max:255'],
+            'model_year'                    => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
+            'serial_number'                 => ['nullable', 'string', 'max:255'],
+            'status'                        => ['required', 'in:active,under_repair,disposed,scrapped,inactive'],
+            // Location & ownership
+            'location'                      => ['nullable', 'string', 'max:255'],
+            'department'                    => ['nullable', 'string', 'max:255'],
+            'custodian'                     => ['nullable', 'string', 'max:255'],
+            'vendor_supplier'               => ['nullable', 'string', 'max:255'],
+            // Purchase
+            'bill_no'                       => ['nullable', 'string', 'max:255'],
+            'bill_amount'                   => ['nullable', 'numeric', 'min:0'],
+            'bill_date'                     => ['nullable', 'date'],
+            'purchase_date'                 => ['nullable', 'date'],
+            // Maintenance schedule
+            'maintenance_schedule_type'     => ['required', 'in:date_based,hours_based,mileage_based,custom,none'],
+            'maintenance_interval_value'    => ['nullable', 'integer', 'min:1'],
+            'maintenance_interval_unit'     => ['nullable', 'in:days,weeks,months,years,operating_hours,miles,kilometers'],
+            'inspection_required'           => ['required', 'boolean'],
+            'inspection_frequency_value'    => ['nullable', 'integer', 'min:1'],
+            'inspection_frequency_unit'     => ['nullable', 'in:days,weeks,months,years'],
+            // Vehicle compliance
+            'registration_number'           => ['nullable', 'string', 'max:50'],
+            'puc_expiry_date'               => ['nullable', 'date'],
+            'puc_reminder_before_days'      => ['nullable', 'integer', 'min:1', 'max:365'],
+            'fitness_expiry_date'           => ['nullable', 'date'],
+            'fitness_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'road_tax_expiry_date'          => ['nullable', 'date'],
+            'road_tax_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'vehicle_obv'                   => ['nullable', 'numeric', 'min:0'],
+            'vehicle_depreciation_percent'  => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'vehicle_depreciation_book_value' => ['nullable', 'numeric', 'min:0'],
+            // Misc
+            'remarks'                       => ['nullable', 'string'],
+        ];
+
+        $field = $request->input('field');
+        abort_if(! array_key_exists($field, $allowed), 422);
+
+        // Vehicle-only fields must not be patched on non-vehicle assets
+        $vehicleFields = ['registration_number', 'puc_expiry_date', 'puc_reminder_before_days',
+                          'fitness_expiry_date', 'fitness_reminder_before_days', 'road_tax_expiry_date',
+                          'road_tax_reminder_before_days', 'vehicle_obv', 'vehicle_depreciation_percent',
+                          'vehicle_depreciation_book_value'];
+        abort_if(in_array($field, $vehicleFields, true) && ! $asset->isVehicle(), 403);
+
+        $validated = $request->validate(['value' => $allowed[$field]]);
+
+        $asset->update([
+            $field       => $validated['value'],
+            'updated_by' => auth()->id(),
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true]);
+        }
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'overview'])
+            ->with('success', ucwords(str_replace('_', ' ', $field)) . ' updated.');
     }
 
     public function destroy(Asset $asset)

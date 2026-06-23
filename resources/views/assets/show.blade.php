@@ -24,9 +24,9 @@
                 </flux:text>
             </div>
         </div>
-        <flux:button href="{{ route('assets.edit', $asset) }}" variant="primary" icon="pencil">
+        {{-- <flux:button href="{{ route('assets.edit', $asset) }}" variant="primary" icon="pencil">
             Edit Asset
-        </flux:button>
+        </flux:button> --}}
     </div>
 
     @php
