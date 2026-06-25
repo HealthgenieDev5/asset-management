@@ -33,7 +33,7 @@
         $tabs = [
             'insights' => ['label' => 'Insights',          'icon' => 'chart-pie'],
             'overview'  => ['label' => 'Overview',          'icon' => 'information-circle'],
-            'reminders' => ['label' => 'Reminders',          'icon' => 'bell-alert'],
+            'reminders' => ['label' => 'Smart Alerts',        'icon' => 'bell-alert'],
             'warranty'  => ['label' => 'Warranty',           'icon' => 'shield-check'],
             'services'   => ['label' => 'Servicing',   'icon' => 'cog-6-tooth'],
             'schedules'  => ['label' => 'Schedules',   'icon' => 'calendar-days'],

@@ -156,6 +156,12 @@ class Asset extends Model
 
     public function latestMeterReading(string $unit): ?int
     {
+        if ($this->relationLoaded('meterLogs')) {
+            return $this->meterLogs
+                ->where('unit', $unit)
+                ->sortByDesc('logged_at')
+                ->first()?->reading_value;
+        }
         return $this->meterLogs()->where('unit', $unit)->value('reading_value');
     }
 

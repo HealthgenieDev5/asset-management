@@ -88,6 +88,51 @@ class AssetMaintenanceScheduleController extends Controller
             ->with('success', 'Maintenance schedule updated.');
     }
 
+    public function patchField(Request $request, Asset $asset, AssetMaintenanceSchedule $schedule)
+    {
+        abort_if($schedule->asset_id !== $asset->id, 403);
+
+        $allowed = [
+            'service_type', 'schedule_name', 'description', 'schedule_type',
+            'interval_value', 'interval_unit', 'last_done_date',
+            'interval_km', 'last_done_km',
+            'interval_hours', 'last_done_hours',
+            'is_active', 'notes',
+        ];
+
+        $field = $request->input('field');
+        abort_if(! in_array($field, $allowed, true), 422);
+
+        $rules = [
+            'service_type'   => ['required', 'in:preventive_maintenance,corrective_maintenance,inspection,repair,calibration,cleaning,other'],
+            'schedule_name'  => ['required', 'string', 'max:255'],
+            'description'    => ['nullable', 'string'],
+            'schedule_type'  => ['required', 'in:date,mileage,operating_hours'],
+            'interval_value' => ['nullable', 'integer', 'min:1'],
+            'interval_unit'  => ['nullable', 'in:days,weeks,months,years'],
+            'last_done_date' => ['nullable', 'date'],
+            'interval_km'    => ['nullable', 'integer', 'min:1'],
+            'last_done_km'   => ['nullable', 'integer', 'min:0'],
+            'interval_hours' => ['nullable', 'integer', 'min:1'],
+            'last_done_hours'=> ['nullable', 'integer', 'min:0'],
+            'is_active'      => ['boolean'],
+            'notes'          => ['nullable', 'string'],
+        ];
+
+        $validated = $request->validate(['value' => $rules[$field]]);
+        $value     = $field === 'is_active' ? (bool) $validated['value'] : ($validated['value'] ?: null);
+
+        $schedule->update([$field => $value, 'updated_by' => auth()->id()]);
+
+        if ($schedule->schedule_type === 'date') {
+            $schedule->refresh();
+            $next = $schedule->computeNextDueDate();
+            $schedule->update(['next_due_date' => $next]);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     public function destroy(Asset $asset, AssetMaintenanceSchedule $schedule): RedirectResponse
     {
         abort_if($schedule->asset_id !== $asset->id, 403);

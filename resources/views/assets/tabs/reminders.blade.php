@@ -187,11 +187,11 @@
         @endif
     </div>
 
-    {{-- ── Section 2: Smart Reminders ── --}}
+    {{-- ── Section 2: Smart Alerts ── --}}
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <flux:heading class="font-semibold text-zinc-800 dark:text-zinc-200">Smart Reminders</flux:heading>
+                <flux:heading class="font-semibold text-zinc-800 dark:text-zinc-200">Smart Alerts</flux:heading>
                 <flux:text class="text-xs text-zinc-500 mt-0.5">
                     Set multiple reminder dates before any expiry. Emails sent automatically on each threshold day.
                 </flux:text>
@@ -199,12 +199,12 @@
             <button type="button" x-on:click="$dispatch('open-modal-add-smart-reminder')"
                 class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
-                Add Smart Reminder
+                Add Smart Alert
             </button>
         </div>
 
         {{-- Add Modal --}}
-        <x-modal name="add-smart-reminder" title="New Smart Reminder" :dismissible="false"
+        <x-modal name="add-smart-reminder" title="New Smart Alert" :dismissible="false"
             :auto-open="($errors->any() && old('_form') === 'smart_reminder' && !old('_reminder_id')) || ($showReminderForm ?? false)">
             <form method="POST" action="{{ route('assets.smart-reminders.store', $asset) }}"
                   class="mt-4 space-y-4">
@@ -226,7 +226,7 @@
 
         {{-- Edit Modals --}}
         @foreach ($smartReminders as $sr)
-            <x-modal name="edit-smart-reminder-{{ $sr->id }}" title="Edit Smart Reminder" :dismissible="false"
+            <x-modal name="edit-smart-reminder-{{ $sr->id }}" title="Edit Smart Alert" :dismissible="false"
                 :auto-open="$errors->any() && old('_form') === 'smart_reminder' && (int) old('_reminder_id') === $sr->id">
                 <form method="POST" action="{{ route('assets.smart-reminders.update', [$asset, $sr]) }}"
                       class="mt-4 space-y-4">
@@ -248,12 +248,12 @@
             </x-modal>
         @endforeach
 
-        {{-- Smart Reminders List --}}
+        {{-- Smart Alerts List --}}
         @if ($smartReminders->isEmpty())
             <div class="grid grid-cols-3 gap-4">
                 <div class="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-center transition-colors duration-200 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-accent">
                     <flux:icon.bell-alert class="mx-auto size-10 text-zinc-600" />
-                    <flux:heading class="mt-4 text-zinc-400">No Smart Reminders Yet</flux:heading>
+                    <flux:heading class="mt-4 text-zinc-400">No Smart Alerts Yet</flux:heading>
                     <flux:text class="mt-1 text-sm text-zinc-600">Create a smart reminder to get notified at multiple points before an expiry.</flux:text>
                     <div class="mt-4">
                         <button type="button" x-on:click="$dispatch('open-modal-add-smart-reminder')"
@@ -374,7 +374,7 @@
                                             <flux:icon.pencil class="size-3.5" />
                                         </button>
                                         <form method="POST" action="{{ route('assets.smart-reminders.destroy', [$asset, $sr]) }}"
-                                              onsubmit="return confirm('Delete this smart reminder?')">
+                                              onsubmit="confirmDelete(this, 'Delete this smart reminder?'); return false;">
                                             @csrf @method('DELETE')
                                             <button type="submit" title="Delete"
                                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">

@@ -64,33 +64,42 @@ class AssetMaintenanceSchedule extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    private ?AssetService $_latestSvcCache = null;
+    private bool $_latestSvcResolved = false;
+
     public function latestServiceRecord(): ?AssetService
     {
-        $q = $this->asset->services()->orderByDesc('service_date');
-        if ($this->service_type) {
-            $q->where('service_type', $this->service_type);
+        if (! $this->_latestSvcResolved) {
+            $this->_latestSvcResolved = true;
+            $services = $this->asset->relationLoaded('services')
+                ? $this->asset->services
+                : $this->asset->services()->get();
+
+            $this->_latestSvcCache = $services
+                ->when($this->service_type, fn ($c) => $c->where('service_type', $this->service_type))
+                ->sortByDesc('service_date')
+                ->first();
         }
-        return $q->first();
+
+        return $this->_latestSvcCache;
     }
 
     public function latestMileage(): ?int
     {
-        $q = $this->asset->services()->orderByDesc('service_date');
-        if ($this->service_type) {
-            $q->where('service_type', $this->service_type);
+        $svc = $this->latestServiceRecord();
+        if ($svc && $svc->mileage_reading !== null) {
+            return (int) $svc->mileage_reading;
         }
-        $val = $q->value('mileage_reading');
-        return $val !== null ? (int) $val : null;
+        return null;
     }
 
     public function latestHours(): ?int
     {
-        $q = $this->asset->services()->orderByDesc('service_date');
-        if ($this->service_type) {
-            $q->where('service_type', $this->service_type);
+        $svc = $this->latestServiceRecord();
+        if ($svc && $svc->meter_reading !== null) {
+            return (int) $svc->meter_reading;
         }
-        $val = $q->value('meter_reading');
-        return $val !== null ? (int) $val : null;
+        return null;
     }
 
     public function effectiveLastDoneDate(): ?CarbonInterface
@@ -166,45 +175,51 @@ class AssetMaintenanceSchedule extends Model
         };
     }
 
+    private ?string $_statusLabelCache = null;
+
     public function statusLabel(): string
     {
+        if ($this->_statusLabelCache !== null) {
+            return $this->_statusLabelCache;
+        }
+
         if ($this->schedule_type === 'date') {
             if (! $this->next_due_date) {
-                return 'active';
+                return $this->_statusLabelCache = 'active';
             }
             $days = (int) now()->startOfDay()->diffInDays($this->next_due_date->startOfDay(), false);
             if ($days < 0) {
-                return 'overdue';
+                return $this->_statusLabelCache = 'overdue';
             }
             $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 30;
-            return $days <= $threshold ? 'due-soon' : 'active';
+            return $this->_statusLabelCache = ($days <= $threshold ? 'due-soon' : 'active');
         }
 
         if ($this->schedule_type === 'mileage') {
             $remaining = $this->remainingKm();
             if ($remaining === null) {
-                return 'active';
+                return $this->_statusLabelCache = 'active';
             }
             if ($remaining <= 0) {
-                return 'overdue';
+                return $this->_statusLabelCache = 'overdue';
             }
             $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 500;
-            return $remaining <= $threshold ? 'due-soon' : 'active';
+            return $this->_statusLabelCache = ($remaining <= $threshold ? 'due-soon' : 'active');
         }
 
         if ($this->schedule_type === 'operating_hours') {
             $remaining = $this->remainingHours();
             if ($remaining === null) {
-                return 'active';
+                return $this->_statusLabelCache = 'active';
             }
             if ($remaining <= 0) {
-                return 'overdue';
+                return $this->_statusLabelCache = 'overdue';
             }
             $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 50;
-            return $remaining <= $threshold ? 'due-soon' : 'active';
+            return $this->_statusLabelCache = ($remaining <= $threshold ? 'due-soon' : 'active');
         }
 
-        return 'active';
+        return $this->_statusLabelCache = 'active';
     }
 
     public function statusColor(): string

@@ -4,6 +4,7 @@
     'maxWidth'    => '64rem',
     'dismissible' => true,
     'autoOpen'    => false,
+    'footer'      => null,
 ])
 
 <div
@@ -46,5 +47,12 @@
              x-on:scroll="$el.querySelectorAll('input').forEach(el => { if (el._flatpickr?.isOpen) el._flatpickr._positionCalendar() })">
             {{ $slot }}
         </div>
+
+        {{-- Optional footer --}}
+        @if(isset($footer))
+        <div class="flex items-center justify-between border-t border-zinc-200 px-6 py-3 dark:border-zinc-700">
+            {{ $footer }}
+        </div>
+        @endif
     </div>
 </div>

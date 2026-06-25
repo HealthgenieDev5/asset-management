@@ -74,28 +74,79 @@ class AssetComplaintController extends Controller
     {
         abort_if($complaint->asset_id !== $asset->id, 403);
 
-        $allowed = ['location', 'department', 'reported_by_name', 'reported_by_email', 'reported_by_phone'];
+        $allowed = [
+            'title', 'description', 'priority', 'status',
+            'location', 'department',
+            'reported_by_name', 'reported_by_email', 'reported_by_phone',
+            'resolution_summary', 'resolved_at', 'remarks',
+        ];
         $field = $request->input('field');
 
         abort_if(! in_array($field, $allowed, true), 422);
 
         $rules = [
-            'location' => ['nullable', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
-            'reported_by_name' => ['required', 'string', 'max:255'],
-            'reported_by_email' => ['nullable', 'email', 'max:255'],
-            'reported_by_phone' => ['nullable', 'string', 'max:30'],
+            'title'              => ['required', 'string', 'max:255'],
+            'description'        => ['nullable', 'string'],
+            'priority'           => ['required', 'in:low,medium,high,critical'],
+            'status'             => ['required', 'in:open,acknowledged,in_progress,resolved,closed,rejected'],
+            'location'           => ['nullable', 'string', 'max:255'],
+            'department'         => ['nullable', 'string', 'max:255'],
+            'reported_by_name'   => ['nullable', 'string', 'max:255'],
+            'reported_by_email'  => ['nullable', 'email', 'max:255'],
+            'reported_by_phone'  => ['nullable', 'string', 'max:30'],
+            'resolution_summary' => ['nullable', 'string'],
+            'resolved_at'        => ['nullable', 'date'],
+            'remarks'            => ['nullable', 'string'],
         ];
 
         $validated = $request->validate(['value' => $rules[$field]]);
+        $value = $validated['value'] ?: null;
 
-        $complaint->update([
-            $field => $validated['value'],
-            'updated_by' => auth()->id(),
+        $complaint->update([$field => $value, 'updated_by' => auth()->id()]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function storeDocument(Request $request, Asset $asset, AssetComplaint $complaint)
+    {
+        abort_if($complaint->asset_id !== $asset->id, 403);
+        $request->validate(['file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120']]);
+        $file = $request->file('file');
+        $path = $file->store("assets/{$asset->id}/complaints", 'public');
+        $doc = AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetComplaint::class,
+            'documentable_id'    => $complaint->id,
+            'document_type'      => 'complaint_document',
+            'document_title'     => 'Complaint Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
         ]);
+        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
+    }
 
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id = trim($request->getContent());
+        $doc = AssetDocument::where('id', $id)
+            ->where('asset_id', $asset->id)
+            ->where('documentable_type', AssetComplaint::class)
+            ->firstOrFail();
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+        return response('', 200);
+    }
+
+    public function destroyDocument(Asset $asset, AssetDocument $document)
+    {
+        abort_if($document->asset_id !== $asset->id, 403);
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
         return redirect()->route('assets.show', [$asset, 'tab' => 'complaints'])
-            ->with('success', ucwords(str_replace('_', ' ', $field)) . ' updated.');
+            ->with('success', 'Document removed.');
     }
 
     public function destroy(Asset $asset, AssetComplaint $complaint)

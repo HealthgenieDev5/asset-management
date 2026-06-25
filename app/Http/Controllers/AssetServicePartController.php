@@ -43,6 +43,52 @@ class AssetServicePartController extends Controller
             ->with('success', 'Part record updated successfully.');
     }
 
+    public function patchField(Request $request, Asset $asset, AssetService $service, AssetServicePart $part)
+    {
+        abort_if($service->asset_id !== $asset->id, 403);
+        abort_if($part->asset_service_id !== $service->id, 403);
+
+        $allowed = [
+            'part_name', 'part_serial_number', 'part_cost', 'purchased_from', 'vendor_id', 'bill_no',
+            'warranty_tracking_mode', 'warranty_till', 'warranty_unit',
+            'warranty_meter_source', 'warranty_counter_limit',
+            'warranty_reminder_before_days', 'warranty_reminder_before_units',
+            'remarks',
+        ];
+
+        $field = $request->input('field');
+        abort_if(! in_array($field, $allowed, true), 422);
+
+        $rules = [
+            'part_name'                      => ['required', 'string', 'max:255'],
+            'part_serial_number'             => ['nullable', 'string', 'max:255'],
+            'part_cost'                      => ['nullable', 'numeric', 'min:0'],
+            'purchased_from'                 => ['nullable', 'string', 'max:255'],
+            'vendor_id'                      => ['nullable', 'integer', 'exists:vendors,id'],
+            'bill_no'                        => ['nullable', 'string', 'max:255'],
+            'warranty_tracking_mode'         => ['nullable', 'in:time,meter,count'],
+            'warranty_till'                  => ['nullable', 'date'],
+            'warranty_unit'                  => ['nullable', 'string', 'max:20'],
+            'warranty_meter_source'          => ['nullable', 'in:mileage,meter'],
+            'warranty_counter_limit'         => ['nullable', 'integer', 'min:1'],
+            'warranty_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'warranty_reminder_before_units' => ['nullable', 'integer', 'min:1'],
+            'remarks'                        => ['nullable', 'string'],
+        ];
+
+        $validated = $request->validate(['value' => $rules[$field]]);
+        $value     = $validated['value'] ?: null;
+
+        $part->update([$field => $value, 'updated_by' => auth()->id()]);
+
+        $label = null;
+        if ($field === 'vendor_id' && $value) {
+            $label = \App\Models\Vendor::where('id', $value)->value('name');
+        }
+
+        return response()->json(['ok' => true, 'label' => $label]);
+    }
+
     public function destroy(Asset $asset, AssetService $service, AssetServicePart $part)
     {
         abort_if($service->asset_id !== $asset->id, 403);
@@ -65,6 +111,7 @@ class AssetServicePartController extends Controller
             'part_serial_number'           => ['nullable', 'string', 'max:255'],
             'part_cost'                    => ['nullable', 'numeric', 'min:0'],
             'purchased_from'               => ['nullable', 'string', 'max:255'],
+            'vendor_id'                    => ['nullable', 'integer', 'exists:vendors,id'],
             'bill_no'                      => ['nullable', 'string', 'max:255'],
             'warranty_tracking_mode'       => ['nullable', 'in:time,meter,count'],
             'warranty_till'                => ['nullable', 'date'],

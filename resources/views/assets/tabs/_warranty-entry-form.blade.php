@@ -36,7 +36,16 @@ $formId = 'wf_' . ($w?->id ?? 'new');
          src:        '{{ $wSrc }}',
          unitSel:    '{{ $unitSelected }}',
          customUnit: '{{ $unitCustom }}',
-         get unit() { return this.unitSel === '__custom__' ? this.customUnit : this.unitSel; }
+         get unit() { return this.unitSel === '__custom__' ? this.customUnit : this.unitSel; },
+         serviceParts:   {{ $servicePartsJson ?? '[]' }},
+         selectedPartId: '{{ ($w && $w->scope === 'part') ? '__manual__' : '' }}',
+         partName:       '{{ addslashes($v('part_name') ?? $prefillPart ?? '') }}',
+         partSerial:     '{{ addslashes($v('part_serial_number') ?? '') }}',
+         selectPart(id) {
+             this.selectedPartId = id;
+             const p = this.serviceParts.find(p => String(p.id) === String(id));
+             if (p) { this.partName = p.name; this.partSerial = p.serial; }
+         }
      }">
 
     <input type="hidden" name="warranty_type" :value="wtype">
@@ -92,18 +101,42 @@ $formId = 'wf_' . ($w?->id ?? 'new');
         @error('scope')<p class="{{ $err }}">{{ $message }}</p>@enderror
 
         {{-- Part fields (shown only when scope=part) --}}
-        <div x-show="scope === 'part'" style="display:none" class="mt-3 grid grid-cols-2 gap-3">
-            <div class="relative">
-                <input type="text" name="part_name" id="{{ $formId }}_part_name"
-                       value="{{ $v('part_name') ?? $prefillPart }}" placeholder=" " maxlength="100" class="{{ $inp }}" />
-                <label for="{{ $formId }}_part_name" class="{{ $lbl }}">Part Name <span class="text-red-400">*</span></label>
-                @error('part_name')<p class="{{ $err }}">{{ $message }}</p>@enderror
-            </div>
-            <div class="relative">
-                <input type="text" name="part_serial_number" id="{{ $formId }}_part_serial"
-                       value="{{ $v('part_serial_number') }}" placeholder=" " maxlength="100" class="{{ $inp }}" />
-                <label for="{{ $formId }}_part_serial" class="{{ $lbl }}">Part Serial Number</label>
-                @error('part_serial_number')<p class="{{ $err }}">{{ $message }}</p>@enderror
+        <div x-show="scope === 'part'" style="display:none" class="mt-3 space-y-3">
+
+            {{-- Dropdown — only shown when there are known service parts --}}
+            <template x-if="serviceParts.length > 0">
+                <div class="relative">
+                    <select @change="selectPart($event.target.value)" class="{{ $sel }}">
+                        <option value="">— Select a service part —</option>
+                        <template x-for="p in serviceParts" :key="p.id">
+                            <option :value="p.id"
+                                    :selected="String(selectedPartId) === String(p.id)"
+                                    x-text="p.serial ? p.name + '  ·  ' + p.serial : p.name">
+                            </option>
+                        </template>
+                    </select>
+                    <label class="{{ $lbs }}">Select Part</label>
+                </div>
+            </template>
+
+            {{-- Name + serial: shown when no service parts exist, or when editing an existing part warranty --}}
+            <div x-show="selectedPartId === '__manual__' || serviceParts.length === 0"
+                 style="display:none"
+                 class="grid grid-cols-2 gap-3">
+                <div class="relative">
+                    <input type="text" name="part_name" id="{{ $formId }}_part_name"
+                           x-model="partName"
+                           placeholder=" " maxlength="100" class="{{ $inp }}" />
+                    <label for="{{ $formId }}_part_name" class="{{ $lbl }}">Part Name <span class="text-red-400">*</span></label>
+                    @error('part_name')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                </div>
+                <div class="relative">
+                    <input type="text" name="part_serial_number" id="{{ $formId }}_part_serial"
+                           x-model="partSerial"
+                           placeholder=" " maxlength="100" class="{{ $inp }}" />
+                    <label for="{{ $formId }}_part_serial" class="{{ $lbl }}">Part Serial Number</label>
+                    @error('part_serial_number')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                </div>
             </div>
         </div>
     </div>

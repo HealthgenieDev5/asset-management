@@ -202,9 +202,8 @@
                         <td class="px-4 py-3 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <flux:button href="{{ route('assets.show', $asset) }}" wire:navigate size="sm" variant="ghost" icon="eye" />
-                                <flux:button href="{{ route('assets.edit', $asset) }}" wire:navigate size="sm" variant="ghost" icon="pencil" />
                                 <form method="POST" action="{{ route('assets.destroy', $asset) }}"
-                                      onsubmit="return confirm('Delete asset {{ $asset->asset_code }}? This cannot be undone.')">
+                                      onsubmit="confirmDelete(this, 'Delete asset {{ $asset->asset_code }}? This cannot be undone.'); return false;">
                                     @csrf @method('DELETE')
                                     <flux:button type="submit" size="sm" variant="ghost" icon="trash" class="text-red-400 hover:text-red-300" />
                                 </form>

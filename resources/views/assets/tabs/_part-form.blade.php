@@ -52,15 +52,20 @@ $formId = 'pf_' . ($part?->id ?? 'new');
         </div>
     </div>
 
-    {{-- ── Vendor & Billing ── --}}
+    {{-- ── Vendor / Provider ── --}}
     <div>
-        <p class="{{ $sec }}">Vendor & Billing</p>
+        <p class="{{ $sec }}">Vendor / Provider</p>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {{-- Purchased From --}}
+            {{-- Vendor (select) --}}
             <div class="relative sm:col-span-2">
-                <input type="text" name="purchased_from" id="{{ $formId }}_purchased_from" value="{{ $v('purchased_from') }}" placeholder=" " class="{{ $inp }}" />
-                <label for="{{ $formId }}_purchased_from" class="{{ $lbl }}">Purchased From</label>
-                @error('purchased_from')<p class="{{ $err }}">{{ $message }}</p>@enderror
+                <select name="vendor_id" id="{{ $formId }}_vendor_id" class="{{ $sel }}">
+                    <option value="">— None —</option>
+                    @foreach ($vendors ?? [] as $vnd)
+                        <option value="{{ $vnd->id }}" {{ old('vendor_id', $part?->vendor_id) == $vnd->id ? 'selected' : '' }}>{{ $vnd->name }}</option>
+                    @endforeach
+                </select>
+                <label for="{{ $formId }}_vendor_id" class="{{ $lbs }}">Vendor / Provider</label>
+                @error('vendor_id')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
             {{-- Bill No --}}
             <div class="relative">

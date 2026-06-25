@@ -288,7 +288,7 @@
                         <flux:icon.pencil class="size-3.5" />
                     </button>
                     <form method="POST" action="{{ route('assets.ext-warranty.destroy', [$asset, $ew]) }}"
-                          onsubmit="return confirm('Delete extended warranty record?')">
+                          onsubmit="confirmDelete(this, 'Delete extended warranty record?'); return false;">
                         @csrf @method('DELETE')
                         <button type="submit"
                                 aria-label="Delete extended warranty"

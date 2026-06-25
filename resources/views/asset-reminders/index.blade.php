@@ -1,14 +1,14 @@
-<x-layouts::app :title="__('Smart Reminders')">
+<x-layouts::app :title="__('Expiry Tracker')">
     @include('partials.flash')
 
     {{-- Page Header --}}
     <div class="mb-6 flex items-center justify-between">
         <div>
             <flux:heading size="xl" class="font-extrabold">
-                Asset <span class="text-accent">Smart Reminders</span>
+                Expiry <span class="text-accent">Tracker</span>
             </flux:heading>
             <flux:text class="mt-1 text-zinc-500 dark:text-zinc-400">
-                Track expiry dates across all assets — warranty, AMC, insurance, schedules and more.
+                Track coverage expiry dates across all assets — warranty, AMC, insurance, schedules and more.
             </flux:text>
         </div>
     </div>
@@ -138,7 +138,7 @@
         <div class="flex items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-20 text-center dark:border-zinc-700 dark:bg-zinc-900">
             <div>
                 <flux:icon.bell-alert class="mx-auto size-12 text-zinc-400 dark:text-zinc-600" />
-                <flux:heading class="mt-4 text-zinc-500 dark:text-zinc-400">No Reminders Found</flux:heading>
+                <flux:heading class="mt-4 text-zinc-500 dark:text-zinc-400">No Expiries Found</flux:heading>
                 <flux:text class="mt-1 text-zinc-500 dark:text-zinc-600">
                     @if ($filter === 'upcoming')
                         No upcoming expiry dates found.

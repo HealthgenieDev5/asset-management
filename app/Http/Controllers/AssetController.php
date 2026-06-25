@@ -108,18 +108,23 @@ class AssetController extends Controller
 
     public function show(Asset $asset)
     {
+        $tab = request('tab', 'insights');
+
         $asset->load([
             'category',
             'subcategory',
             'documents.uploader',
             'warranties.documents',
             'warranties.smartReminders',
+            'warranties.vendorRecord',
             'amcContracts.documents',
             'amcContracts.smartReminders',
+            'amcContracts.vendor',
             'insurancePolicies.documents',
             'insurancePolicies.smartReminders',
             'services.documents',
             'services.smartReminders',
+            'services.vendor',
             'services.parts.documents',
             'services.parts.smartReminders',
             'complaints.comments.user',
@@ -129,7 +134,7 @@ class AssetController extends Controller
             'maintenanceSchedules.smartReminders',
             'meterLogs',
         ]);
-        $tab = request('tab', 'insights');
+
         $showReminderForm   = request('showform') === '1' && $tab === 'reminders';
         $prefillInsuranceId = request('insuranceid');
         $prefillWarrantyId  = request('warrantyid');
@@ -221,8 +226,9 @@ class AssetController extends Controller
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $vendors = \App\Models\Vendor::active()->orderBy('name')
-            ->get(['id', 'name', 'type', 'phone', 'email']);
+        $vendors = in_array($tab, ['amc', 'insurance', 'services', 'reminders', 'warranty', 'parts']) || $showReminderForm
+            ? \App\Models\Vendor::active()->orderBy('name')->get(['id', 'name', 'type', 'phone', 'email'])
+            : collect();
 
         $categories = \App\Models\AssetCategory::active()->orderBy('name')->get(['id', 'name', 'code']);
 

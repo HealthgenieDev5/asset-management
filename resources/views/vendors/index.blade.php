@@ -300,7 +300,7 @@
                                 Edit
                             </button>
                             <form method="POST" action="{{ route('vendors.destroy', $vendor) }}"
-                                  onsubmit="return confirm('Delete {{ addslashes($vendor->name) }}? This cannot be undone.')">
+                                  onsubmit="confirmDelete(this, 'Delete {{ addslashes($vendor->name) }}? This cannot be undone.'); return false;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"

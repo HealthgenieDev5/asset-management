@@ -17,6 +17,7 @@ class AssetServicePart extends Model
         'part_serial_number',
         'part_cost',
         'purchased_from',
+        'vendor_id',
         'bill_no',
         'warranty_till',
         'warranty_tracking_mode',
@@ -50,6 +51,11 @@ class AssetServicePart extends Model
             ->value('reminder_days');
         if (empty($days)) return null;
         return max($days);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function service(): BelongsTo

@@ -19,7 +19,7 @@ class AssetServiceController extends Controller
 
         $service = AssetService::create($validated);
 
-        $this->storeDocument($request, $asset, $service);
+        $this->storeFormDocument($request, $asset, $service);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'services'])
             ->with('success', 'Service record added successfully.');
@@ -34,10 +34,63 @@ class AssetServiceController extends Controller
 
         $service->update($validated);
 
-        $this->storeDocument($request, $asset, $service);
+        $this->storeFormDocument($request, $asset, $service);
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'services'])
             ->with('success', 'Service record updated successfully.');
+    }
+
+    public function patchField(Request $request, Asset $asset, AssetService $service)
+    {
+        abort_if($service->asset_id !== $asset->id, 403);
+
+        $allowed = [
+            'service_type', 'service_date', 'vendor_id', 'technician_name',
+            'service_cost', 'bill_no', 'bill_date',
+            'next_service_date', 'service_interval_value', 'service_interval_unit',
+            'meter_reading', 'mileage_reading', 'downtime_hours', 'condition_rating',
+            'certification_expiry', 'certification_reminder_before_days',
+            'next_service_reminder_before_days',
+            'work_done', 'safety_notes', 'remarks',
+        ];
+
+        $field = $request->input('field');
+        abort_if(! in_array($field, $allowed, true), 422);
+
+        $rules = [
+            'service_type'                       => ['required', 'in:preventive_maintenance,corrective_maintenance,inspection,repair,calibration,cleaning,other'],
+            'service_date'                       => ['required', 'date'],
+            'vendor_id'                          => ['nullable', 'integer', 'exists:vendors,id'],
+            'technician_name'                    => ['nullable', 'string', 'max:255'],
+            'service_cost'                       => ['nullable', 'numeric', 'min:0'],
+            'bill_no'                            => ['nullable', 'string', 'max:255'],
+            'bill_date'                          => ['nullable', 'date'],
+            'next_service_date'                  => ['nullable', 'date'],
+            'service_interval_value'             => ['nullable', 'integer', 'min:1'],
+            'service_interval_unit'              => ['nullable', 'in:days,weeks,months,years,operating_hours,kilometers'],
+            'meter_reading'                      => ['nullable', 'integer', 'min:0'],
+            'mileage_reading'                    => ['nullable', 'integer', 'min:0'],
+            'downtime_hours'                     => ['nullable', 'numeric', 'min:0'],
+            'condition_rating'                   => ['nullable', 'in:excellent,good,fair,poor,critical'],
+            'certification_expiry'               => ['nullable', 'date'],
+            'certification_reminder_before_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'next_service_reminder_before_days'  => ['nullable', 'integer', 'min:1', 'max:365'],
+            'work_done'                          => ['nullable', 'string'],
+            'safety_notes'                       => ['nullable', 'string'],
+            'remarks'                            => ['nullable', 'string'],
+        ];
+
+        $validated = $request->validate(['value' => $rules[$field]]);
+        $value     = $validated['value'] ?: null;
+
+        $service->update([$field => $value, 'updated_by' => auth()->id()]);
+
+        $label = null;
+        if ($field === 'vendor_id' && $value) {
+            $label = \App\Models\Vendor::where('id', $value)->value('name');
+        }
+
+        return response()->json(['ok' => true, 'label' => $label]);
     }
 
     public function destroy(Asset $asset, AssetService $service)
@@ -53,6 +106,44 @@ class AssetServiceController extends Controller
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'services'])
             ->with('success', 'Service record deleted.');
+    }
+
+    public function storeDocument(Request $request, Asset $asset, AssetService $service)
+    {
+        abort_if($service->asset_id !== $asset->id, 403);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store("assets/{$asset->id}/services", 'public');
+
+        $doc = AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetService::class,
+            'documentable_id'    => $service->id,
+            'document_type'      => 'service_bill',
+            'document_title'     => 'Service Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
+        ]);
+
+        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
+    }
+
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id  = (int) $request->getContent();
+        $doc = AssetDocument::where('id', $id)->where('asset_id', $asset->id)->firstOrFail();
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        return response('', 200);
     }
 
     public function destroyDocument(Asset $asset, AssetDocument $document)
@@ -93,7 +184,7 @@ class AssetServiceController extends Controller
         ];
     }
 
-    private function storeDocument(Request $request, Asset $asset, AssetService $service): void
+    private function storeFormDocument(Request $request, Asset $asset, AssetService $service): void
     {
         if (! $request->hasFile('service_bill')) {
             return;

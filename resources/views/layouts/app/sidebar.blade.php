@@ -60,7 +60,7 @@
                         ];
 
                         $reminderItems = [
-                            $item('bell-alert', 'Reminders', 'asset-reminders.index', 'asset-reminders.*'),
+                            $item('bell-alert', 'Expiry Tracker', 'asset-reminders.index', 'asset-reminders.*'),
                         ];
 
                         $masterItems = [
@@ -102,7 +102,7 @@
 
                     {{-- Reminders --}}
                     <div class="mb-1">
-                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Alerts</p>
+                        <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-600">Compliance</p>
                         @foreach ($reminderItems as $nav)
                             @include('layouts.app._nav-item', $nav)
                         @endforeach

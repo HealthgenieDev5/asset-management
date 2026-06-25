@@ -40,6 +40,78 @@ class AssetInsurancePolicyController extends Controller
             ->with('success', 'Insurance policy updated successfully.');
     }
 
+    public function patchField(Request $request, Asset $asset, AssetInsurancePolicy $insurance)
+    {
+        abort_if($insurance->asset_id !== $asset->id, 403);
+
+        $allowed = [
+            'policy_number', 'insurer_name', 'insurer_contact_person', 'insurer_phone', 'insurer_email',
+            'policy_type', 'policy_date_from', 'policy_date_to',
+            'premium_amount', 'sum_insured', 'bill_no', 'bill_date',
+            'coverage_details', 'reminder_before_days', 'remarks',
+        ];
+        $field = $request->input('field');
+        abort_if(! in_array($field, $allowed, true), 422);
+
+        $rules = [
+            'policy_number'          => ['nullable', 'string', 'max:255'],
+            'insurer_name'           => ['nullable', 'string', 'max:255'],
+            'insurer_contact_person' => ['nullable', 'string', 'max:255'],
+            'insurer_phone'          => ['nullable', 'string', 'max:30'],
+            'insurer_email'          => ['nullable', 'email', 'max:255'],
+            'policy_type'            => ['nullable', 'string', 'max:255'],
+            'policy_date_from'       => ['nullable', 'date'],
+            'policy_date_to'         => ['nullable', 'date'],
+            'premium_amount'         => ['nullable', 'numeric', 'min:0'],
+            'sum_insured'            => ['nullable', 'numeric', 'min:0'],
+            'bill_no'                => ['nullable', 'string', 'max:255'],
+            'bill_date'              => ['nullable', 'date'],
+            'coverage_details'       => ['nullable', 'string'],
+            'reminder_before_days'   => ['nullable', 'integer', 'min:1', 'max:365'],
+            'remarks'                => ['nullable', 'string'],
+        ];
+
+        $validated = $request->validate(['value' => $rules[$field]]);
+        $value = $validated['value'] ?: null;
+
+        $insurance->update([$field => $value, 'updated_by' => auth()->id()]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function storeDocument(Request $request, Asset $asset, AssetInsurancePolicy $insurance)
+    {
+        abort_if($insurance->asset_id !== $asset->id, 403);
+        $request->validate(['file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120']]);
+        $file = $request->file('file');
+        $path = $file->store("assets/{$asset->id}/insurance", 'public');
+        $doc = AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetInsurancePolicy::class,
+            'documentable_id'    => $insurance->id,
+            'document_type'      => 'insurance_policy',
+            'document_title'     => 'Insurance Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
+        ]);
+        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
+    }
+
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id = trim($request->getContent());
+        $doc = AssetDocument::where('id', $id)
+            ->where('asset_id', $asset->id)
+            ->where('documentable_type', AssetInsurancePolicy::class)
+            ->firstOrFail();
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+        return response('', 200);
+    }
+
     public function destroy(Asset $asset, AssetInsurancePolicy $insurance)
     {
         abort_if($insurance->asset_id !== $asset->id, 403);
@@ -53,6 +125,16 @@ class AssetInsurancePolicyController extends Controller
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'insurance'])
             ->with('success', 'Insurance policy deleted.');
+    }
+
+    public function destroyDocument(Asset $asset, AssetDocument $document)
+    {
+        abort_if($document->asset_id !== $asset->id, 403);
+
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
+
+        return response()->json(['deleted' => true]);
     }
 
     private function rules(): array

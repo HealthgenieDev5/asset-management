@@ -147,7 +147,7 @@
                                         <flux:icon.pencil class="size-3.5" />
                                         Edit
                                     </flux:button>
-                                    <form method="POST" action="{{ route('asset-categories.destroy', $category) }}" onsubmit="return confirm('Delete this category?')">
+                                    <form method="POST" action="{{ route('asset-categories.destroy', $category) }}" onsubmit="confirmDelete(this, 'Delete this category?'); return false;">
                                         @csrf
                                         @method('DELETE')
                                         <flux:button type="submit" size="sm" variant="ghost" class="text-red-400 hover:text-red-300">

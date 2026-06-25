@@ -70,30 +70,45 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // AMC Contracts (nested under asset)
     Route::post('assets/{asset}/amc', [AssetAmcContractController::class, 'store'])->name('assets.amc.store');
     Route::put('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'update'])->name('assets.amc.update');
+    Route::patch('assets/{asset}/amc/{amc}/field', [AssetAmcContractController::class, 'patchField'])->name('assets.amc.patch-field');
+    Route::post('assets/{asset}/amc/{amc}/documents', [AssetAmcContractController::class, 'storeDocument'])->name('assets.amc.documents.store');
+    Route::delete('assets/{asset}/amc/documents/revert', [AssetAmcContractController::class, 'revertDocument'])->name('assets.amc.documents.revert');
     Route::delete('assets/{asset}/amc/{amc}', [AssetAmcContractController::class, 'destroy'])->name('assets.amc.destroy');
+    Route::delete('assets/{asset}/amc/documents/{document}', [AssetAmcContractController::class, 'destroyDocument'])->name('assets.amc.documents.destroy');
 
     // Unified Warranty Entries
     Route::post('assets/{asset}/warranties',                          [AssetWarrantyController::class, 'store'])->name('assets.warranties.store');
     Route::put('assets/{asset}/warranties/{warranty}',                [AssetWarrantyController::class, 'update'])->name('assets.warranties.update');
     Route::delete('assets/{asset}/warranties/{warranty}',             [AssetWarrantyController::class, 'destroy'])->name('assets.warranties.destroy');
+    Route::patch('assets/{asset}/warranties/{warranty}/field',        [AssetWarrantyController::class, 'patchField'])->name('assets.warranties.patch-field');
     Route::patch('assets/{asset}/warranties/{warranty}/dispose',      [AssetWarrantyController::class, 'dispose'])->name('assets.warranties.dispose');
+    Route::post('assets/{asset}/warranties/{warranty}/documents',      [AssetWarrantyController::class, 'storeDocument'])->name('assets.warranties.documents.store');
+    Route::delete('assets/{asset}/warranties/documents/revert',       [AssetWarrantyController::class, 'revertDocument'])->name('assets.warranties.documents.revert');
     Route::delete('assets/{asset}/warranties/documents/{document}',   [AssetWarrantyController::class, 'destroyDocument'])->name('assets.warranties.documents.destroy');
 
 
     // Insurance Policies (nested under asset)
     Route::post('assets/{asset}/insurance', [AssetInsurancePolicyController::class, 'store'])->name('assets.insurance.store');
     Route::put('assets/{asset}/insurance/{insurance}', [AssetInsurancePolicyController::class, 'update'])->name('assets.insurance.update');
+    Route::patch('assets/{asset}/insurance/{insurance}/field', [AssetInsurancePolicyController::class, 'patchField'])->name('assets.insurance.patch-field');
+    Route::post('assets/{asset}/insurance/{insurance}/documents', [AssetInsurancePolicyController::class, 'storeDocument'])->name('assets.insurance.documents.store');
+    Route::delete('assets/{asset}/insurance/documents/revert', [AssetInsurancePolicyController::class, 'revertDocument'])->name('assets.insurance.documents.revert');
     Route::delete('assets/{asset}/insurance/{insurance}', [AssetInsurancePolicyController::class, 'destroy'])->name('assets.insurance.destroy');
+    Route::delete('assets/{asset}/insurance/documents/{document}', [AssetInsurancePolicyController::class, 'destroyDocument'])->name('assets.insurance.documents.destroy');
 
     // Services (nested under asset)
     Route::post('assets/{asset}/services', [AssetServiceController::class, 'store'])->name('assets.services.store');
     Route::put('assets/{asset}/services/{service}', [AssetServiceController::class, 'update'])->name('assets.services.update');
+    Route::patch('assets/{asset}/services/{service}/field', [AssetServiceController::class, 'patchField'])->name('assets.services.patch-field');
+    Route::post('assets/{asset}/services/{service}/documents', [AssetServiceController::class, 'storeDocument'])->name('assets.services.documents.store');
+    Route::delete('assets/{asset}/services/documents/revert', [AssetServiceController::class, 'revertDocument'])->name('assets.services.documents.revert');
     Route::delete('assets/{asset}/services/{service}', [AssetServiceController::class, 'destroy'])->name('assets.services.destroy');
     Route::delete('assets/{asset}/services/documents/{document}', [AssetServiceController::class, 'destroyDocument'])->name('assets.services.documents.destroy');
 
     // Service Parts (nested under asset > service)
     Route::post('assets/{asset}/services/{service}/parts', [AssetServicePartController::class, 'store'])->name('assets.services.parts.store');
     Route::put('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'update'])->name('assets.services.parts.update');
+    Route::patch('assets/{asset}/services/{service}/parts/{part}/field', [AssetServicePartController::class, 'patchField'])->name('assets.services.parts.patch-field');
     Route::delete('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'destroy'])->name('assets.services.parts.destroy');
     Route::delete('assets/{asset}/services/parts/documents/{document}', [AssetServicePartController::class, 'destroyDocument'])->name('assets.services.parts.documents.destroy');
 
@@ -105,6 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Maintenance Schedules (nested under asset)
     Route::post('assets/{asset}/maintenance-schedules', [AssetMaintenanceScheduleController::class, 'store'])->name('assets.maintenance-schedules.store');
     Route::put('assets/{asset}/maintenance-schedules/{schedule}', [AssetMaintenanceScheduleController::class, 'update'])->name('assets.maintenance-schedules.update');
+    Route::patch('assets/{asset}/maintenance-schedules/{schedule}/field', [AssetMaintenanceScheduleController::class, 'patchField'])->name('assets.maintenance-schedules.patch-field');
     Route::delete('assets/{asset}/maintenance-schedules/{schedule}', [AssetMaintenanceScheduleController::class, 'destroy'])->name('assets.maintenance-schedules.destroy');
     Route::patch('assets/{asset}/maintenance-schedules/{schedule}/complete', [AssetMaintenanceScheduleController::class, 'complete'])->name('assets.maintenance-schedules.complete');
 
@@ -119,6 +135,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('assets/{asset}/complaints/{complaint}', [AssetComplaintController::class, 'destroy'])->name('assets.complaints.destroy');
     Route::post('assets/{asset}/complaints/{complaint}/link-service', [AssetComplaintController::class, 'linkService'])->name('assets.complaints.link-service');
     Route::patch('assets/{asset}/complaints/{complaint}/field', [AssetComplaintController::class, 'patchField'])->name('assets.complaints.patch-field');
+    Route::post('assets/{asset}/complaints/{complaint}/documents', [AssetComplaintController::class, 'storeDocument'])->name('assets.complaints.documents.store');
+    Route::delete('assets/{asset}/complaints/documents/revert', [AssetComplaintController::class, 'revertDocument'])->name('assets.complaints.documents.revert');
+    Route::delete('assets/{asset}/complaints/documents/{document}', [AssetComplaintController::class, 'destroyDocument'])->name('assets.complaints.documents.destroy');
 
     // Complaint Comments
     Route::post('assets/{asset}/complaints/{complaint}/comments', [AssetComplaintCommentController::class, 'store'])->name('assets.complaints.comments.store');

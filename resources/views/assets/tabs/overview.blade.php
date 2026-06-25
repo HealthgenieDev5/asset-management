@@ -463,7 +463,7 @@
                                class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
                             <span class="text-zinc-300 dark:text-zinc-600">·</span>
                             <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                  onsubmit="return confirm('Delete this purchase bill?')">
+                                  onsubmit="confirmDelete(this, 'Delete this purchase bill?'); return false;">
                                 @csrf @method('DELETE')
                                 <input type="hidden" name="_tab" value="overview">
                                 <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">Delete</button>

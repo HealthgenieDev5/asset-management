@@ -1,4 +1,5 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
+<style>.part-doc-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
 
 {{-- ── Doc Lightbox ── --}}
 <div x-data="docLightbox()"
@@ -111,73 +112,345 @@
                     </form>
                 </x-modal>
 
+                @php
+                    $pPatchUrl = route('assets.services.parts.patch-field', [$asset, $svc, $part]);
+                    $pInp      = 'rounded border border-zinc-300 bg-white px-2 py-0.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100';
+                    $pBtnOk    = 'rounded p-0.5 text-green-500 hover:text-green-400 transition-colors';
+                    $pBtnX     = 'rounded p-0.5 text-zinc-400 hover:text-zinc-200 transition-colors';
+                    $pPencil   = '<svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>';
+                    $pCheck    = '<svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>';
+                    $pX        = '<svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
+                    $pDt       = 'text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+                    $pDd       = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
+                    $pFirstDoc = $part->documents->first();
+                    $partWarrantyExpired = $part->warranty_till && $part->warranty_till->lt(now()->startOfDay());
+                @endphp
                 <x-modal name="view-part-{{ $part->id }}" title="Part Replacement Details">
-                    <div class="space-y-5">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <flux:icon.puzzle-piece class="size-4 shrink-0 text-zinc-400" />
-                                    <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ $part->part_name }}</h3>
-                                </div>
-                                <p class="mt-1 text-xs text-zinc-500">
-                                    {{ $svc->service_type_label }} - {{ $svc->service_date->format('d M Y') }}
-                                    @if ($svc->service_agency) - {{ $svc->service_agency }} @endif
-                                </p>
-                            </div>
+                    <x-slot:footer>
+                        <div class="flex items-center gap-2">
+                            <flux:icon.puzzle-piece class="size-4 shrink-0 text-zinc-400" />
+                            <span class="text-xs text-zinc-500">{{ $svc->service_type_label }} · {{ $svc->service_date->format('d M Y') }}</span>
                             @if ($part->warranty_till)
-                                @php $partWarrantyExpired = $part->warranty_till->lt(now()->startOfDay()); @endphp
-                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $partWarrantyExpired ? 'bg-red-400/10 text-red-400' : 'bg-green-400/10 text-green-400' }}">
+                                <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $partWarrantyExpired ? 'bg-red-400/10 text-red-400' : 'bg-green-400/10 text-green-400' }}">
                                     {{ $partWarrantyExpired ? 'Warranty Expired' : 'Under Warranty' }}
                                 </span>
                             @endif
                         </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" x-on:click="$dispatch('close-modal-view-part-{{ $part->id }}')"
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-800 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:text-zinc-100">
+                                <flux:icon.x-mark class="size-3.5" />
+                                Close
+                            </button>
+                            <form method="POST" action="{{ route('assets.services.parts.destroy', [$asset, $svc, $part]) }}" onsubmit="confirmDelete(this, 'Delete this part?'); return false;">
+                                @csrf @method('DELETE')
+                                <button type="submit"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-red-300/60 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:border-red-500/60 hover:bg-red-500/5 dark:border-red-700/50 dark:text-red-400 dark:hover:border-red-500/60">
+                                    <flux:icon.trash class="size-3.5" />
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </x-slot:footer>
 
-                        <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-                            @if ($part->part_serial_number)
+                    <div x-data="{
+                        partName:      {{ json_encode($part->part_name) }},
+                        serialNo:      {{ json_encode($part->part_serial_number ?? '') }},
+                        partCost:      '{{ $part->part_cost ?? '' }}',
+                        vendorLabel:   {{ json_encode($part->vendor?->name ?? $part->purchased_from ?? '') }},
+                        purchasedFrom: {{ json_encode($part->purchased_from ?? '') }},
+                        billNo:        {{ json_encode($part->bill_no ?? '') }},
+                        warrantyMode:  '{{ $part->warranty_tracking_mode ?? 'time' }}',
+                        warrantyTill:  '{{ $part->warranty_till?->format('d M Y') ?? '' }}',
+                        warrantyUnit:  '{{ $part->warranty_unit ?? '' }}',
+                        counterLimit:  '{{ $part->warranty_counter_limit ?? '' }}',
+                        remindDays:    '{{ $part->warranty_reminder_before_days ?? '' }}',
+                        remindUnits:   '{{ $part->warranty_reminder_before_units ?? '' }}',
+                        remarks:       {{ json_encode($part->remarks ?? '') }},
+                        async pp(field, value) {
+                            const fd = new URLSearchParams({ _method: 'PATCH', field, value: value ?? '' });
+                            const r = await fetch('{{ $pPatchUrl }}', {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                                body: fd
+                            });
+                            if (!r.ok) { toastr.error('Save failed.'); return false; }
+                            const d = await r.json();
+                            toastr.success('Updated.');
+                            if (field === 'vendor_id') { this.vendorLabel = d.label || ''; }
+                            return true;
+                        }
+                    }" class="flex min-h-0 gap-5 mt-1">
+
+                        {{-- ── Left: fields ── --}}
+                        <div class="flex-1 min-w-0 space-y-5">
+
+                            {{-- ── Part Info ── --}}
                             <div>
-                                <dt class="text-xs font-medium text-zinc-500">Serial Number</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_serial_number }}</dd>
+                                <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Part Info</p>
+                                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+
+                                    {{-- Part Name --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Part Name</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100" x-text="partName"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="text" x-ref="inpName" class="{{ $pInp }} w-40" :value="partName" maxlength="255" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('part_name',$refs.inpName.value)){partName=$refs.inpName.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Serial Number --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Serial Number</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="serialNo || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="text" x-ref="inpSerial" class="{{ $pInp }} w-36" :value="serialNo" maxlength="255" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('part_serial_number',$refs.inpSerial.value)){serialNo=$refs.inpSerial.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                </dl>
                             </div>
-                            @endif
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Cost</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->part_cost !== null ? '₹ ' . number_format($part->part_cost, 2) : '--' }}</dd>
+
+                            {{-- ── Vendor / Provider ── --}}
+                            <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                                <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Vendor / Provider</p>
+                                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+
+                                    {{-- Vendor (select) --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Vendor / Provider</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="vendorLabel || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <select x-ref="selVendor" class="{{ $pInp }} max-w-44">
+                                                        <option value="">— None —</option>
+                                                        @foreach ($vendors ?? [] as $vnd)
+                                                            <option value="{{ $vnd->id }}" {{ $part->vendor_id == $vnd->id ? 'selected' : '' }}>{{ $vnd->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <button type="button" class="{{ $pBtnOk }}"
+                                                        @click="if(await pp('vendor_id',$refs.selVendor.value)){vendorLabel=$refs.selVendor.options[$refs.selVendor.selectedIndex].text==='— None —'?'':$refs.selVendor.options[$refs.selVendor.selectedIndex].text;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Bill No --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Bill / Invoice No.</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="billNo || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="text" x-ref="inpBill" class="{{ $pInp }} w-32" :value="billNo" maxlength="255" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('bill_no',$refs.inpBill.value)){billNo=$refs.inpBill.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Part Cost --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Cost (₹)</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="partCost ? '₹ ' + parseFloat(partCost).toLocaleString('en-IN',{minimumFractionDigits:2}) : '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="number" x-ref="inpCost" class="{{ $pInp }} w-28" :value="partCost" min="0" step="0.01" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('part_cost',$refs.inpCost.value)){partCost=$refs.inpCost.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Service Labour Cost (read-only context) --}}
+                                    <div>
+                                        <dt class="{{ $pDt }}">Service Labour Cost</dt>
+                                        <dd class="{{ $pDd }}">{{ $svc->service_cost ? '₹ ' . number_format($svc->service_cost, 2) : '--' }}</dd>
+                                    </div>
+
+                                </dl>
                             </div>
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Purchased From</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->purchased_from ?: '--' }}</dd>
+
+                            {{-- ── Warranty ── --}}
+                            <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                                <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Warranty</p>
+                                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+
+                                    {{-- Tracking Mode --}}
+                                    <div x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Tracking Mode</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="{ time:'Date-based', meter:'Meter-based', count:'Count-based' }[warrantyMode] || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <select x-ref="selMode" class="{{ $pInp }}" :value="warrantyMode">
+                                                        <option value="time">Date-based</option>
+                                                        <option value="meter">Meter-based</option>
+                                                        <option value="count">Count-based</option>
+                                                    </select>
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_tracking_mode',$refs.selMode.value)){warrantyMode=$refs.selMode.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Warranty Till (time) --}}
+                                    <div x-show="warrantyMode === 'time'" x-data="{ editing: false }" x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpWTill, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
+                                        <dt class="{{ $pDt }}">Warranty Expiry</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="text-sm {{ $partWarrantyExpired ? 'font-semibold text-red-400' : 'text-zinc-800 dark:text-zinc-200' }}" x-text="warrantyTill || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="text" x-ref="fpWTill" class="{{ $pInp }} w-32" placeholder="Date" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_till',$refs.fpWTill._flatpickr?.input.value||$refs.fpWTill.value)){warrantyTill=$refs.fpWTill._flatpickr?.altInput?.value||$refs.fpWTill.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Reminder Before Days (time) --}}
+                                    <div x-show="warrantyMode === 'time'" x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Reminder (days before)</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="remindDays ? remindDays + ' days before' : '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="number" x-ref="inpRDays" class="{{ $pInp }} w-20" :value="remindDays" min="1" max="365" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_reminder_before_days',$refs.inpRDays.value)){remindDays=$refs.inpRDays.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Unit (meter/count) --}}
+                                    <div x-show="warrantyMode === 'meter' || warrantyMode === 'count'" x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Warranty Unit</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="warrantyUnit || '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="text" x-ref="inpUnit" class="{{ $pInp }} w-24" :value="warrantyUnit" maxlength="20" placeholder="km, hrs…" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_unit',$refs.inpUnit.value)){warrantyUnit=$refs.inpUnit.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Counter Limit (meter/count) --}}
+                                    <div x-show="warrantyMode === 'meter' || warrantyMode === 'count'" x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Warranty Limit</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="counterLimit ? Number(counterLimit).toLocaleString() + ' ' + (warrantyUnit || 'units') : '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="number" x-ref="inpLimit" class="{{ $pInp }} w-24" :value="counterLimit" min="1" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_counter_limit',$refs.inpLimit.value)){counterLimit=$refs.inpLimit.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                    {{-- Reminder Before Units (meter/count) --}}
+                                    <div x-show="warrantyMode === 'meter' || warrantyMode === 'count'" x-data="{ editing: false }">
+                                        <dt class="{{ $pDt }}">Reminder (units before)</dt>
+                                        <dd class="mt-0.5 flex items-center gap-1.5">
+                                            <span x-show="!editing" class="{{ $pDd }}" x-text="remindUnits ? Number(remindUnits).toLocaleString() + ' ' + (warrantyUnit || 'units') + ' before' : '--'"></span>
+                                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }}">{!! $pPencil !!}</button>
+                                            <template x-if="editing">
+                                                <span class="flex items-center gap-1">
+                                                    <input type="number" x-ref="inpRUnits" class="{{ $pInp }} w-24" :value="remindUnits" min="1" />
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('warranty_reminder_before_units',$refs.inpRUnits.value)){remindUnits=$refs.inpRUnits.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </template>
+                                        </dd>
+                                    </div>
+
+                                </dl>
                             </div>
-                            @if ($part->bill_no)
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Bill / Invoice No.</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->bill_no }}</dd>
+
+                            {{-- ── Remarks ── --}}
+                            <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                                <div x-data="{ editing: false }">
+                                    <dt class="{{ $pDt }}">Remarks</dt>
+                                    <dd class="mt-0.5 flex items-start gap-1.5">
+                                        <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="remarks || '--'"></span>
+                                        <button x-show="!editing" type="button" @click="editing=true" class="{{ $pBtnX }} mt-0.5">{!! $pPencil !!}</button>
+                                        <template x-if="editing">
+                                            <span class="flex w-full flex-col gap-1">
+                                                <textarea x-ref="taRemarks" rows="2" class="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100" x-text="remarks"></textarea>
+                                                <span class="flex gap-1">
+                                                    <button type="button" class="{{ $pBtnOk }}" @click="if(await pp('remarks',$refs.taRemarks.value)){remarks=$refs.taRemarks.value;editing=false}">{!! $pCheck !!}</button>
+                                                    <button type="button" class="{{ $pBtnX }}" @click="editing=false">{!! $pX !!}</button>
+                                                </span>
+                                            </span>
+                                        </template>
+                                    </dd>
+                                </div>
                             </div>
-                            @endif
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Warranty Till</dt>
-                                <dd class="mt-0.5 text-sm {{ $part->warranty_till && $part->warranty_till->lt(now()->startOfDay()) ? 'text-red-400 font-semibold' : 'text-zinc-800 dark:text-zinc-100' }}">
-                                    {{ $part->warranty_till?->format('d M Y') ?: '--' }}
-                                    @if ($part->warranty_till && $part->warranty_till->lt(now()->startOfDay())) <span class="text-xs font-normal">(Expired)</span> @endif
-                                </dd>
+
+                        </div>{{-- end left --}}
+
+                        {{-- ── Right: Document panel ── --}}
+                        <div class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700">
+                            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+                            <div class="part-doc-upload" x-data x-init="
+                                initUploadPond($el.querySelector('input'), {
+                                    acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
+                                    @if ($pFirstDoc)
+                                    files: [{
+                                        source: '{{ Storage::url($pFirstDoc->file_path) }}',
+                                        options: { type: 'local' }
+                                    }],
+                                    fileMetaBySource: { '{{ Storage::url($pFirstDoc->file_path) }}': { name: '{{ addslashes($pFirstDoc->file_original_name) }}' } },
+                                    onremovefile: () => fetch('{{ route('assets.services.parts.documents.destroy', [$asset, $pFirstDoc]) }}', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+                                        body: '_method=DELETE'
+                                    }).then(r => r.ok ? toastr.success('Document removed.') : toastr.error('Failed.')),
+                                    @endif
+                                })
+                            ">
+                                <input type="file" />
                             </div>
-                            <div>
-                                <dt class="text-xs font-medium text-zinc-500">Service Cost</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $svc->service_cost ? 'Rs. ' . number_format($svc->service_cost, 2) : '--' }}</dd>
-                            </div>
-                            <div class="sm:col-span-2 lg:col-span-3">
-                                <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $part->remarks ?: '--' }}</dd>
-                            </div>
-                        </dl>
-                        @if ($part->documents->isNotEmpty())
-                            <div>
-                                <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Document</p>
-                                <div class="space-y-1">
-                                    @foreach ($part->documents as $doc)
-                                        <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-800/50">
+                            @if ($part->documents->count() > 1)
+                                <div class="mt-2 space-y-1">
+                                    @foreach ($part->documents->skip(1) as $doc)
+                                        <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
                                             @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
                                             <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
-                                            <span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
                                             <button type="button"
                                                 x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
                                                 title="View"
@@ -189,11 +462,21 @@
                                                 class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
                                                 <flux:icon.arrow-down-tray class="size-3" />
                                             </a>
+                                            <form method="POST" action="{{ route('assets.services.parts.documents.destroy', [$asset, $doc]) }}" onsubmit="confirmDelete(this, 'Delete this document?'); return false;">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                                    <flux:icon.trash class="size-3" />
+                                                </button>
+                                            </form>
                                         </div>
                                     @endforeach
                                 </div>
-                            </div>
-                        @endif
+                            @endif
+                            @if ($part->documents->isEmpty())
+                                <p class="text-xs text-zinc-500">No document yet.</p>
+                            @endif
+                        </div>{{-- end right --}}
+
                     </div>
                 </x-modal>
             @endforeach
@@ -283,7 +566,7 @@
                                             </button>
                                             <form method="POST"
                                                   action="{{ route('assets.services.parts.destroy', [$asset, $svc, $part]) }}"
-                                                  onsubmit="return confirm('Delete this part record?')">
+                                                  onsubmit="confirmDelete(this, 'Delete this part record?'); return false;">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
                                                         aria-label="Delete part record"

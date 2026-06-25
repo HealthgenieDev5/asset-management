@@ -135,7 +135,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
     {{-- ── Schedule ── --}}
     <div>
         <p class="{{ $sec }}">Schedule & Certification</p>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div class="relative">
                 <input type="number" name="service_interval_value" id="service_interval_value" value="{{ $v('service_interval_value') }}" placeholder=" " min="1" class="{{ $inp }}" />
                 <label for="service_interval_value" class="{{ $lbl }}">Interval Value</label>
@@ -151,6 +151,11 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <label for="service_interval_unit" class="{{ $lbs }}">Interval Unit</label>
                 @error('service_interval_unit')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
+            <div class="relative">
+                <input type="number" name="next_service_reminder_before_days" id="next_service_reminder_before_days" value="{{ $v('next_service_reminder_before_days') }}" placeholder=" " min="1" max="365" class="{{ $inp }}" />
+                <label for="next_service_reminder_before_days" class="{{ $lbl }}">Next Service Reminder (days)</label>
+                @error('next_service_reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
             <div x-init="flatpickr($el.querySelector('input'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })">
                 <div class="relative w-full">
                     <input type="text" inputmode="none" name="certification_expiry" id="certification_expiry" value="{{ $service?->certification_expiry?->format('Y-m-d') ?? old('certification_expiry') }}" placeholder=" " autocomplete="off" class="{{ $inp }} pr-9" />
@@ -158,6 +163,11 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-zinc-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" /></svg></span>
                 </div>
                 @error('certification_expiry')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
+            <div class="relative">
+                <input type="number" name="certification_reminder_before_days" id="certification_reminder_before_days" value="{{ $v('certification_reminder_before_days') }}" placeholder=" " min="1" max="365" class="{{ $inp }}" />
+                <label for="certification_reminder_before_days" class="{{ $lbl }}">Cert. Reminder (days)</label>
+                @error('certification_reminder_before_days')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
         </div>
     </div>
@@ -175,6 +185,11 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 <textarea name="safety_notes" id="safety_notes" rows="2" placeholder=" " class="{{ $txa }}">{{ $v('safety_notes') }}</textarea>
                 <label for="safety_notes" class="{{ $lbl }}">Safety Notes</label>
                 @error('safety_notes')<p class="{{ $err }}">{{ $message }}</p>@enderror
+            </div>
+            <div class="relative col-span-2">
+                <input type="text" name="remarks" id="remarks_svc" value="{{ $v('remarks') }}" placeholder=" " class="{{ $inp }}" />
+                <label for="remarks_svc" class="{{ $lbl }}">Remarks</label>
+                @error('remarks')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
         </div>
     </div>

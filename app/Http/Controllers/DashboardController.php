@@ -36,21 +36,39 @@ class DashboardController extends Controller
         $totalAssetValue = Asset::whereNotNull('bill_amount')->sum('bill_amount');
 
         // ── Expiry counts per source ─────────────────────────────────────────
-        $warranty    = $this->expiryBuckets('assets', 'warranty_lapse_date', $now, $in7, $in30, 'deleted_at IS NULL');
-        $extWarranty = $this->expiryBuckets('asset_warranties', 'expiry_date', $now, $in7, $in30, "warranty_type = 'extended'");
-        $amc         = $this->expiryBuckets('asset_amc_contracts', 'amc_date_to', $now, $in7, $in30);
-        $insurance   = $this->expiryBuckets('asset_insurance_policies', 'policy_date_to', $now, $in7, $in30);
+        // Active statuses — inactive/disposed/scrapped assets excluded from all expiry counts
+        $activeStatuses = "('active', 'under_repair')";
 
-        // Vehicle compliance
-        $puc     = $this->expiryBuckets('assets', 'puc_expiry_date', $now, $in7, $in30, 'deleted_at IS NULL AND puc_expiry_date IS NOT NULL');
-        $fitness = $this->expiryBuckets('assets', 'fitness_expiry_date', $now, $in7, $in30, 'deleted_at IS NULL AND fitness_expiry_date IS NOT NULL');
-        $roadTax = $this->expiryBuckets('assets', 'road_tax_expiry_date', $now, $in7, $in30, 'deleted_at IS NULL AND road_tax_expiry_date IS NOT NULL');
+        $warranty    = $this->expiryBuckets('assets', 'warranty_lapse_date', $now, $in7, $in30, "deleted_at IS NULL AND status IN $activeStatuses");
+        $extWarranty = $this->expiryBucketsJoined('asset_warranties', 'expiry_date', $now, $in7, $in30, "warranty_type = 'extended'", $activeStatuses);
+        $amc         = $this->expiryBucketsJoined('asset_amc_contracts', 'amc_date_to', $now, $in7, $in30, '1=1', $activeStatuses);
+        $insurance   = $this->expiryBucketsJoined('asset_insurance_policies', 'policy_date_to', $now, $in7, $in30, '1=1', $activeStatuses);
 
-        // Aggregated reminder totals
+        // Vehicle compliance — only active vehicles
+        $puc     = $this->expiryBuckets('assets', 'puc_expiry_date',      $now, $in7, $in30, "deleted_at IS NULL AND puc_expiry_date IS NOT NULL      AND status IN $activeStatuses");
+        $fitness = $this->expiryBuckets('assets', 'fitness_expiry_date',  $now, $in7, $in30, "deleted_at IS NULL AND fitness_expiry_date IS NOT NULL  AND status IN $activeStatuses");
+        $roadTax = $this->expiryBuckets('assets', 'road_tax_expiry_date', $now, $in7, $in30, "deleted_at IS NULL AND road_tax_expiry_date IS NOT NULL AND status IN $activeStatuses");
+
+        // All warranties from asset_warranties table (active assets only)
+        $allWarranties = $this->expiryBucketsJoined('asset_warranties', 'expiry_date', $now, $in7, $in30, '1=1', $activeStatuses);
+
+        // Part warranties — via asset_services join
+        $partWarranties = $this->expiryBucketsPartsJoined($now, $in7, $in30, $activeStatuses);
+
+        // Date-based maintenance schedules (active assets only)
+        $schedules = $this->expiryBucketsSchedulesJoined($now, $in7, $in30, $activeStatuses);
+
+        // Aggregated expiry totals — active/under_repair assets only
         $reminderStats = [
-            'expired'     => $warranty['expired'] + $extWarranty['expired'] + $amc['expired'] + $insurance['expired'],
-            'expiring_7'  => $warranty['in7']     + $extWarranty['in7']     + $amc['in7']     + $insurance['in7'],
-            'expiring_30' => $warranty['in30']    + $extWarranty['in30']    + $amc['in30']    + $insurance['in30'],
+            'expired'     => $warranty['expired'] + $allWarranties['expired'] + $amc['expired'] + $insurance['expired']
+                           + $puc['expired'] + $fitness['expired'] + $roadTax['expired']
+                           + $partWarranties['expired'] + $schedules['expired'],
+            'expiring_7'  => $warranty['in7']  + $allWarranties['in7']  + $amc['in7']  + $insurance['in7']
+                           + $puc['in7'] + $fitness['in7'] + $roadTax['in7']
+                           + $partWarranties['in7'] + $schedules['in7'],
+            'expiring_30' => $warranty['in30'] + $allWarranties['in30'] + $amc['in30'] + $insurance['in30']
+                           + $puc['in30'] + $fitness['in30'] + $roadTax['in30']
+                           + $partWarranties['in30'] + $schedules['in30'],
         ];
 
         $serviceDue = $this->expiryBuckets('asset_services', 'next_service_date', $now, $in7, $in30, 'deleted_at IS NULL AND next_service_date IS NOT NULL');
@@ -160,32 +178,109 @@ class DashboardController extends Controller
         ];
     }
 
+    // For related tables (warranties, AMC, insurance) — joins assets to filter by status
+    private function expiryBucketsJoined(string $table, string $col, string $now, string $in7, string $in30, string $where, string $activeStatuses): array
+    {
+        $rows = DB::select("
+            SELECT
+                SUM(CASE WHEN t.`{$col}` < :now1  THEN 1 ELSE 0 END) AS expired,
+                SUM(CASE WHEN t.`{$col}` >= :now2 AND t.`{$col}` <= :in7  THEN 1 ELSE 0 END) AS in7,
+                SUM(CASE WHEN t.`{$col}` > :in7b  AND t.`{$col}` <= :in30 THEN 1 ELSE 0 END) AS in30
+            FROM `{$table}` t
+            INNER JOIN assets a ON a.id = t.asset_id
+            WHERE a.deleted_at IS NULL
+              AND a.status IN {$activeStatuses}
+              AND t.`{$col}` IS NOT NULL
+              AND {$where}
+        ", ['now1' => $now, 'now2' => $now, 'in7' => $in7, 'in7b' => $in7, 'in30' => $in30]);
+
+        $r = $rows[0] ?? null;
+        return [
+            'expired' => (int) ($r->expired ?? 0),
+            'in7'     => (int) ($r->in7     ?? 0),
+            'in30'    => (int) ($r->in30    ?? 0),
+        ];
+    }
+
+    // Part warranties — asset_service_parts → asset_services → assets
+    private function expiryBucketsPartsJoined(string $now, string $in7, string $in30, string $activeStatuses): array
+    {
+        $rows = DB::select("
+            SELECT
+                SUM(CASE WHEN p.warranty_till < :now1  THEN 1 ELSE 0 END) AS expired,
+                SUM(CASE WHEN p.warranty_till >= :now2 AND p.warranty_till <= :in7  THEN 1 ELSE 0 END) AS in7,
+                SUM(CASE WHEN p.warranty_till > :in7b  AND p.warranty_till <= :in30 THEN 1 ELSE 0 END) AS in30
+            FROM asset_service_parts p
+            INNER JOIN asset_services s ON s.id = p.asset_service_id
+            INNER JOIN assets a ON a.id = s.asset_id
+            WHERE a.deleted_at IS NULL
+              AND a.status IN {$activeStatuses}
+              AND p.warranty_till IS NOT NULL
+        ", ['now1' => $now, 'now2' => $now, 'in7' => $in7, 'in7b' => $in7, 'in30' => $in30]);
+
+        $r = $rows[0] ?? null;
+        return [
+            'expired' => (int) ($r->expired ?? 0),
+            'in7'     => (int) ($r->in7     ?? 0),
+            'in30'    => (int) ($r->in30    ?? 0),
+        ];
+    }
+
+    // Maintenance schedules — joins assets to filter by status
+    private function expiryBucketsSchedulesJoined(string $now, string $in7, string $in30, string $activeStatuses): array
+    {
+        $rows = DB::select("
+            SELECT
+                SUM(CASE WHEN sch.next_due_date < :now1  THEN 1 ELSE 0 END) AS expired,
+                SUM(CASE WHEN sch.next_due_date >= :now2 AND sch.next_due_date <= :in7  THEN 1 ELSE 0 END) AS in7,
+                SUM(CASE WHEN sch.next_due_date > :in7b  AND sch.next_due_date <= :in30 THEN 1 ELSE 0 END) AS in30
+            FROM asset_maintenance_schedules sch
+            INNER JOIN assets a ON a.id = sch.asset_id
+            WHERE a.deleted_at IS NULL
+              AND a.status IN {$activeStatuses}
+              AND sch.schedule_type = 'date'
+              AND sch.is_active = 1
+              AND sch.next_due_date IS NOT NULL
+        ", ['now1' => $now, 'now2' => $now, 'in7' => $in7, 'in7b' => $in7, 'in30' => $in30]);
+
+        $r = $rows[0] ?? null;
+        return [
+            'expired' => (int) ($r->expired ?? 0),
+            'in7'     => (int) ($r->in7     ?? 0),
+            'in30'    => (int) ($r->in30    ?? 0),
+        ];
+    }
+
     private function upcomingExpiries(string $now, string $in30): \Illuminate\Support\Collection
     {
-        $items = collect();
+        $active = ['active', 'under_repair'];
+        $items  = collect();
 
         Asset::whereNotNull('warranty_lapse_date')
             ->whereBetween('warranty_lapse_date', [$now, $in30])
             ->whereNull('deleted_at')
+            ->whereIn('status', $active)
             ->select('id', 'asset_code', 'asset_name', 'warranty_lapse_date as expiry_date')
             ->get()
             ->each(fn($a) => $items->push(['asset_id' => $a->id, 'asset_code' => $a->asset_code, 'asset_name' => $a->asset_name, 'type' => 'Warranty', 'expiry_date' => $a->expiry_date, 'tab' => 'warranty']));
 
-        AssetWarranty::where('warranty_type', 'extended')
-            ->whereNotNull('expiry_date')
+        AssetWarranty::whereNotNull('expiry_date')
             ->whereBetween('expiry_date', [$now, $in30])
+            ->whereHas('asset', fn($q) => $q->whereIn('status', $active))
             ->with('asset:id,asset_code,asset_name')
             ->get()
             ->each(fn($w) => $items->push(['asset_id' => $w->asset_id, 'asset_code' => $w->asset?->asset_code, 'asset_name' => $w->asset?->asset_name, 'type' => 'Ext. Warranty', 'expiry_date' => $w->expiry_date, 'tab' => 'warranty']));
 
         AssetAmcContract::whereNotNull('amc_date_to')
             ->whereBetween('amc_date_to', [$now, $in30])
+            ->whereHas('asset', fn($q) => $q->whereIn('status', $active))
             ->with('asset:id,asset_code,asset_name')
             ->get()
             ->each(fn($c) => $items->push(['asset_id' => $c->asset_id, 'asset_code' => $c->asset?->asset_code, 'asset_name' => $c->asset?->asset_name, 'type' => 'AMC', 'expiry_date' => $c->amc_date_to, 'tab' => 'amc']));
 
         AssetInsurancePolicy::whereNotNull('policy_date_to')
             ->whereBetween('policy_date_to', [$now, $in30])
+            ->whereHas('asset', fn($q) => $q->whereIn('status', $active))
             ->with('asset:id,asset_code,asset_name')
             ->get()
             ->each(fn($p) => $items->push(['asset_id' => $p->asset_id, 'asset_code' => $p->asset?->asset_code, 'asset_name' => $p->asset?->asset_name, 'type' => 'Insurance', 'expiry_date' => $p->policy_date_to, 'tab' => 'insurance']));

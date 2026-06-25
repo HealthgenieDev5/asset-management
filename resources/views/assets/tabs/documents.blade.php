@@ -224,7 +224,7 @@
                                        class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
                                     <span class="text-zinc-300 dark:text-zinc-600">·</span>
                                     <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                          onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
                                         @csrf @method('DELETE')
                                         <button type="submit" aria-label="Delete document" title="Delete document"
                                                 class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -267,7 +267,7 @@
                                                class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
                                             <span class="text-zinc-300 dark:text-zinc-600">·</span>
                                             <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                                  onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" aria-label="Delete document" title="Delete document"
                                                         class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -356,7 +356,7 @@
                                        class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
                                     <span class="text-zinc-300 dark:text-zinc-600">·</span>
                                     <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                          onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
                                         @csrf @method('DELETE')
                                         <button type="submit" aria-label="Delete document" title="Delete document"
                                                 class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -404,7 +404,7 @@
                                             <span class="text-zinc-300 dark:text-zinc-600">·</span>
                                             <form method="POST"
                                                   action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                                  onsubmit="return confirm('Delete this document? This cannot be undone.')">
+                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
                                                         aria-label="Delete document"

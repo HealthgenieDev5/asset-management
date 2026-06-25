@@ -114,7 +114,7 @@
                                             Edit
                                         </button>
                                         <form method="POST" action="{{ route('complaint-escalation-rules.destroy', $rule) }}"
-                                              onsubmit="return confirm('Delete this escalation rule?')">
+                                              onsubmit="confirmDelete(this, 'Delete this escalation rule?'); return false;">
                                             @csrf @method('DELETE')
                                             <button type="submit"
                                                     class="rounded-md border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-500 hover:border-red-500/60 hover:text-red-400 transition-colors dark:border-zinc-700">

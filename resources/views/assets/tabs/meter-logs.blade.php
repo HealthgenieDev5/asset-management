@@ -332,7 +332,7 @@
                                         <flux:icon.pencil class="size-3.5" />
                                     </button>
                                     <form method="POST" action="{{ route('assets.meter-logs.destroy', [$asset, $log]) }}"
-                                          onsubmit="return confirm('Delete this meter reading?')">
+                                          onsubmit="confirmDelete(this, 'Delete this meter reading?'); return false;">
                                         @csrf @method('DELETE')
                                         <button type="submit" title="Delete"
                                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">

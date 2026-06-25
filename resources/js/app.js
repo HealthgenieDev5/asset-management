@@ -3,6 +3,25 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import FilePondPluginPdfPreview from 'filepond-plugin-pdf-preview';
 import toastr from 'toastr';
 import 'toastr/build/toastr.min.css';
+import Swal from 'sweetalert2';
+
+window.confirmDelete = function (form, message) {
+    const dark = document.documentElement.classList.contains('dark');
+    Swal.fire({
+        title: 'Are you sure?',
+        text: message || 'This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#52525b',
+        background: dark ? '#18181b' : '#ffffff',
+        color: dark ? '#f4f4f5' : '#18181b',
+    }).then(function (result) {
+        if (result.isConfirmed) form.submit();
+    });
+};
 
 FilePond.registerPlugin(FilePondPluginImagePreview, FilePondPluginPdfPreview);
 
@@ -34,16 +53,17 @@ window.destroyUploadPond = function (pond) {
 };
 
 window.initUploadPond = function (inputEl, options = {}) {
+    const useServerMode = !!options.server;
     const pond = FilePond.create(inputEl, {
         files:              options.files ?? undefined,
         allowMultiple:      false,
-        allowProcess:       false,
+        allowProcess:       !useServerMode ? false : true,
         allowRevert:        true,
         allowRemove:        true,
         allowBrowse:        true,
         allowDrop:          true,
         allowPaste:         true,
-        storeAsFile:        true,
+        storeAsFile:        !useServerMode,
         credits:            false,
         labelIdle:          options.labelIdle ?? 'Drag & Drop your file or <span class="filepond--label-action">Browse</span>',
         imagePreviewHeight: 220,
@@ -52,11 +72,11 @@ window.initUploadPond = function (inputEl, options = {}) {
         pdfComponentExtraParams: 'toolbar=0&navpanes=0&scrollbar=0',
         stylePanelAspectRatio: null,
         styleItemPanelAspectRatio: null,
-        acceptedFileTypes: options.acceptedFileTypes ?? undefined,
-        onaddfile: options.onaddfile ?? undefined,
-        onremovefile: options.onremovefile ?? undefined,
-        beforeRemoveFile: options.beforeRemoveFile ?? (() => window.confirm('Remove this file?')),
-        server: {
+        acceptedFileTypes:  options.acceptedFileTypes ?? undefined,
+        onaddfile:          options.onaddfile ?? undefined,
+        onremovefile:       options.onremovefile ?? undefined,
+        beforeRemoveFile:   options.beforeRemoveFile ?? (() => window.confirm('Remove this file?')),
+        server: useServerMode ? options.server : {
             remove: options.deleteUrl
                 ? (source, load, error) => {
                     const data = new FormData();

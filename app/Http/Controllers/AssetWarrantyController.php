@@ -63,6 +63,81 @@ class AssetWarrantyController extends Controller
             ->with('success', 'Warranty entry deleted.');
     }
 
+    public function patchField(Request $request, Asset $asset, AssetWarranty $warranty)
+    {
+        abort_if($warranty->asset_id !== $asset->id, 403);
+
+        $allowed = [
+            'warranty_type', 'scope', 'tracking_mode', 'meter_source',
+            'part_name', 'part_serial_number',
+            'vendor_id', 'bill_no', 'bill_amount',
+            'date_from', 'expiry_date', 'unit', 'counter_limit',
+            'details', 'terms',
+        ];
+        $field = $request->input('field');
+        abort_if(! in_array($field, $allowed, true), 422);
+
+        $rules = [
+            'warranty_type'      => ['required', 'in:original,extended'],
+            'scope'              => ['required', 'in:overall,part'],
+            'tracking_mode'      => ['required', 'in:time,meter,count'],
+            'meter_source'       => ['nullable', 'in:mileage,meter'],
+            'part_name'          => ['nullable', 'string', 'max:100'],
+            'part_serial_number' => ['nullable', 'string', 'max:100'],
+            'vendor_id'          => ['nullable', 'integer', 'exists:vendors,id'],
+            'bill_no'            => ['nullable', 'string', 'max:255'],
+            'bill_amount'        => ['nullable', 'numeric', 'min:0'],
+            'date_from'          => ['nullable', 'date'],
+            'expiry_date'        => ['nullable', 'date'],
+            'unit'               => ['nullable', 'string', 'max:20'],
+            'counter_limit'      => ['nullable', 'integer', 'min:1'],
+            'details'            => ['nullable', 'string'],
+            'terms'              => ['nullable', 'string'],
+        ];
+
+        // scope=part allows submitting part_name together in one request
+        if ($field === 'scope') {
+            $validated = $request->validate([
+                'value'      => $rules['scope'],
+                'part_name'  => $rules['part_name'],
+            ]);
+        } else {
+            $validated = $request->validate(['value' => $rules[$field]]);
+        }
+
+        $value  = $validated['value'] ?: null;
+        $update = [$field => $value, 'updated_by' => auth()->id()];
+
+        // When tracking_mode changes, null out fields that belong to the other modes
+        if ($field === 'tracking_mode') {
+            if ($value === 'time') {
+                $update['counter_limit']      = null;
+                $update['unit']               = null;
+                $update['meter_source']       = null;
+            } else {
+                $update['expiry_date']        = null;
+                $update['date_from']          = null;
+                if ($value !== 'meter') {
+                    $update['meter_source']   = null;
+                }
+            }
+        }
+
+        // When scope changes to overall, clear part fields; when changing to part, save part_name too
+        if ($field === 'scope') {
+            if ($value === 'overall') {
+                $update['part_name']          = null;
+                $update['part_serial_number'] = null;
+            } else {
+                $update['part_name'] = $validated['part_name'] ?: null;
+            }
+        }
+
+        $warranty->update($update);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function dispose(Request $request, Asset $asset, AssetWarranty $warranty)
     {
         abort_if($warranty->asset_id !== $asset->id, 403);
@@ -83,6 +158,34 @@ class AssetWarrantyController extends Controller
             ->with('success', 'Warranty marked as disposed.');
     }
 
+    public function storeDocument(Request $request, Asset $asset, AssetWarranty $warranty)
+    {
+        abort_if($warranty->asset_id !== $asset->id, 403);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store("assets/{$asset->id}/warranties", 'public');
+
+        $doc = AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetWarranty::class,
+            'documentable_id'    => $warranty->id,
+            'document_type'      => 'warranty_doc',
+            'document_title'     => 'Warranty Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
+        ]);
+
+        // FilePond server.process expects plain-text unique ID back
+        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
+    }
+
     public function destroyDocument(Asset $asset, AssetDocument $document)
     {
         abort_if($document->asset_id !== $asset->id, 403);
@@ -90,8 +193,19 @@ class AssetWarrantyController extends Controller
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
-        return redirect()->route('assets.show', [$asset, 'tab' => 'warranty'])
-            ->with('success', 'Document removed.');
+        return response('', 200);
+    }
+
+    // FilePond server.revert — body contains the document ID returned by storeDocument
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id  = (int) $request->getContent();
+        $doc = AssetDocument::where('id', $id)->where('asset_id', $asset->id)->firstOrFail();
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        return response('', 200);
     }
 
     private function rules(): array

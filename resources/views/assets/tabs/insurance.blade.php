@@ -1,4 +1,5 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
+<style>.ins-doc-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
 
 <div class="space-y-5">
 
@@ -60,121 +61,424 @@
         </x-modal>
     @endforeach
 
-    {{-- View Modals (one per policy) --}}
+    {{-- View Modals (one per policy) - inline-edit two-column layout --}}
     @foreach ($asset->insurancePolicies->sortByDesc('created_at') as $policy)
         @php
-            $viewDays    = $policy->daysUntilExpiry();
-            $viewExpired = $policy->isExpired();
-            $viewSoon    = ! $viewExpired && $viewDays !== null && $viewDays <= 30;
-            $viewExpiryClass = $viewExpired ? 'text-red-400 font-semibold' : ($viewSoon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-100');
+            $vDays    = $policy->daysUntilExpiry();
+            $vExpired = $policy->isExpired();
+            $vSoon    = ! $vExpired && $vDays !== null && $vDays <= 30;
+            $insPatchUrl  = route('assets.insurance.patch-field', [$asset, $policy]);
+            $insDocStore  = route('assets.insurance.documents.store', [$asset, $policy]);
+            $insDocRevert = route('assets.insurance.documents.revert', $asset);
+            $insFirstDoc  = $policy->documents->first();
+            $insExtraDocs = $policy->documents->skip(1);
+            $iInp  = 'rounded border border-zinc-300 bg-white px-2 py-0.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100';
+            $iBtnOk = 'rounded p-0.5 text-green-500 hover:text-green-400 transition-colors';
+            $iBtnX  = 'rounded p-0.5 text-zinc-400 hover:text-zinc-200 transition-colors';
+            $iDt    = 'text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
+            $iDd    = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
+            $iPencil = '<svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>';
+            $iCheck  = '<svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>';
+            $iX      = '<svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>';
         @endphp
+
         <x-modal name="view-insurance-{{ $policy->id }}" title="Insurance Policy Details">
-            <div class="space-y-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                            <flux:icon.building-library class="size-4 shrink-0 text-zinc-400" />
-                            <h3 class="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                {{ $policy->insurer_name ?: 'Insurance Policy' }}
-                            </h3>
-                        </div>
-                        @if ($policy->policy_number)
-                            <p class="mt-1 font-mono text-xs text-zinc-500">{{ $policy->policy_number }}</p>
-                        @endif
-                    </div>
-                    @if ($viewExpired)
+            <x-slot:footer>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <flux:icon.building-library class="size-4 shrink-0 text-zinc-400" />
+                    @if ($vExpired)
                         <span class="rounded-full bg-red-400/10 px-2 py-0.5 text-xs font-medium text-red-400">Expired</span>
-                    @elseif ($viewSoon)
-                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $viewDays }}d</span>
-                    @elseif ($viewDays !== null)
+                    @elseif ($vSoon)
+                        <span class="rounded-full bg-yellow-400/10 px-2 py-0.5 text-xs font-medium text-yellow-400">Expiring in {{ $vDays }}d</span>
+                    @elseif ($vDays !== null)
                         <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                     @endif
+                    @if ($policy->policy_number)
+                        <span class="font-mono text-xs text-zinc-500">{{ $policy->policy_number }}</span>
+                    @endif
                 </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" x-on:click="$dispatch('close-modal-view-insurance-{{ $policy->id }}')"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-400 hover:text-zinc-800 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:text-zinc-100">
+                        <flux:icon.x-mark class="size-3.5" />
+                        Close
+                    </button>
+                    <form method="POST" action="{{ route('assets.insurance.destroy', [$asset, $policy]) }}" onsubmit="confirmDelete(this, 'Delete this insurance policy?'); return false;">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-red-300/60 px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:border-red-500/60 hover:bg-red-500/5 dark:border-red-700/50 dark:text-red-400 dark:hover:border-red-500/60">
+                            <flux:icon.trash class="size-3.5" />
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </x-slot:footer>
 
-                <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div x-data="{
+                iPolicyNo:   {{ json_encode($policy->policy_number ?? '') }},
+                iInsurerName:{{ json_encode($policy->insurer_name ?? '') }},
+                iPolicyType: {{ json_encode($policy->policy_type ?? '') }},
+                iDateFrom:   '{{ $policy->policy_date_from?->format('d M Y') ?? '' }}',
+                iDateTo:     '{{ $policy->policy_date_to?->format('d M Y') ?? '' }}',
+                iPremium:    '{{ $policy->premium_amount ?? '' }}',
+                iSumInsured: '{{ $policy->sum_insured ?? '' }}',
+                iBillNo:     {{ json_encode($policy->bill_no ?? '') }},
+                iBillDate:   '{{ $policy->bill_date?->format('d M Y') ?? '' }}',
+                iContact:    {{ json_encode($policy->insurer_contact_person ?? '') }},
+                iPhone:      {{ json_encode($policy->insurer_phone ?? '') }},
+                iEmail:      {{ json_encode($policy->insurer_email ?? '') }},
+                iRemindDays: '{{ $policy->reminder_before_days ?? '' }}',
+                iCovDetails: {{ json_encode($policy->coverage_details ?? '') }},
+                iRemarks:    {{ json_encode($policy->remarks ?? '') }},
+                async ip(field, value) {
+                    const fd = new URLSearchParams({ _method: 'PATCH', field, value: value ?? '' });
+                    const r = await fetch('{{ $insPatchUrl }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                        body: fd,
+                    });
+                    if (!r.ok) { toastr.error('Save failed.'); return false; }
+                    toastr.success('Updated.');
+                    return true;
+                }
+            }" class="flex min-h-0 gap-5 mt-1">
+
+                {{-- ── Left: editable fields ── --}}
+                <div class="flex-1 min-w-0 space-y-5">
+
+                    {{-- ── Policy Info ── --}}
                     <div>
-                        <dt class="text-xs font-medium text-zinc-500">Policy Type</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->policy_type ?: '--' }}</dd>
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Policy Info</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+
+                            {{-- Policy Number --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Policy Number</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="font-mono text-sm text-zinc-800 dark:text-zinc-200" x-text="iPolicyNo||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpPno" class="{{ $iInp }} w-36" :value="iPolicyNo" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('policy_number',$refs.inpPno.value)){iPolicyNo=$refs.inpPno.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Policy Type --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Policy Type</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iPolicyType||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpType" class="{{ $iInp }} w-36" :value="iPolicyType" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('policy_type',$refs.inpType.value)){iPolicyType=$refs.inpType.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Insurer Name --}}
+                            <div x-data="{ editing: false }" class="sm:col-span-2">
+                                <dt class="{{ $iDt }}">Insurer Name</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100" x-text="iInsurerName||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpIns" class="{{ $iInp }} w-48" :value="iInsurerName" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_name',$refs.inpIns.value)){iInsurerName=$refs.inpIns.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                        </dl>
                     </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">From</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->policy_date_from?->format('d M Y') ?: '--' }}</dd>
+
+                    {{-- ── Period ── --}}
+                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Period</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+
+                            {{-- From --}}
+                            <div x-data="{ editing: false }"
+                                 x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpIFrom{{ $policy->id }}, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
+                                <dt class="{{ $iDt }}">From</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iDateFrom||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="fpIFrom{{ $policy->id }}" class="{{ $iInp }} w-32" placeholder="Date" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="const v=$refs['fpIFrom{{ $policy->id }}']._flatpickr?.altInput?.value||$refs['fpIFrom{{ $policy->id }}'].value;if(await ip('policy_date_from',v)){iDateFrom=v;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Expiry Date --}}
+                            <div x-data="{ editing: false }"
+                                 x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpITo{{ $policy->id }}, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
+                                <dt class="{{ $iDt }}">Expiry Date</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $vExpired ? 'text-red-400 font-semibold text-sm' : ($vSoon ? 'text-yellow-400 text-sm' : $iDd) }}" x-text="iDateTo||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="fpITo{{ $policy->id }}" class="{{ $iInp }} w-32" placeholder="Date" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="const v=$refs['fpITo{{ $policy->id }}']._flatpickr?.altInput?.value||$refs['fpITo{{ $policy->id }}'].value;if(await ip('policy_date_to',v)){iDateTo=v;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Reminder Before Days --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Reminder Before (days)</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iRemindDays ? iRemindDays + ' days' : '--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="number" x-ref="inpRem" class="{{ $iInp }} w-20" :value="iRemindDays" min="1" max="365" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('reminder_before_days',$refs.inpRem.value)){iRemindDays=$refs.inpRem.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                        </dl>
                     </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Expiry Date</dt>
-                        <dd class="mt-0.5 text-sm {{ $viewExpiryClass }}">
-                            {{ $policy->policy_date_to?->format('d M Y') ?: '--' }}
-                            @if ($viewExpired) <span class="text-xs font-normal">(Expired)</span>
-                            @elseif ($viewSoon) <span class="text-xs">({{ $viewDays }}d left)</span>
+
+                    {{-- ── Billing ── --}}
+                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Billing</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+
+                            {{-- Premium Amount --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Premium Amount (₹)</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iPremium ? '₹ ' + parseFloat(iPremium).toLocaleString('en-IN',{minimumFractionDigits:2}) : '--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="number" x-ref="inpPrem" class="{{ $iInp }} w-28" :value="iPremium" min="0" step="0.01" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('premium_amount',$refs.inpPrem.value)){iPremium=$refs.inpPrem.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Sum Insured --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Sum Insured (₹)</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iSumInsured ? '₹ ' + parseFloat(iSumInsured).toLocaleString('en-IN',{minimumFractionDigits:2}) : '--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="number" x-ref="inpSum" class="{{ $iInp }} w-28" :value="iSumInsured" min="0" step="0.01" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('sum_insured',$refs.inpSum.value)){iSumInsured=$refs.inpSum.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Bill No --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Bill No</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iBillNo||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpBill" class="{{ $iInp }} w-32" :value="iBillNo" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('bill_no',$refs.inpBill.value)){iBillNo=$refs.inpBill.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Bill Date --}}
+                            <div x-data="{ editing: false }"
+                                 x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpIBill{{ $policy->id }}, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
+                                <dt class="{{ $iDt }}">Bill Date</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iBillDate||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="fpIBill{{ $policy->id }}" class="{{ $iInp }} w-32" placeholder="Date" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="const v=$refs['fpIBill{{ $policy->id }}']._flatpickr?.altInput?.value||$refs['fpIBill{{ $policy->id }}'].value;if(await ip('bill_date',v)){iBillDate=v;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                        </dl>
+                    </div>
+
+                    {{-- ── Insurer Contact ── --}}
+                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Insurer Contact</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Contact Person</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iContact||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpCon" class="{{ $iInp }} w-36" :value="iContact" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_contact_person',$refs.inpCon.value)){iContact=$refs.inpCon.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Phone</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iPhone||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpPh" class="{{ $iInp }} w-32" :value="iPhone" maxlength="30" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_phone',$refs.inpPh.value)){iPhone=$refs.inpPh.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Email</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $iDd }} truncate" x-text="iEmail||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="email" x-ref="inpEm" class="{{ $iInp }} w-36" :value="iEmail" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_email',$refs.inpEm.value)){iEmail=$refs.inpEm.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                        </dl>
+                    </div>
+
+                    {{-- ── Coverage & Remarks ── --}}
+                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                        <dl class="space-y-3">
+
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Coverage Details</dt>
+                                <dd class="mt-0.5 flex items-start gap-1.5">
+                                    <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="iCovDetails||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }} mt-0.5">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex w-full flex-col gap-1">
+                                            <textarea x-ref="taCov" rows="2" class="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100" x-text="iCovDetails"></textarea>
+                                            <span class="flex gap-1">
+                                                <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('coverage_details',$refs.taCov.value)){iCovDetails=$refs.taCov.value;editing=false}">{!! $iCheck !!}</button>
+                                                <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                            </span>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Remarks</dt>
+                                <dd class="mt-0.5 flex items-start gap-1.5">
+                                    <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="iRemarks||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }} mt-0.5">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex w-full flex-col gap-1">
+                                            <textarea x-ref="taRem" rows="2" class="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100" x-text="iRemarks"></textarea>
+                                            <span class="flex gap-1">
+                                                <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('remarks',$refs.taRem.value)){iRemarks=$refs.taRem.value;editing=false}">{!! $iCheck !!}</button>
+                                                <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                            </span>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                        </dl>
+                    </div>
+
+                </div>{{-- end left --}}
+
+                {{-- ── Right: Document panel ── --}}
+                <div class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700">
+                    <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+                    <div class="ins-doc-upload" x-data x-init="
+                        initUploadPond($el.querySelector('input'), {
+                            acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
+                            @if ($insFirstDoc)
+                            files: [{
+                                source: '{{ (string) $insFirstDoc->id }}',
+                                options: { type: 'limbo', file: { name: '{{ addslashes($insFirstDoc->file_original_name) }}', size: {{ $insFirstDoc->file_size }}, type: '{{ $insFirstDoc->file_mime_type }}' } }
+                            }],
                             @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Premium Amount</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
-                            {{ $policy->premium_amount ? 'Rs. ' . number_format($policy->premium_amount, 2) : '--' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Sum Insured</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
-                            {{ $policy->sum_insured ? 'Rs. ' . number_format($policy->sum_insured, 2) : '--' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Reminder Before</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">
-                            {{ $policy->reminder_before_days ? $policy->reminder_before_days . ' days' : '--' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Bill No</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->bill_no ?: '--' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Contact Person</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_contact_person ?: '--' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Phone</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_phone ?: '--' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-500">Email</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->insurer_email ?: '--' }}</dd>
-                    </div>
-                    <div class="sm:col-span-2 lg:col-span-3">
-                        <dt class="text-xs font-medium text-zinc-500">Coverage Details</dt>
-                        <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->coverage_details ?: '--' }}</dd>
-                    </div>
-                    <div class="sm:col-span-2 lg:col-span-3">
-                        <dt class="text-xs font-medium text-zinc-500">Remarks</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-100">{{ $policy->remarks ?: '--' }}</dd>
-                    </div>
-                </dl>
+                            server: {
+                                process: { url: @js($insDocStore), method: 'POST', headers: { 'X-CSRF-TOKEN': @js(csrf_token()) }, onload: (id) => { toastr.success('Document uploaded.'); return id; } },
+                                revert:  { url: @js($insDocRevert), method: 'DELETE', headers: { 'X-CSRF-TOKEN': @js(csrf_token()) } },
+                                load:    (source, load, error, progress, abort) => { fetch(source).then(r => r.blob()).then(load).catch(error); return { abort }; },
+                            },
+                        })
+                    "><input type="file" /></div>
 
-                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
-                    @if ($policy->documents->isNotEmpty())
-                        <div class="space-y-1.5">
-                            @foreach ($policy->documents as $doc)
-                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
-                                    @if ($doc->isImage())
-                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
-                                    @else
-                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
-                                    @endif
-                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
-                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">Open</a>
+                    @if ($insExtraDocs->isNotEmpty())
+                        <div class="mt-2 space-y-1">
+                            @foreach ($insExtraDocs as $doc)
+                                <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
+                                    @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
+                                    <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
+                                    <button type="button"
+                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
+                                    <form method="POST" action="{{ route('assets.insurance.documents.destroy', [$asset, $doc]) }}" onsubmit="confirmDelete(this,'Delete this document?');return false;">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                            <flux:icon.trash class="size-3" />
+                                        </button>
+                                    </form>
                                 </div>
                             @endforeach
                         </div>
-                    @else
-                        <p class="text-xs text-zinc-500">No documents attached.</p>
                     @endif
-                </div>
+                    @if (!$insFirstDoc && $insExtraDocs->isEmpty())
+                        <p class="text-xs text-zinc-500">No document yet.</p>
+                    @endif
+                </div>{{-- end right --}}
+
             </div>
         </x-modal>
     @endforeach
@@ -229,7 +533,7 @@
                             <flux:icon.pencil class="size-3.5" />
                         </button>
                         <form method="POST" action="{{ route('assets.insurance.destroy', [$asset, $policy]) }}"
-                              onsubmit="return confirm('Delete this insurance policy?')">
+                              onsubmit="confirmDelete(this, 'Delete this insurance policy?'); return false;">
                             @csrf @method('DELETE')
                             <button type="submit"
                                     aria-label="Delete insurance policy"

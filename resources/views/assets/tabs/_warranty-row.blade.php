@@ -102,7 +102,7 @@ if ($isDisposed && $w->scope === 'part') {
 
             {{-- Delete --}}
             <form method="POST" action="{{ route('assets.warranties.destroy', [$asset, $w]) }}"
-                  onsubmit="return confirm('Delete this warranty entry? This cannot be undone.')">
+                  onsubmit="confirmDelete(this, 'Delete this warranty entry? This cannot be undone.'); return false;">
                 @csrf @method('DELETE')
                 <button type="submit"
                     aria-label="Delete warranty"
@@ -176,7 +176,7 @@ if ($isDisposed && $w->scope === 'part') {
                                 <flux:icon.arrow-down-tray class="size-3.5" />
                             </a>
                             <form method="POST" action="{{ route('assets.warranties.documents.destroy', [$asset, $doc]) }}"
-                                  onsubmit="return confirm('Delete this document?')">
+                                  onsubmit="confirmDelete(this, 'Delete this document?'); return false;">
                                 @csrf @method('DELETE')
                                 <button type="submit"
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
