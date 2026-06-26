@@ -216,7 +216,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
                 }),
                 @endif
             })">
-            <input type="file" name="service_bill" x-ref="serviceBill" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <input type="file" name="service_bill" x-ref="serviceBill" accept="application/pdf,image/jpeg,image/png,image/webp" />
         </div>
         <p class="mt-1 text-[11px] text-zinc-400">PDF, JPG, PNG, WEBP — max 5 MB</p>
         @error('service_bill')<p class="{{ $err }}">{{ $message }}</p>@enderror

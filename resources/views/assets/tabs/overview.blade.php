@@ -417,12 +417,29 @@
                           const existingBillUrl  = @js($existingBill ? Storage::url($existingBill->file_path) : '');
                           const existingBillName = @js($existingBill?->file_original_name ?? '');
                           initUploadPond(billInput, {
-                              acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
                               files: existingBillUrl ? [{ source: existingBillUrl, options: { type: 'local' } }] : undefined,
                               fileMetaBySource: existingBillUrl ? { [existingBillUrl]: { name: existingBillName } } : undefined,
                               deleteUrl:  @js($existingBill ? route('assets.documents.destroy', [$asset, $existingBill]) : ''),
                               csrfToken:  @js(csrf_token()),
-                              onaddfile: (error, file) => { if (!error && file.origin === 1) $el.submit(); },
+                              deleteSuccessMessage: 'Purchase bill deleted.',
+                              acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
+                              onaddfile: (error, file) => {
+                                  if (error || file.origin !== 1) return;
+                                  setTimeout(() => {
+                                      const data = new FormData($el);
+                                      fetch($el.action, {
+                                          method: 'POST',
+                                          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                                          body: data,
+                                      }).then(r => {
+                                          if (r.ok) {
+                                              toastr.success('Purchase bill uploaded.');
+                                          } else {
+                                              toastr.error('Upload failed. Please try again.');
+                                          }
+                                      });
+                                  }, 50);
+                              },
                           });
                       }
                   ">
@@ -431,7 +448,7 @@
                 <input type="hidden" name="_tab" value="overview">
 
                 <div class="max-w-md">
-                    <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <input type="file" name="file" accept="application/pdf,image/jpeg,image/png,image/webp" />
                 </div>
 
                 @if ($existingBill)

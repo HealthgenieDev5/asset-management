@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AssetDocument extends Model
 {
+    use HasAuditLog;
+
     protected $fillable = [
         'asset_id',
         'documentable_type',
@@ -35,6 +38,39 @@ class AssetDocument extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    protected function auditModelLabel(): string
+    {
+        return 'Document';
+    }
+
+    protected static function buildAuditDescription(string $event, Model $model, array $old, array $new): string
+    {
+        $label = $model->document_type_label;
+        $name  = $model->file_original_name ?? '';
+
+        return match ($event) {
+            'created' => "{$label} uploaded — {$name}",
+            'deleted' => "{$label} deleted — {$name}",
+            default   => "{$label} updated",
+        };
+    }
+
+    protected static function auditFieldLabels(): array
+    {
+        return [
+            'document_type'      => 'Document Type',
+            'document_title'     => 'Title',
+            'file_original_name' => 'File Name',
+            'file_size'          => 'File Size (bytes)',
+            'file_mime_type'     => 'File Type',
+            'file_path'          => 'Storage Path',
+            'remarks'            => 'Remarks',
+            'uploaded_by'        => 'Uploaded By',
+            'documentable_type'  => 'Owner Type',
+            'documentable_id'    => 'Owner ID',
+        ];
     }
 
     public function isImage(): bool

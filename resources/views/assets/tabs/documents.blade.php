@@ -113,7 +113,7 @@
                     <span class="ml-1 font-normal">(PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX — max 10 MB)</span>
                 </p>
                 <input type="file" name="file" x-ref="fileInput"
-                       accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx" />
+                       accept="application/pdf,image/jpeg,image/png,image/webp,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                 @error('file') <p class="mt-0.5 text-[11px] text-red-400">{{ $message }}</p> @enderror
             </div>
 

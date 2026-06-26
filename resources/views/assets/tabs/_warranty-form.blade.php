@@ -167,7 +167,7 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
                         }),
                         @endif
                     })">
-                    <input type="file" name="warranty_card" x-ref="warrantyCard" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <input type="file" name="warranty_card" x-ref="warrantyCard" accept="application/pdf,image/jpeg,image/png,image/webp" />
                 </div>
                 @error('warranty_card')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
@@ -187,7 +187,7 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
                         }),
                         @endif
                     })">
-                    <input type="file" name="warranty_activation_image" x-ref="activationImage" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <input type="file" name="warranty_activation_image" x-ref="activationImage" accept="application/pdf,image/jpeg,image/png,image/webp" />
                 </div>
                 @error('warranty_activation_image')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>

@@ -71,6 +71,7 @@ class AssetAuditLog extends Model
             'App\\Models\\AssetMeterLog'            => 'Meter Log',
             'App\\Models\\AssetSmartReminder'       => 'Smart Reminder',
             'App\\Models\\AssetComplaint'           => 'Complaint',
+            'App\\Models\\AssetDocument'            => 'Document',
         ];
 
         return $map[$this->auditable_type] ?? class_basename($this->auditable_type);

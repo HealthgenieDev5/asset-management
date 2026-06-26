@@ -215,7 +215,7 @@ $formId = 'pf_' . ($part?->id ?? 'new');
                 }),
                 @endif
             })">
-            <input type="file" name="part_doc" x-ref="partDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <input type="file" name="part_doc" x-ref="partDoc" accept="application/pdf,image/jpeg,image/png,image/webp" />
         </div>
         @error('part_doc')<p class="{{ $err }}">{{ $message }}</p>@enderror
     </div>

@@ -365,7 +365,7 @@ $formId = 'wf_' . ($w?->id ?? 'new');
                 }),
                 @endif
             })">
-            <input type="file" name="warranty_doc" x-ref="warrantyDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <input type="file" name="warranty_doc" x-ref="warrantyDoc" accept="application/pdf,image/jpeg,image/png,image/webp" />
         </div>
         @error('warranty_doc')<p class="{{ $err }}">{{ $message }}</p>@enderror
     </div>

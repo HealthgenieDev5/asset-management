@@ -103,7 +103,6 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.$nextTick(() => {
-                // Apply after x-for has rendered the options
                 if (this._initialSubcategoryId) {
                     this.selectedSubcategoryId = this._initialSubcategoryId;
                 }
@@ -115,7 +114,7 @@ document.addEventListener('alpine:init', () => {
                 fp('puc_expiry_date'); fp('fitness_expiry_date'); fp('road_tax_expiry_date');
 
                 const billInput = this.$el.querySelector("[name='purchase_bill_file']");
-                if (billInput) {
+                if (billInput && !billInput._pond) {
                     const billWrap = billInput.closest('[data-existing-bill]');
                     const existingBillUrl  = billWrap?.dataset.existingBill;
                     const existingBillName = billWrap?.dataset.existingBillName;
@@ -430,7 +429,7 @@ $textareaCls = 'peer w-full rounded-lg border border-zinc-300 bg-white px-3 pb-2
                  data-existing-bill="{{ $existingBill ? Storage::url($existingBill->file_path) : '' }}"
                  data-existing-bill-name="{{ $existingBill?->file_original_name }}">
                 <input type="file" name="purchase_bill_file"
-                       accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                       accept="application/pdf,image/jpeg,image/png,image/webp" />
                 <flux:error name="purchase_bill_file" />
             </div>
         </div>

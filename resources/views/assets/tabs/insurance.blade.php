@@ -1,5 +1,10 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
-<style>.ins-doc-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
+<style>
+.ins-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
+.ins-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
+.ins-doc-upload .filepond--drop-label { min-height: 130px; }
+.ins-doc-upload .filepond--drop-label label { cursor: pointer; }
+</style>
 
 <div class="space-y-5">
 
@@ -430,21 +435,25 @@
                 </div>{{-- end left --}}
 
                 {{-- ── Right: Document panel ── --}}
-                <div class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700">
-                    <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+                <aside class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700 flex flex-col">
+                    <p class="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
                     <div class="ins-doc-upload" x-data x-init="
                         initUploadPond($el.querySelector('input'), {
                             acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
-                            @if ($insFirstDoc)
-                            files: [{
-                                source: '{{ (string) $insFirstDoc->id }}',
-                                options: { type: 'limbo', file: { name: '{{ addslashes($insFirstDoc->file_original_name) }}', size: {{ $insFirstDoc->file_size }}, type: '{{ $insFirstDoc->file_mime_type }}' } }
-                            }],
-                            @endif
+                            labelIdle: `<div class='flex flex-col items-center gap-2 py-1'>
+                                <div class='w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center'>
+                                    <svg class='h-5 w-5 text-accent' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'/></svg>
+                                </div>
+                                <p class='text-[11px] font-medium text-zinc-300 text-center leading-snug'>Drag &amp; Drop your file<br>or <span class='filepond--label-action text-accent'>Browse</span></p>
+                                <p class='text-[9px] uppercase tracking-wider text-zinc-500'>PDF, PNG, JPG · Max 5MB</p>
+                            </div>`,
+                            files: @js($insFirstDoc ? [['source' => Storage::url($insFirstDoc->file_path), 'options' => ['type' => 'local']]] : []),
+                            fileMetaBySource: @js($insFirstDoc ? [Storage::url($insFirstDoc->file_path) => ['name' => $insFirstDoc->file_original_name]] : (object)[]),
+                            deleteUrl: @js($insFirstDoc ? route('assets.insurance.documents.destroy', [$asset, $insFirstDoc]) : ''),
+                            csrfToken: @js(csrf_token()),
+                            revertUrlTemplate: () => @js(route('assets.insurance.documents.revert', $asset)),
                             server: {
-                                process: { url: @js($insDocStore), method: 'POST', headers: { 'X-CSRF-TOKEN': @js(csrf_token()) }, onload: (id) => { toastr.success('Document uploaded.'); return id; } },
-                                revert:  { url: @js($insDocRevert), method: 'DELETE', headers: { 'X-CSRF-TOKEN': @js(csrf_token()) } },
-                                load:    (source, load, error, progress, abort) => { fetch(source).then(r => r.blob()).then(load).catch(error); return { abort }; },
+                                process: { url: @js($insDocStore), method: 'POST', headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' }, onload: (id) => { const n = parseInt(id); if (!n) { toastr.error('Upload failed.'); return null; } toastr.success('Document uploaded.'); return String(n); }, onerror: (e) => toastr.error('Upload failed.') },
                             },
                         })
                     "><input type="file" /></div>
@@ -475,9 +484,11 @@
                         </div>
                     @endif
                     @if (!$insFirstDoc && $insExtraDocs->isEmpty())
-                        <p class="text-xs text-zinc-500">No document yet.</p>
+                        <div class="mt-3 flex flex-col items-center justify-center">
+                            <p class="text-[11px] text-zinc-500 italic">No document yet.</p>
+                        </div>
                     @endif
-                </div>{{-- end right --}}
+                </aside>{{-- end right --}}
 
             </div>
         </x-modal>

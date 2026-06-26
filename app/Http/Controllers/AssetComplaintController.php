@@ -145,8 +145,8 @@ class AssetComplaintController extends Controller
         abort_if($document->asset_id !== $asset->id, 403);
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
-        return redirect()->route('assets.show', [$asset, 'tab' => 'complaints'])
-            ->with('success', 'Document removed.');
+
+        return response('', 200);
     }
 
     public function destroy(Asset $asset, AssetComplaint $complaint)

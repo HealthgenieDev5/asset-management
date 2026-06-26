@@ -153,8 +153,7 @@ class AssetServiceController extends Controller
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
-        return redirect()->route('assets.show', [$asset, 'tab' => 'services'])
-            ->with('success', 'Document removed.');
+        return response('', 200);
     }
 
     private function rules(): array

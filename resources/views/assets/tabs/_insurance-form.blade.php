@@ -136,7 +136,7 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
                 }),
                 @endif
             })">
-            <input type="file" name="insurance_document" x-ref="insDoc" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+            <input type="file" name="insurance_document" x-ref="insDoc" accept="application/pdf,image/jpeg,image/png,image/webp" />
         </div>
         <p class="mt-1 text-[11px] text-zinc-400">PDF, JPG, PNG, WEBP — max 5 MB</p>
         @error('insurance_document')<p class="{{ $err }}">{{ $message }}</p>@enderror

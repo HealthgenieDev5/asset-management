@@ -7,6 +7,7 @@ use App\Http\Controllers\AssetComplaintCommentController;
 use App\Http\Controllers\AssetComplaintController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetDocumentController;
+use App\Http\Controllers\AssetExtendedWarrantyController;
 use App\Http\Controllers\AssetInsurancePolicyController;
 use App\Http\Controllers\AssetMaintenanceScheduleController;
 use App\Http\Controllers\AssetMeterLogController;
@@ -110,7 +111,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'update'])->name('assets.services.parts.update');
     Route::patch('assets/{asset}/services/{service}/parts/{part}/field', [AssetServicePartController::class, 'patchField'])->name('assets.services.parts.patch-field');
     Route::delete('assets/{asset}/services/{service}/parts/{part}', [AssetServicePartController::class, 'destroy'])->name('assets.services.parts.destroy');
+    Route::post('assets/{asset}/services/parts/{part}/documents', [AssetServicePartController::class, 'storeDocument'])->name('assets.services.parts.documents.store');
+    Route::delete('assets/{asset}/services/parts/documents/revert', [AssetServicePartController::class, 'revertDocument'])->name('assets.services.parts.documents.revert');
     Route::delete('assets/{asset}/services/parts/documents/{document}', [AssetServicePartController::class, 'destroyDocument'])->name('assets.services.parts.documents.destroy');
+
+    // Extended Warranty (nested under asset)
+    Route::post('assets/{asset}/ext-warranty', [AssetExtendedWarrantyController::class, 'store'])->name('assets.ext-warranty.store');
+    Route::put('assets/{asset}/ext-warranty/{ew}', [AssetExtendedWarrantyController::class, 'update'])->name('assets.ext-warranty.update');
+    Route::delete('assets/{asset}/ext-warranty/{ew}', [AssetExtendedWarrantyController::class, 'destroy'])->name('assets.ext-warranty.destroy');
+    Route::post('assets/{asset}/ext-warranty/{ew}/documents', [AssetExtendedWarrantyController::class, 'storeDocument'])->name('assets.ext-warranty.documents.store');
+    Route::delete('assets/{asset}/ext-warranty/documents/revert', [AssetExtendedWarrantyController::class, 'revertDocument'])->name('assets.ext-warranty.documents.revert');
+    Route::delete('assets/{asset}/ext-warranty/documents/{document}', [AssetExtendedWarrantyController::class, 'destroyDocument'])->name('assets.ext-warranty.documents.destroy');
 
     // Smart Reminders (nested under asset)
     Route::post('assets/{asset}/smart-reminders', [AssetSmartReminderController::class, 'store'])->name('assets.smart-reminders.store');

@@ -11,6 +11,8 @@
         "@tailwindcss/vite": "^4.3.1",
         "concurrently": "^9.0.1",
         "filepond": "^4.32.12",
+        "filepond-plugin-file-validate-type": "^1.2.9",
+        "filepond-plugin-image-exif-orientation": "^1.0.11",
         "filepond-plugin-image-preview": "^4.6.12",
         "filepond-plugin-pdf-preview": "^1.0.4",
         "laravel-vite-plugin": "^3.1",

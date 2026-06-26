@@ -2,6 +2,12 @@
     use Illuminate\Support\Facades\Storage;
     $ew = $asset->extendedWarranties->first();
 @endphp
+<style>
+.ew-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
+.ew-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
+.ew-doc-upload .filepond--drop-label { min-height: 130px; }
+.ew-doc-upload .filepond--drop-label label { cursor: pointer; }
+</style>
 
 {{-- Lightbox overlay --}}
 <div x-data="docLightbox()"
@@ -129,9 +135,12 @@
             $ewIsExpired = $expired || $ewCounterExpired;
             $ewIsSoon    = ! $ewIsExpired && ($soon || $ewCounterSoon);
             $ewIsActive  = ! $ewIsExpired && ($days !== null || $ewCounterRemaining !== null);
+            $ewFirstDoc  = $ew->documents->first();
+            $ewExtraDocs = $ew->documents->skip(1);
         @endphp
         <x-modal name="view-ext-warranty" title="Extended Warranty Details">
-            <div class="space-y-5">
+            <div class="flex gap-6">
+                <div class="min-w-0 flex-1 space-y-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
@@ -220,28 +229,69 @@
                     </div>
                 </dl>
 
-                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                    <p class="mb-2 text-xs font-medium text-zinc-500">Documents</p>
-                    @if ($ew->documents->isNotEmpty())
-                        <div class="space-y-1.5">
-                            @foreach ($ew->documents as $doc)
-                                <div class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/40">
-                                    @if ($doc->isImage())
-                                        <flux:icon.photo class="size-4 shrink-0 text-zinc-400" />
-                                    @else
-                                        <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
-                                    @endif
-                                    <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
-                                    <span class="text-xs text-zinc-600 dark:text-zinc-400">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">Open</a>
+                </div>{{-- end left --}}
+
+                {{-- ── Right: Document panel ── --}}
+                <aside class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700 flex flex-col">
+                    <p class="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+                    <div class="ew-doc-upload" x-data x-init="
+                        initUploadPond($el.querySelector('input'), {
+                            acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
+                            labelIdle: `<div class='flex flex-col items-center gap-2 py-1'>
+                                <div class='w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center'>
+                                    <svg class='h-5 w-5 text-accent' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'/></svg>
+                                </div>
+                                <p class='text-[11px] font-medium text-zinc-300 text-center leading-snug'>Drag &amp; Drop your file<br>or <span class='filepond--label-action text-accent'>Browse</span></p>
+                                <p class='text-[9px] uppercase tracking-wider text-zinc-500'>PDF, PNG, JPG · Max 5MB</p>
+                            </div>`,
+                            files: @js($ewFirstDoc ? [['source' => Storage::url($ewFirstDoc->file_path), 'options' => ['type' => 'local']]] : []),
+                            fileMetaBySource: @js($ewFirstDoc ? [Storage::url($ewFirstDoc->file_path) => ['name' => $ewFirstDoc->file_original_name]] : (object)[]),
+                            deleteUrl: @js($ewFirstDoc ? route('assets.ext-warranty.documents.destroy', [$asset, $ewFirstDoc]) : ''),
+                            csrfToken: @js(csrf_token()),
+                            revertUrlTemplate: () => @js(route('assets.ext-warranty.documents.revert', $asset)),
+                            server: {
+                                process: {
+                                    url: @js(route('assets.ext-warranty.documents.store', [$asset, $ew])),
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' },
+                                    onload: (id) => { const n = parseInt(id); if (!n) { toastr.error('Upload failed.'); return null; } toastr.success('Document uploaded.'); return String(n); },
+                                    onerror: (e) => toastr.error('Upload failed.'),
+                                },
+                            },
+                        })
+                    "><input type="file" /></div>
+
+                    @if ($ewExtraDocs->isNotEmpty())
+                        <div class="mt-2 space-y-1">
+                            @foreach ($ewExtraDocs as $doc)
+                                <div class="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
+                                    @if ($doc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
+                                    <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</p>
+                                    <button type="button"
+                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
+                                    <form method="POST" action="{{ route('assets.ext-warranty.documents.destroy', [$asset, $doc]) }}" onsubmit="confirmDelete(this,'Delete this document?');return false;">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-400 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
+                                            <flux:icon.trash class="size-3" />
+                                        </button>
+                                    </form>
                                 </div>
                             @endforeach
                         </div>
-                    @else
-                        <p class="text-xs text-zinc-500">No documents attached.</p>
                     @endif
-                </div>
+                    @if (!$ewFirstDoc && $ewExtraDocs->isEmpty())
+                        <div class="mt-3 flex flex-col items-center justify-center">
+                            <p class="text-[11px] text-zinc-500 italic">No document yet.</p>
+                        </div>
+                    @endif
+                </aside>{{-- end right --}}
             </div>
         </x-modal>
 

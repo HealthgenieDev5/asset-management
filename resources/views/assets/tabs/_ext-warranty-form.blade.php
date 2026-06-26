@@ -218,7 +218,7 @@ $currentCounter = $ewAsset?->latestWarrantyCounter();
                         }),
                         @endif
                     })">
-                    <input type="file" name="extended_warranty_bill" x-ref="ewBill" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <input type="file" name="extended_warranty_bill" x-ref="ewBill" accept="application/pdf,image/jpeg,image/png,image/webp" />
                 </div>
                 @error('extended_warranty_bill')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>
@@ -238,7 +238,7 @@ $currentCounter = $ewAsset?->latestWarrantyCounter();
                         }),
                         @endif
                     })">
-                    <input type="file" name="extended_warranty_image" x-ref="ewImage" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                    <input type="file" name="extended_warranty_image" x-ref="ewImage" accept="application/pdf,image/jpeg,image/png,image/webp" />
                 </div>
                 @error('extended_warranty_image')<p class="{{ $err }}">{{ $message }}</p>@enderror
             </div>

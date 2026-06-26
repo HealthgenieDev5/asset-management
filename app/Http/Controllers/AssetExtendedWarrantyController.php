@@ -57,6 +57,44 @@ class AssetExtendedWarrantyController extends Controller
             ->with('success', 'Extended warranty deleted.');
     }
 
+    public function storeDocument(Request $request, Asset $asset, AssetExtendedWarranty $ew)
+    {
+        abort_if($ew->asset_id !== $asset->id, 403);
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store("assets/{$asset->id}/ext-warranty", 'public');
+
+        $doc = AssetDocument::create([
+            'asset_id'           => $asset->id,
+            'documentable_type'  => AssetExtendedWarranty::class,
+            'documentable_id'    => $ew->id,
+            'document_type'      => 'extended_warranty_bill',
+            'document_title'     => 'Extended Warranty Document',
+            'file_path'          => $path,
+            'file_original_name' => $file->getClientOriginalName(),
+            'file_mime_type'     => $file->getClientMimeType(),
+            'file_size'          => $file->getSize(),
+            'uploaded_by'        => auth()->id(),
+        ]);
+
+        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
+    }
+
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id  = (int) $request->getContent();
+        $doc = AssetDocument::where('id', $id)->where('asset_id', $asset->id)->firstOrFail();
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        return response('', 200);
+    }
+
     public function destroyDocument(Asset $asset, AssetDocument $document)
     {
         abort_if($document->asset_id !== $asset->id, 403);
@@ -64,8 +102,7 @@ class AssetExtendedWarrantyController extends Controller
         Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
-        return redirect()->route('assets.show', [$asset, 'tab' => 'ext-warranty'])
-            ->with('success', 'Document removed.');
+        return response('', 200);
     }
 
     private function rules(): array

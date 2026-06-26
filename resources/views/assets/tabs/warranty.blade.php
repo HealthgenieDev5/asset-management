@@ -13,7 +13,12 @@ $servicePartsJson = $asset->services
 
 $cal    = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4"><path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" /></svg>';
 @endphp
-<style>.wd-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
+<style>
+.wd-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
+.wd-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
+.wd-upload .filepond--drop-label { min-height: 130px; }
+.wd-upload .filepond--drop-label label { cursor: pointer; }
+</style>
 @php
 $dt     = 'text-[10px] font-medium text-zinc-500 dark:text-zinc-400';
 $dd     = 'mt-0.5 text-sm text-zinc-800 dark:text-zinc-200';
@@ -487,39 +492,37 @@ $lbl2   = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium tex
 
                 {{-- ── Right: Document panel ── --}}
                 @php $wFirstDoc = $w->documents->first(); $wExtraDocs = $w->documents->skip(1); @endphp
-                <div class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700">
-                    <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+                <aside class="w-56 shrink-0 border-l border-zinc-200 pl-4 dark:border-zinc-700 flex flex-col">
+                    <p class="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Document</p>
+
+                    {{-- FilePond dropzone --}}
                     <div class="wd-upload" x-data x-init="
                         initUploadPond($el.querySelector('input'), {
                             acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
-                            beforeRemoveFile: () => true,
-                            files: @js($wFirstDoc ? [[
-                                'source'  => (string) $wFirstDoc->id,
-                                'options' => [
-                                    'type'     => 'limbo',
-                                    'metadata' => ['poster' => Storage::url($wFirstDoc->file_path)],
-                                    'file'     => ['name' => $wFirstDoc->file_original_name, 'size' => $wFirstDoc->file_size, 'type' => $wFirstDoc->file_mime_type],
-                                ],
-                            ]] : []),
+                            labelIdle: `<div class='flex flex-col items-center gap-2 py-1'>
+                                <div class='w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center group-hover:scale-110 transition-transform'>
+                                    <svg class='h-5 w-5 text-accent' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'/></svg>
+                                </div>
+                                <p class='text-[11px] font-medium text-zinc-300 text-center leading-snug'>Drag &amp; Drop your file<br>or <span class='filepond--label-action text-accent'>Browse</span></p>
+                                <p class='text-[9px] uppercase tracking-wider text-zinc-500'>PDF, PNG, JPG · Max 5MB</p>
+                            </div>`,
+                            files: @js($wFirstDoc ? [['source' => Storage::url($wFirstDoc->file_path), 'options' => ['type' => 'local']]] : []),
+                            fileMetaBySource: @js($wFirstDoc ? [Storage::url($wFirstDoc->file_path) => ['name' => $wFirstDoc->file_original_name]] : (object)[]),
+                            deleteUrl: @js($wFirstDoc ? route('assets.warranties.documents.destroy', [$asset, $wFirstDoc]) : ''),
+                            csrfToken: @js(csrf_token()),
+                            revertUrlTemplate: () => @js(route('assets.warranties.documents.revert', $asset)),
                             server: {
                                 process: {
                                     url: @js(route('assets.warranties.documents.store', [$asset, $w])),
                                     method: 'POST',
-                                    headers: { 'X-CSRF-TOKEN': @js(csrf_token()) },
-                                    onload: (id) => { toastr.success('Document uploaded.'); return id; },
-                                    onerror: () => toastr.error('Upload failed.'),
-                                },
-                                revert: {
-                                    url: @js(route('assets.warranties.documents.revert', $asset)),
-                                    method: 'DELETE',
-                                    headers: { 'X-CSRF-TOKEN': @js(csrf_token()) },
-                                    onload: () => toastr.success('Document removed.'),
-                                    onerror: () => toastr.error('Failed to remove document.'),
+                                    headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' },
+                                    onload: (id) => { const n = parseInt(id); if (!n) { toastr.error('Upload failed.'); return null; } toastr.success('Document uploaded.'); return String(n); },
+                                    onerror: (e) => toastr.error('Upload failed.'),
                                 },
                             },
                         });
                     ">
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+                        <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" />
                     </div>
 
                     @if ($wExtraDocs->isNotEmpty())
@@ -548,9 +551,11 @@ $lbl2   = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium tex
                         </div>
                     @endif
                     @if (!$wFirstDoc && $wExtraDocs->isEmpty())
-                        <p class="text-xs text-zinc-500">No document yet.</p>
+                        <div class="mt-3 flex flex-col items-center justify-center">
+                            <p class="text-[11px] text-zinc-500 italic">No document yet.</p>
+                        </div>
                     @endif
-                </div>{{-- end right --}}
+                </aside>{{-- end right --}}
 
             </div>
         </x-modal>
@@ -610,10 +615,10 @@ $lbl2   = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium tex
                                class="inline-flex size-6 items-center justify-center rounded-md border transition-colors {{ $w->smartReminders->isNotEmpty() ? 'border-blue-500/40 text-blue-400 hover:bg-blue-500/10' : 'border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10' }}">
                                 <flux:icon.bell-alert class="size-3.5" />
                             </a>
-                            <button type="button" x-on:click="$dispatch('open-modal-edit-warranty-{{ $w->id }}')" title="Edit"
+                            {{-- <button type="button" x-on:click="$dispatch('open-modal-edit-warranty-{{ $w->id }}')" title="Edit"
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                                 <flux:icon.pencil class="size-3.5" />
-                            </button>
+                            </button> --}}
                             <button type="button" x-on:click="$dispatch('open-modal-dispose-warranty-{{ $w->id }}')" title="Dispose"
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-yellow-500/60 hover:text-yellow-400 dark:border-zinc-700">
                                 <flux:icon.archive-box-x-mark class="size-3.5" />
@@ -625,13 +630,13 @@ $lbl2   = 'pointer-events-none absolute left-3 top-2 text-[10px] font-medium tex
                                 Create Replacement
                             </a>
                         @endif
-                        <form method="POST" action="{{ route('assets.warranties.destroy', [$asset, $w]) }}" onsubmit="confirmDelete(this, 'Delete this warranty entry?'); return false;">
+                        {{-- <form method="POST" action="{{ route('assets.warranties.destroy', [$asset, $w]) }}" onsubmit="confirmDelete(this, 'Delete this warranty entry?'); return false;">
                             @csrf @method('DELETE')
                             <button type="submit" title="Delete"
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 
