@@ -66,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('assets/{asset}/field', [AssetController::class, 'patchField'])->name('assets.patch-field');
     Route::get('assets/{asset}/history', [AssetAuditLogController::class, 'index'])->name('assets.history');
     Route::post('assets/{asset}/documents', [AssetDocumentController::class, 'store'])->name('assets.documents.store');
+    Route::delete('assets/{asset}/documents/revert', [AssetDocumentController::class, 'revertDocument'])->name('assets.documents.revert');
     Route::delete('assets/{asset}/documents/{document}', [AssetDocumentController::class, 'destroy'])->name('assets.documents.destroy');
 
     // AMC Contracts (nested under asset)

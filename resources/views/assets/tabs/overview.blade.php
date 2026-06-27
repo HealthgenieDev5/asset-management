@@ -419,26 +419,25 @@
                           initUploadPond(billInput, {
                               files: existingBillUrl ? [{ source: existingBillUrl, options: { type: 'local' } }] : undefined,
                               fileMetaBySource: existingBillUrl ? { [existingBillUrl]: { name: existingBillName } } : undefined,
-                              deleteUrl:  @js($existingBill ? route('assets.documents.destroy', [$asset, $existingBill]) : ''),
-                              csrfToken:  @js(csrf_token()),
+                              deleteUrl: @js($existingBill ? route('assets.documents.destroy', [$asset, $existingBill]) : ''),
+                              csrfToken: @js(csrf_token()),
                               deleteSuccessMessage: 'Purchase bill deleted.',
                               acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
-                              onaddfile: (error, file) => {
-                                  if (error || file.origin !== 1) return;
-                                  setTimeout(() => {
-                                      const data = new FormData($el);
-                                      fetch($el.action, {
-                                          method: 'POST',
-                                          headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                                          body: data,
-                                      }).then(r => {
-                                          if (r.ok) {
-                                              toastr.success('Purchase bill uploaded.');
-                                          } else {
-                                              toastr.error('Upload failed. Please try again.');
-                                          }
-                                      });
-                                  }, 50);
+                              revertUrlTemplate: () => @js(route('assets.documents.revert', $asset)),
+                              server: {
+                                  process: {
+                                      url: @js(route('assets.documents.store', $asset)),
+                                      method: 'POST',
+                                      headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' },
+                                      ondata: (formData) => { formData.append('document_type', 'purchase_bill'); return formData; },
+                                      onload: (id) => {
+                                          const n = parseInt(id);
+                                          if (!n) { toastr.error('Upload failed.'); return null; }
+                                          toastr.success('Purchase bill uploaded.');
+                                          return String(n);
+                                      },
+                                      onerror: () => toastr.error('Upload failed.'),
+                                  },
                               },
                           });
                       }

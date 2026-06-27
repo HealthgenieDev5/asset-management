@@ -44,7 +44,7 @@ class AssetDocumentController extends Controller
         $title = $request->input('document_title')
             ?: (self::ALLOWED_TYPES[$request->document_type] ?? 'Document');
 
-        AssetDocument::create([
+        $doc = AssetDocument::create([
             'asset_id'           => $asset->id,
             'documentable_type'  => Asset::class,
             'documentable_id'    => $asset->id,
@@ -58,10 +58,28 @@ class AssetDocumentController extends Controller
             'uploaded_by'        => auth()->id(),
         ]);
 
+        if ($request->ajax()) {
+            return response((string) $doc->id, 200)
+                ->header('Content-Type', 'text/plain');
+        }
+
         $tab = $request->input('_tab', 'documents');
 
         return redirect()->route('assets.show', [$asset, 'tab' => $tab])
             ->with('success', 'Document uploaded successfully.');
+    }
+
+    public function revertDocument(Request $request, Asset $asset)
+    {
+        $id  = (int) $request->getContent();
+        $doc = AssetDocument::where('id', $id)
+            ->where('asset_id', $asset->id)
+            ->firstOrFail();
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        return response('', 200);
     }
 
     public function destroy(Request $request, Asset $asset, AssetDocument $document)
