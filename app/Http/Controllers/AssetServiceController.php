@@ -88,10 +88,7 @@ class AssetServiceController extends Controller
 
         $service->update([$field => $value, 'updated_by' => auth()->id()]);
 
-        $label = null;
-        if ($field === 'vendor_id' && $value) {
-            $label = \App\Models\Vendor::where('id', $value)->value('name');
-        }
+        $label = ($field === 'vendor_id') ? $service->vendor?->name : null;
 
         return response()->json(['ok' => true, 'label' => $label]);
     }

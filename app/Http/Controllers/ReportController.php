@@ -76,6 +76,16 @@ class ReportController extends Controller
         return ucfirst(str_replace('_', ' ', $status));
     }
 
+    private function applyExpiryFilter($query, string $column, string $filter)
+    {
+        return match ($filter) {
+            'expired', 'overdue' => $query->whereDate($column, '<', today()),
+            'in30'               => $query->whereDate($column, '>=', today())->whereDate($column, '<=', today()->addDays(30)),
+            'in90'               => $query->whereDate($column, '>=', today())->whereDate($column, '<=', today()->addDays(90)),
+            default              => $query,
+        };
+    }
+
     // ── 1. Asset Register ─────────────────────────────────────────────────────
 
     public function assetRegister(Request $request)
@@ -186,12 +196,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('warranty_lapse_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('warranty_lapse_date', '<', today()),
-            'in30'    => $query->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'warranty_lapse_date', $filter);
         $assets = $query->orderBy('warranty_lapse_date')->paginate(50)->withQueryString();
         return view('reports.warranty-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
     }
@@ -200,12 +205,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('warranty_lapse_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('warranty_lapse_date', '<', today()),
-            'in30'    => $query->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'warranty_lapse_date', $filter);
         $rows = $query->orderBy('warranty_lapse_date')->get()->map(fn($a) => [
             $a->asset_code, $a->asset_name, $a->category?->name, $a->department,
             $a->warranty_details, $a->warranty_lapse_date?->format('d/m/Y'),
@@ -228,12 +228,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('amc_date_to', '<', today()),
-            'in30'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query   = $this->applyExpiryFilter($query, 'amc_date_to', $filter);
         $records = $query->orderBy('amc_date_to')->paginate(50)->withQueryString();
         return view('reports.amc-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
     }
@@ -247,12 +242,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('amc_date_to', '<', today()),
-            'in30'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query = $this->applyExpiryFilter($query, 'amc_date_to', $filter);
         $rows = $query->orderBy('amc_date_to')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
             $r->vendor_name, $r->contract_number, $r->coverage_type,
@@ -277,12 +267,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('policy_date_to', '<', today()),
-            'in30'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query   = $this->applyExpiryFilter($query, 'policy_date_to', $filter);
         $records = $query->orderBy('policy_date_to')->paginate(50)->withQueryString();
         return view('reports.insurance-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
     }
@@ -296,12 +281,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('policy_date_to', '<', today()),
-            'in30'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query = $this->applyExpiryFilter($query, 'policy_date_to', $filter);
         $rows = $query->orderBy('policy_date_to')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
             $r->policy_number, $r->insurer_name, $r->policy_type,
@@ -321,12 +301,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('puc_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('puc_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'puc_expiry_date', $filter);
         $assets = $query->orderBy('puc_expiry_date')->paginate(50)->withQueryString();
         return view('reports.puc-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
     }
@@ -335,12 +310,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('puc_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('puc_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'puc_expiry_date', $filter);
         $rows = $query->orderBy('puc_expiry_date')->get()->map(fn($a) => [
             $a->asset_code, $a->asset_name, $a->category?->name,
             $a->department, $a->custodian, $a->puc_expiry_date?->format('d/m/Y'),
@@ -358,12 +328,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('fitness_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('fitness_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'fitness_expiry_date', $filter);
         $assets = $query->orderBy('fitness_expiry_date')->paginate(50)->withQueryString();
         return view('reports.fitness-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
     }
@@ -372,12 +337,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('fitness_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('fitness_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'fitness_expiry_date', $filter);
         $rows = $query->orderBy('fitness_expiry_date')->get()->map(fn($a) => [
             $a->asset_code, $a->asset_name, $a->category?->name,
             $a->department, $a->custodian, $a->fitness_expiry_date?->format('d/m/Y'),
@@ -395,12 +355,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('road_tax_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('road_tax_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'road_tax_expiry_date', $filter);
         $assets = $query->orderBy('road_tax_expiry_date')->paginate(50)->withQueryString();
         return view('reports.road-tax-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
     }
@@ -409,12 +364,7 @@ class ReportController extends Controller
     {
         $filter = $request->get('expiry_filter', 'all');
         $query  = $this->baseAssetQuery($request)->whereNotNull('road_tax_expiry_date');
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('road_tax_expiry_date', '<', today()),
-            'in30'    => $query->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query  = $this->applyExpiryFilter($query, 'road_tax_expiry_date', $filter);
         $rows = $query->orderBy('road_tax_expiry_date')->get()->map(fn($a) => [
             $a->asset_code, $a->asset_name, $a->category?->name,
             $a->department, $a->custodian, $a->road_tax_expiry_date?->format('d/m/Y'),
@@ -466,12 +416,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('certification_expiry', '<', today()),
-            'in30'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query   = $this->applyExpiryFilter($query, 'certification_expiry', $filter);
         $records = $query->orderBy('certification_expiry')->paginate(50)->withQueryString();
         return view('reports.certification-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
     }
@@ -485,12 +430,7 @@ class ReportController extends Controller
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query  = match ($filter) {
-            'expired' => $query->whereDate('certification_expiry', '<', today()),
-            'in30'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query = $this->applyExpiryFilter($query, 'certification_expiry', $filter);
         $rows = $query->orderBy('certification_expiry')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
             $r->service_type_label, $r->service_date?->format('d/m/Y'),
@@ -515,12 +455,7 @@ class ReportController extends Controller
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
-        $query  = match ($filter) {
-            'overdue' => $query->whereDate('next_service_date', '<', today()),
-            'in30'    => $query->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query   = $this->applyExpiryFilter($query, 'next_service_date', $filter);
         $records = $query->orderBy('next_service_date')->paginate(50)->withQueryString();
         return view('reports.service-due', array_merge($this->filterOptions(), compact('records', 'filter')));
     }
@@ -535,12 +470,7 @@ class ReportController extends Controller
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
-        $query  = match ($filter) {
-            'overdue' => $query->whereDate('next_service_date', '<', today()),
-            'in30'    => $query->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(30)),
-            'in90'    => $query->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(90)),
-            default   => $query,
-        };
+        $query = $this->applyExpiryFilter($query, 'next_service_date', $filter);
         $rows = $query->orderBy('next_service_date')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
             $r->asset?->department, $r->service_type_label,
@@ -582,14 +512,17 @@ class ReportController extends Controller
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
             ->orderByDesc('service_date')->get()
-            ->map(fn($r) => [
-                $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
-                $r->service_type_label, $r->service_date?->format('d/m/Y'),
-                $r->service_agency, $r->technician_name, $r->condition_rating_label,
-                $r->service_cost ? number_format($r->service_cost, 2) : '',
-                number_format($r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity), 2),
-                number_format(($r->service_cost ?? 0) + $r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity), 2),
-            ]);
+            ->map(function ($r) {
+                $partsCost = $r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
+                return [
+                    $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
+                    $r->service_type_label, $r->service_date?->format('d/m/Y'),
+                    $r->service_agency, $r->technician_name, $r->condition_rating_label,
+                    $r->service_cost ? number_format($r->service_cost, 2) : '',
+                    number_format($partsCost, 2),
+                    number_format(($r->service_cost ?? 0) + $partsCost, 2),
+                ];
+            });
         return $this->csvResponse('service-history-' . today()->format('Y-m-d') . '.csv', [
             'Asset Code', 'Asset Name', 'Category', 'Service Type', 'Service Date',
             'Agency', 'Technician', 'Condition', 'Labour Cost (₹)', 'Parts Cost (₹)', 'Total (₹)',
@@ -624,13 +557,16 @@ class ReportController extends Controller
             ->when($request->date_from,      fn($q, $v) => $q->whereDate('service_date', '>=', $v))
             ->when($request->date_to,        fn($q, $v) => $q->whereDate('service_date', '<=', $v))
             ->orderByDesc('service_date')->get()
-            ->map(fn($r) => [
-                $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
-                $r->asset?->department, $r->service_type_label, $r->service_date?->format('d/m/Y'),
-                $r->service_cost ? number_format($r->service_cost, 2) : '',
-                number_format($r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity), 2),
-                number_format(($r->service_cost ?? 0) + $r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity), 2),
-            ]);
+            ->map(function ($r) {
+                $partsCost = $r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
+                return [
+                    $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
+                    $r->asset?->department, $r->service_type_label, $r->service_date?->format('d/m/Y'),
+                    $r->service_cost ? number_format($r->service_cost, 2) : '',
+                    number_format($partsCost, 2),
+                    number_format(($r->service_cost ?? 0) + $partsCost, 2),
+                ];
+            });
         return $this->csvResponse('maintenance-cost-' . today()->format('Y-m-d') . '.csv', [
             'Asset Code', 'Asset Name', 'Category', 'Department', 'Service Type',
             'Service Date', 'Labour Cost (₹)', 'Parts Cost (₹)', 'Total (₹)',

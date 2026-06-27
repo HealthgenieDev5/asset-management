@@ -221,10 +221,35 @@ class AssetController extends Controller
             }
         }
 
+        if ($showReminderForm && request('puc') === '1' && ! $reminderPrefill && $asset->isVehicle()) {
+            $reminderPrefill = [
+                'reminder_name' => ($asset->registration_number ? $asset->registration_number . ' – ' : '') . 'PUC Expiry Reminder',
+                'reminder_type' => 'puc',
+                'expiry_date'   => $asset->puc_expiry_date?->format('Y-m-d'),
+            ];
+        }
+
+        if ($showReminderForm && request('fitness') === '1' && ! $reminderPrefill && $asset->isVehicle()) {
+            $reminderPrefill = [
+                'reminder_name' => ($asset->registration_number ? $asset->registration_number . ' – ' : '') . 'Fitness Certificate Renewal Reminder',
+                'reminder_type' => 'fitness',
+                'expiry_date'   => $asset->fitness_expiry_date?->format('Y-m-d'),
+            ];
+        }
+
+        if ($showReminderForm && request('road_tax') === '1' && ! $reminderPrefill && $asset->isVehicle()) {
+            $reminderPrefill = [
+                'reminder_name' => ($asset->registration_number ? $asset->registration_number . ' – ' : '') . 'Road Tax Renewal Reminder',
+                'reminder_type' => 'road_tax',
+                'expiry_date'   => $asset->road_tax_expiry_date?->format('Y-m-d'),
+            ];
+        }
+
         $auditLogs = \App\Models\AssetAuditLog::where('asset_id', $asset->id)
             ->with('causer:id,name')
             ->orderByDesc('created_at')
-            ->paginate(25);
+            ->paginate(25)
+            ->withQueryString();
 
         $vendors = in_array($tab, ['amc', 'insurance', 'services', 'reminders', 'warranty', 'parts']) || $showReminderForm
             ? \App\Models\Vendor::active()->orderBy('name')->get(['id', 'name', 'type', 'phone', 'email'])

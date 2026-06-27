@@ -145,6 +145,10 @@ select:focus[data-flux-control] {
 .filepond--root.fp-upload .filepond--image-preview-wrapper,
 .filepond--root.fp-upload .filepond--pdf-preview-wrapper {
     border-radius: 0.625rem 0.625rem 0 0;
+    cursor: pointer;
+}
+.filepond--root.fp-upload .filepond--pdf-preview-wrapper object {
+    pointer-events: none;
 }
 .filepond--root.fp-upload .filepond--file-info-main,
 .filepond--root.fp-upload .filepond--file-info-sub {

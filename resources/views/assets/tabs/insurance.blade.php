@@ -6,6 +6,35 @@
 .ins-doc-upload .filepond--drop-label label { cursor: pointer; }
 </style>
 
+{{-- ── Doc Lightbox ── --}}
+<div x-data="docLightbox()"
+     x-on:keydown.escape.window="close()"
+     x-on:open-doc-lightbox.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+     x-show="open" style="display:none"
+     class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+    <div class="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
+        <p class="truncate text-sm font-medium text-white" x-text="title"></p>
+        <button type="button" @click="close()"
+                class="shrink-0 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+        </button>
+    </div>
+    <div class="flex flex-1 cursor-zoom-out items-center justify-center overflow-hidden p-4" @click.self="close()">
+        <template x-if="isPdf">
+            <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
+        </template>
+        <template x-if="!isPdf">
+            <img :src="src" :alt="title" class="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+        </template>
+    </div>
+</div>
+
 <div class="space-y-5">
 
     {{-- Header --}}
@@ -16,11 +45,11 @@
                 {{ $asset->insurancePolicies->count() }} {{ Str::plural('policy', $asset->insurancePolicies->count()) }}
             </flux:text>
         </div>
-        <button type="button" x-on:click="$dispatch('open-modal-add-insurance')"
+        {{-- <button type="button" x-on:click="$dispatch('open-modal-add-insurance')"
             class="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm hover:opacity-90 transition-opacity">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3.5"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
             Add Policy
-        </button>
+        </button> --}}
     </div>
 
     {{-- Add Modal --}}
@@ -151,10 +180,10 @@
                 {{-- ── Left: editable fields ── --}}
                 <div class="flex-1 min-w-0 space-y-5">
 
-                    {{-- ── Policy Info ── --}}
+                    {{-- ── Policy Details ── --}}
                     <div>
-                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Policy Info</p>
-                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Policy Details</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             {{-- Policy Number --}}
                             <div x-data="{ editing: false }">
@@ -172,6 +201,22 @@
                                 </dd>
                             </div>
 
+                            {{-- Insurer Name --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $iDt }}">Insurer Name</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100" x-text="iInsurerName||'--'"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <input type="text" x-ref="inpIns" class="{{ $iInp }} w-40" :value="iInsurerName" maxlength="255" />
+                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_name',$refs.inpIns.value)){iInsurerName=$refs.inpIns.value;editing=false}">{!! $iCheck !!}</button>
+                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
                             {{-- Policy Type --}}
                             <div x-data="{ editing: false }">
                                 <dt class="{{ $iDt }}">Policy Type</dt>
@@ -180,7 +225,7 @@
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
                                     <template x-if="editing">
                                         <span class="flex items-center gap-1">
-                                            <input type="text" x-ref="inpType" class="{{ $iInp }} w-36" :value="iPolicyType" maxlength="255" />
+                                            <input type="text" x-ref="inpType" class="{{ $iInp }} w-48" :value="iPolicyType" maxlength="255" />
                                             <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('policy_type',$refs.inpType.value)){iPolicyType=$refs.inpType.value;editing=false}">{!! $iCheck !!}</button>
                                             <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
                                         </span>
@@ -188,34 +233,10 @@
                                 </dd>
                             </div>
 
-                            {{-- Insurer Name --}}
-                            <div x-data="{ editing: false }" class="sm:col-span-2">
-                                <dt class="{{ $iDt }}">Insurer Name</dt>
-                                <dd class="mt-0.5 flex items-center gap-1.5">
-                                    <span x-show="!editing" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100" x-text="iInsurerName||'--'"></span>
-                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
-                                    <template x-if="editing">
-                                        <span class="flex items-center gap-1">
-                                            <input type="text" x-ref="inpIns" class="{{ $iInp }} w-48" :value="iInsurerName" maxlength="255" />
-                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_name',$refs.inpIns.value)){iInsurerName=$refs.inpIns.value;editing=false}">{!! $iCheck !!}</button>
-                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
-                                        </span>
-                                    </template>
-                                </dd>
-                            </div>
-
-                        </dl>
-                    </div>
-
-                    {{-- ── Period ── --}}
-                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Period</p>
-                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-
-                            {{-- From --}}
+                            {{-- Policy From --}}
                             <div x-data="{ editing: false }"
                                  x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpIFrom{{ $policy->id }}, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
-                                <dt class="{{ $iDt }}">From</dt>
+                                <dt class="{{ $iDt }}">Policy From</dt>
                                 <dd class="mt-0.5 flex items-center gap-1.5">
                                     <span x-show="!editing" class="{{ $iDd }}" x-text="iDateFrom||'--'"></span>
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
@@ -229,10 +250,10 @@
                                 </dd>
                             </div>
 
-                            {{-- Expiry Date --}}
+                            {{-- Policy Expiry --}}
                             <div x-data="{ editing: false }"
                                  x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpITo{{ $policy->id }}, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
-                                <dt class="{{ $iDt }}">Expiry Date</dt>
+                                <dt class="{{ $iDt }}">Policy Expiry</dt>
                                 <dd class="mt-0.5 flex items-center gap-1.5">
                                     <span x-show="!editing" class="{{ $vExpired ? 'text-red-400 font-semibold text-sm' : ($vSoon ? 'text-yellow-400 text-sm' : $iDd) }}" x-text="iDateTo||'--'"></span>
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
@@ -246,33 +267,17 @@
                                 </dd>
                             </div>
 
-                            {{-- Reminder Before Days --}}
-                            <div x-data="{ editing: false }">
-                                <dt class="{{ $iDt }}">Reminder Before (days)</dt>
-                                <dd class="mt-0.5 flex items-center gap-1.5">
-                                    <span x-show="!editing" class="{{ $iDd }}" x-text="iRemindDays ? iRemindDays + ' days' : '--'"></span>
-                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
-                                    <template x-if="editing">
-                                        <span class="flex items-center gap-1">
-                                            <input type="number" x-ref="inpRem" class="{{ $iInp }} w-20" :value="iRemindDays" min="1" max="365" />
-                                            <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('reminder_before_days',$refs.inpRem.value)){iRemindDays=$refs.inpRem.value;editing=false}">{!! $iCheck !!}</button>
-                                            <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
-                                        </span>
-                                    </template>
-                                </dd>
-                            </div>
-
                         </dl>
                     </div>
 
-                    {{-- ── Billing ── --}}
+                    {{-- ── Financials ── --}}
                     <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Billing</p>
-                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Financials</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
-                            {{-- Premium Amount --}}
+                            {{-- Premium --}}
                             <div x-data="{ editing: false }">
-                                <dt class="{{ $iDt }}">Premium Amount (₹)</dt>
+                                <dt class="{{ $iDt }}">Premium (₹)</dt>
                                 <dd class="mt-0.5 flex items-center gap-1.5">
                                     <span x-show="!editing" class="{{ $iDd }}" x-text="iPremium ? '₹ ' + parseFloat(iPremium).toLocaleString('en-IN',{minimumFractionDigits:2}) : '--'"></span>
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
@@ -302,9 +307,9 @@
                                 </dd>
                             </div>
 
-                            {{-- Bill No --}}
+                            {{-- Bill Number --}}
                             <div x-data="{ editing: false }">
-                                <dt class="{{ $iDt }}">Bill No</dt>
+                                <dt class="{{ $iDt }}">Bill Number</dt>
                                 <dd class="mt-0.5 flex items-center gap-1.5">
                                     <span x-show="!editing" class="{{ $iDd }}" x-text="iBillNo||'--'"></span>
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
@@ -338,10 +343,10 @@
                         </dl>
                     </div>
 
-                    {{-- ── Insurer Contact ── --}}
+                    {{-- ── Contact ── --}}
                     <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Insurer Contact</p>
-                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Contact</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             <div x-data="{ editing: false }">
                                 <dt class="{{ $iDt }}">Contact Person</dt>
@@ -380,7 +385,7 @@
                                     <button x-show="!editing" type="button" @click="editing=true" class="{{ $iBtnX }}">{!! $iPencil !!}</button>
                                     <template x-if="editing">
                                         <span class="flex items-center gap-1">
-                                            <input type="email" x-ref="inpEm" class="{{ $iInp }} w-36" :value="iEmail" maxlength="255" />
+                                            <input type="email" x-ref="inpEm" class="{{ $iInp }} w-40" :value="iEmail" maxlength="255" />
                                             <button type="button" class="{{ $iBtnOk }}" @click="if(await ip('insurer_email',$refs.inpEm.value)){iEmail=$refs.inpEm.value;editing=false}">{!! $iCheck !!}</button>
                                             <button type="button" class="{{ $iBtnX }}" @click="editing=false">{!! $iX !!}</button>
                                         </span>
@@ -391,9 +396,10 @@
                         </dl>
                     </div>
 
-                    {{-- ── Coverage & Remarks ── --}}
+                    {{-- ── Notes ── --}}
                     <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                        <dl class="space-y-3">
+                        <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Notes</p>
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             <div x-data="{ editing: false }">
                                 <dt class="{{ $iDt }}">Coverage Details</dt>
@@ -457,6 +463,24 @@
                             },
                         })
                     "><input type="file" /></div>
+
+                    @if ($insFirstDoc)
+                        <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 dark:border-zinc-800 dark:bg-zinc-800/50">
+                            @if ($insFirstDoc->isImage())<flux:icon.photo class="size-3.5 shrink-0 text-zinc-400" />@else<flux:icon.document class="size-3.5 shrink-0 text-zinc-400" />@endif
+                            <p class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $insFirstDoc->file_original_name }}</p>
+                            <button type="button"
+                                x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($insFirstDoc->file_path) }}', title: '{{ addslashes($insFirstDoc->file_original_name) }}', isPdf: {{ $insFirstDoc->isImage() ? 'false' : 'true' }} })"
+                                class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700"
+                                title="View">
+                                <flux:icon.eye class="size-3" />
+                            </button>
+                            <a href="{{ Storage::url($insFirstDoc->file_path) }}" download="{{ $insFirstDoc->file_original_name }}"
+                                class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700"
+                                title="Download">
+                                <flux:icon.arrow-down-tray class="size-3" />
+                            </a>
+                        </div>
+                    @endif
 
                     @if ($insExtraDocs->isNotEmpty())
                         <div class="mt-2 space-y-1">
@@ -536,7 +560,7 @@
                            class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
                             <flux:icon.bell-alert class="size-3.5" />
                         </a>
-                        <button type="button"
+                        {{-- <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-insurance-{{ $policy->id }}')"
                                 aria-label="Edit insurance policy"
                                 title="Edit insurance policy"
@@ -552,7 +576,7 @@
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 
@@ -637,8 +661,17 @@
                                     @endif
                                     <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
                                     <span class="text-xs text-zinc-600">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                       class="text-xs text-accent hover:underline">View</a>
+                                    <button type="button"
+                                        x-on:click="$dispatch('open-doc-lightbox', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        title="View"
+                                        class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3.5" />
+                                    </button>
+                                    <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
+                                        title="Download"
+                                        class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3.5" />
+                                    </a>
                                 </div>
                             @endforeach
                         </div>

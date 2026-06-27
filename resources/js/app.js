@@ -260,9 +260,10 @@ window.initUploadPond = function (inputEl, options = {}) {
             pond.element.classList.add("fp-upload");
             inputEl._pond = pond;
 
-            // Click on image preview thumbnail → fullscreen <dialog> lightbox.
+            // Click on image/PDF preview thumbnail → fullscreen <dialog> lightbox.
             pond.element.addEventListener("click", (e) => {
-                if (!e.target.closest(".filepond--image-preview-wrapper"))
+                if (!e.target.closest(".filepond--image-preview-wrapper") &&
+                    !e.target.closest(".filepond--pdf-preview-wrapper"))
                     return;
                 const item = e.target.closest(".filepond--item");
                 if (!item) return;
@@ -274,16 +275,18 @@ window.initUploadPond = function (inputEl, options = {}) {
                     : files[0];
                 if (!fp) return;
 
-                // Resolve URL: local files have a string source, new files have a File object.
+                // Resolve URL: local files have a string source, new uploads have a File object.
                 let src = "";
+                let isPdf = false;
                 if (fp.origin === 3 && typeof fp.source === "string") {
                     src = fp.source;
-                } else if (
-                    fp.file instanceof File &&
-                    fp.fileType &&
-                    fp.fileType.startsWith("image/")
-                ) {
-                    src = URL.createObjectURL(fp.file);
+                    isPdf = fp.fileType === "application/pdf" ||
+                            fp.source.toLowerCase().endsWith(".pdf");
+                } else if (fp.file instanceof File && fp.fileType) {
+                    if (fp.fileType.startsWith("image/") || fp.fileType === "application/pdf") {
+                        src = URL.createObjectURL(fp.file);
+                        isPdf = fp.fileType === "application/pdf";
+                    }
                 }
                 if (!src) return;
 
@@ -295,17 +298,16 @@ window.initUploadPond = function (inputEl, options = {}) {
                     dlg.style.cssText =
                         "padding:0;border:none;background:transparent;max-width:100vw;max-height:100vh;width:100vw;height:100vh;outline:none;";
                     dlg.innerHTML = `
-                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.88);cursor:zoom-out;">
+                    <div id="fp-preview-backdrop" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.88);cursor:zoom-out;">
                         <img id="fp-preview-img" src="" alt="" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 48px rgba(0,0,0,0.7);">
+                        <object id="fp-preview-pdf" data="" type="application/pdf" style="display:none;width:92vw;height:92vh;border-radius:8px;background:#fff;cursor:auto;"></object>
                         <button id="fp-preview-close" aria-label="Close" style="position:fixed;top:16px;right:20px;background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:24px;line-height:1;padding:6px 10px;border-radius:6px;cursor:pointer;">&times;</button>
                     </div>`;
                     document.body.appendChild(dlg);
                     dlg.addEventListener("click", (ev) => {
                         if (
                             ev.target === dlg ||
-                            (ev.target.closest("div") ===
-                                dlg.firstElementChild &&
-                                ev.target.tagName !== "IMG") ||
+                            ev.target.id === "fp-preview-backdrop" ||
                             ev.target.id === "fp-preview-close"
                         ) {
                             dlg.close();
@@ -313,13 +315,29 @@ window.initUploadPond = function (inputEl, options = {}) {
                     });
                     dlg.addEventListener("close", () => {
                         const img = dlg.querySelector("#fp-preview-img");
-                        if (img.src.startsWith("blob:"))
-                            URL.revokeObjectURL(img.src);
+                        const pdf = dlg.querySelector("#fp-preview-pdf");
+                        if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+                        if (pdf.data.startsWith("blob:")) URL.revokeObjectURL(pdf.data);
                         img.src = "";
+                        pdf.data = "";
+                        img.style.display = "";
+                        pdf.style.display = "none";
                     });
                 }
 
-                dlg.querySelector("#fp-preview-img").src = src;
+                const img = dlg.querySelector("#fp-preview-img");
+                const pdf = dlg.querySelector("#fp-preview-pdf");
+                if (isPdf) {
+                    img.style.display = "none";
+                    img.src = "";
+                    pdf.data = src;
+                    pdf.style.display = "";
+                } else {
+                    pdf.style.display = "none";
+                    pdf.data = "";
+                    img.src = src;
+                    img.style.display = "";
+                }
                 dlg.showModal();
             });
         }),
@@ -378,20 +396,17 @@ document.addEventListener("alpine:init", () => {
                 .then((r) => {
                     if (r.ok) {
                         const input = form.querySelector('[name="value"]');
-                        const span =
-                            form
-                                .closest("dd, div, p")
-                                ?.parentElement?.querySelector(
-                                    "[data-display]",
-                                ) ??
-                            form
-                                .closest("dd, div")
-                                ?.querySelector("[data-display]");
+                        const span = form.closest("[x-data]")?.querySelector("[data-display]");
                         if (input && span) {
-                            const newVal =
-                                input.tagName === "SELECT"
-                                    ? input.options[input.selectedIndex].text
-                                    : input.value || "—";
+                            let newVal;
+                            if ((input.type === "date" || input._flatpickr) && input.value) {
+                                const d = new Date(input.value + "T00:00:00");
+                                newVal = d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                            } else if (input.tagName === "SELECT") {
+                                newVal = input.options[input.selectedIndex].text;
+                            } else {
+                                newVal = input.value || "—";
+                            }
                             span.textContent = newVal;
                             this.editing = false;
                             toastr.success("Updated successfully");

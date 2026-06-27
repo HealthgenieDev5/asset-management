@@ -98,7 +98,7 @@
                         });
                     },
                     destroy() {
-                        if (this.pond) { destroyUploadPond(this.pond); this.pond = null; }
+                        if (this.pond) { try { destroyUploadPond(this.pond); } catch(e) {} this.pond = null; }
                     },
                     init() {
                         @if($errors->any() && old('document_type'))
@@ -220,11 +220,20 @@
                                     <span class="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-400">
                                         {{ $doc->document_title ?: $doc->file_original_name }}
                                     </span>
+                                    <button type="button"
+                                        x-on:click="$dispatch('docs-lightbox-open', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->document_title ?: $doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        title="View"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
                                     <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                                       class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                                    <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                        title="Download"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
                                     <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
+                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;"
+                                          class="contents">
                                         @csrf @method('DELETE')
                                         <button type="submit" aria-label="Delete document" title="Delete document"
                                                 class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -260,14 +269,20 @@
                                             <p class="mt-0.5 text-[11px] text-zinc-500 italic">{{ $doc->remarks }}</p>
                                         @endif
                                         <div class="mt-2 flex items-center gap-2">
-                                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                               class="text-xs text-accent hover:underline">View</a>
-                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <button type="button"
+                                                x-on:click="$dispatch('docs-lightbox-open', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                title="View"
+                                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.eye class="size-3.5" />
+                                            </button>
                                             <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                                               class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                                title="Download"
+                                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.arrow-down-tray class="size-3.5" />
+                                            </a>
                                             <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
+                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;"
+                                                  class="contents">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" aria-label="Delete document" title="Delete document"
                                                         class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -352,11 +367,20 @@
                                     <span class="min-w-0 flex-1 truncate text-xs text-zinc-600 dark:text-zinc-400">
                                         {{ $doc->document_title ?: $doc->file_original_name }}
                                     </span>
+                                    <button type="button"
+                                        x-on:click="$dispatch('docs-lightbox-open', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->document_title ?: $doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                        title="View"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.eye class="size-3" />
+                                    </button>
                                     <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                                       class="shrink-0 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                                    <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                        title="Download"
+                                        class="inline-flex size-5 shrink-0 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                        <flux:icon.arrow-down-tray class="size-3" />
+                                    </a>
                                     <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
+                                          onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;"
+                                          class="contents">
                                         @csrf @method('DELETE')
                                         <button type="submit" aria-label="Delete document" title="Delete document"
                                                 class="inline-flex size-5 items-center justify-center rounded border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
@@ -396,15 +420,21 @@
                                             <p class="mt-0.5 text-[11px] text-zinc-500 italic">{{ $doc->remarks }}</p>
                                         @endif
                                         <div class="mt-2 flex items-center gap-2">
-                                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                                               class="text-xs text-accent hover:underline">View</a>
-                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                            <button type="button"
+                                                x-on:click="$dispatch('docs-lightbox-open', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                                title="View"
+                                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.eye class="size-3.5" />
+                                            </button>
                                             <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                                               class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                                title="Download"
+                                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                                <flux:icon.arrow-down-tray class="size-3.5" />
+                                            </a>
                                             <form method="POST"
                                                   action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
-                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;">
+                                                  onsubmit="confirmDelete(this, 'Delete this document? This cannot be undone.'); return false;"
+                                                  class="contents">
                                                 @csrf @method('DELETE')
                                                 <button type="submit"
                                                         aria-label="Delete document"
@@ -443,40 +473,31 @@
         </p>
     @endif
 
-    {{-- Shared image lightbox (z-[60] sits above upload modal z-50) --}}
+    {{-- Shared image lightbox --}}
     <div x-data="docLightbox()"
+         x-on:keydown.escape.window="close()"
          x-on:docs-lightbox-open.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
-         x-show="open"
-         x-cloak
-         x-on:keydown.escape.window="if (open) close()"
-         class="fixed inset-0 z-60 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/85" x-on:click="close()"></div>
-        <div class="relative z-10 flex max-w-5xl w-full flex-col rounded-xl overflow-hidden shadow-2xl" x-on:click.stop>
-            {{-- Header bar with title + close --}}
-            <div class="flex items-center justify-between bg-zinc-900 px-4 py-2 shrink-0">
-                <span x-text="title" class="truncate text-sm text-zinc-300"></span>
-                <button type="button" x-on:click="close()"
-                    class="ml-4 flex shrink-0 items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-                        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
-                    </svg>
-                    Close
-                </button>
-            </div>
-            {{-- Content --}}
-            <template x-if="!isPdf">
-                <div class="flex items-center justify-center bg-zinc-950 w-full" style="height:82vh;">
-                    <img :src="src" :alt="title"
-                         class="max-h-full max-w-full object-contain rounded-lg shadow-xl">
-                </div>
-            </template>
+         x-show="open" style="display:none"
+         class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <div class="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
+            <p class="truncate text-sm font-medium text-white" x-text="title"></p>
+            <button type="button" @click="close()"
+                    class="shrink-0 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+            </button>
+        </div>
+        <div class="flex flex-1 cursor-zoom-out items-center justify-center overflow-hidden p-4" @click.self="close()">
             <template x-if="isPdf">
-                <object :data="src" type="application/pdf"
-                        class="w-full bg-white" style="height:82vh;">
-                    <p class="text-center p-4">
-                        <a :href="src" target="_blank" class="underline text-accent">Open PDF in new tab</a>
-                    </p>
-                </object>
+                <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
+            </template>
+            <template x-if="!isPdf">
+                <img :src="src" :alt="title" class="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
             </template>
         </div>
     </div>

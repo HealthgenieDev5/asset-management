@@ -27,7 +27,7 @@
         </button>
     </div>
     {{-- Content --}}
-    <div class="flex flex-1 items-center justify-center overflow-hidden p-4">
+    <div class="flex flex-1 cursor-zoom-out items-center justify-center overflow-hidden p-4" @click.self="close()">
         <template x-if="isPdf">
             <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
         </template>

@@ -354,7 +354,8 @@
             </div>
 
             {{-- Bill Date (editable) --}}
-            <div x-data="inlineEdit()">
+            <div x-data="inlineEdit()"
+                 x-init="$watch('editing', v => v && $nextTick(() => flatpickr($el.querySelector('.fp-bill-date'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })))">
                 <dt class="text-xs font-medium text-zinc-500">Bill Date</dt>
                 <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
                     <span x-show="!editing" data-display class="text-sm text-zinc-800 dark:text-zinc-200">{{ $asset->bill_date?->format('d M Y') ?: '—' }}</span>
@@ -363,10 +364,9 @@
                     <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0" @submit.prevent="save($el)">
                         @csrf @method('PATCH')
                         <input type="hidden" name="field" value="bill_date">
-                        <input type="date" name="value" value="{{ $asset->bill_date?->format('Y-m-d') }}" class="{{ $inpInline }}"
-                               @keydown.escape="editing = false"
-                               x-ref="bill_date"
-                               x-init="$watch('editing', v => v && $nextTick(() => $refs.bill_date.focus()))">
+                        <input type="text" inputmode="none" name="value" value="{{ $asset->bill_date?->format('Y-m-d') }}" autocomplete="off"
+                               class="{{ $inpInline }} fp-bill-date w-32"
+                               @keydown.escape="editing = false">
                         <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
                         <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
                     </form>
@@ -374,7 +374,8 @@
             </div>
 
             {{-- Purchase Date (editable) --}}
-            <div x-data="inlineEdit()">
+            <div x-data="inlineEdit()"
+                 x-init="$watch('editing', v => v && $nextTick(() => flatpickr($el.querySelector('.fp-purchase-date'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })))">
                 <dt class="text-xs font-medium text-zinc-500">Purchase Date</dt>
                 <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
                     <span x-show="!editing" data-display class="text-sm text-zinc-800 dark:text-zinc-200">{{ $asset->purchase_date?->format('d M Y') ?: '—' }}</span>
@@ -383,10 +384,9 @@
                     <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0" @submit.prevent="save($el)">
                         @csrf @method('PATCH')
                         <input type="hidden" name="field" value="purchase_date">
-                        <input type="date" name="value" value="{{ $asset->purchase_date?->format('Y-m-d') }}" class="{{ $inpInline }}"
-                               @keydown.escape="editing = false"
-                               x-ref="purchase_date"
-                               x-init="$watch('editing', v => v && $nextTick(() => $refs.purchase_date.focus()))">
+                        <input type="text" inputmode="none" name="value" value="{{ $asset->purchase_date?->format('Y-m-d') }}" autocomplete="off"
+                               class="{{ $inpInline }} fp-purchase-date w-32"
+                               @keydown.escape="editing = false">
                         <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
                         <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
                     </form>
@@ -416,30 +416,34 @@
                       if (billInput) {
                           const existingBillUrl  = @js($existingBill ? Storage::url($existingBill->file_path) : '');
                           const existingBillName = @js($existingBill?->file_original_name ?? '');
-                          initUploadPond(billInput, {
-                              files: existingBillUrl ? [{ source: existingBillUrl, options: { type: 'local' } }] : undefined,
-                              fileMetaBySource: existingBillUrl ? { [existingBillUrl]: { name: existingBillName } } : undefined,
-                              deleteUrl: @js($existingBill ? route('assets.documents.destroy', [$asset, $existingBill]) : ''),
-                              csrfToken: @js(csrf_token()),
-                              deleteSuccessMessage: 'Purchase bill deleted.',
-                              acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
-                              revertUrlTemplate: () => @js(route('assets.documents.revert', $asset)),
-                              server: {
-                                  process: {
-                                      url: @js(route('assets.documents.store', $asset)),
-                                      method: 'POST',
-                                      headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' },
-                                      ondata: (formData) => { formData.append('document_type', 'purchase_bill'); return formData; },
-                                      onload: (id) => {
-                                          const n = parseInt(id);
-                                          if (!n) { toastr.error('Upload failed.'); return null; }
-                                          toastr.success('Purchase bill uploaded.');
-                                          return String(n);
+                          const initBillPond = () => {
+                              if (billInput._pond) return;
+                              initUploadPond(billInput, {
+                                  files: existingBillUrl ? [{ source: existingBillUrl, options: { type: 'local' } }] : undefined,
+                                  fileMetaBySource: existingBillUrl ? { [existingBillUrl]: { name: existingBillName } } : undefined,
+                                  deleteUrl: @js($existingBill ? route('assets.documents.destroy', [$asset, $existingBill]) : ''),
+                                  csrfToken: @js(csrf_token()),
+                                  deleteSuccessMessage: 'Purchase bill deleted.',
+                                  acceptedFileTypes: ['application/pdf','image/jpeg','image/png','image/webp'],
+                                  revertUrlTemplate: () => @js(route('assets.documents.revert', $asset)),
+                                  server: {
+                                      process: {
+                                          url: @js(route('assets.documents.store', $asset)),
+                                          method: 'POST',
+                                          headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' },
+                                          ondata: (formData) => { formData.append('document_type', 'purchase_bill'); return formData; },
+                                          onload: (id) => {
+                                              const n = parseInt(id);
+                                              if (!n) { toastr.error('Upload failed.'); return null; }
+                                              toastr.success('Purchase bill uploaded.');
+                                              return String(n);
+                                          },
+                                          onerror: () => toastr.error('Upload failed.'),
                                       },
-                                      onerror: () => toastr.error('Upload failed.'),
                                   },
-                              },
-                          });
+                              });
+                          };
+                          window.addEventListener('tab-visible', (e) => { if (e.detail === 'overview') initBillPond(); });
                       }
                   ">
                 @csrf
@@ -472,12 +476,17 @@
                             <flux:icon.document class="size-4 shrink-0 text-zinc-400" />
                             <span class="flex-1 truncate text-xs text-zinc-700 dark:text-zinc-300">{{ $doc->file_original_name }}</span>
                             <span class="text-xs text-zinc-500">{{ number_format($doc->file_size / 1024, 0) }} KB</span>
-                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank"
-                               class="text-xs text-accent hover:underline">View</a>
-                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                            <button type="button"
+                                x-on:click="$dispatch('bill-lightbox-open', { src: '{{ Storage::url($doc->file_path) }}', title: '{{ addslashes($doc->file_original_name) }}', isPdf: {{ $doc->isImage() ? 'false' : 'true' }} })"
+                                title="View"
+                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                <flux:icon.eye class="size-3.5" />
+                            </button>
                             <a href="{{ Storage::url($doc->file_path) }}" download="{{ $doc->file_original_name }}"
-                               class="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">Download</a>
-                            <span class="text-zinc-300 dark:text-zinc-600">·</span>
+                                title="Download"
+                                class="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700">
+                                <flux:icon.arrow-down-tray class="size-3.5" />
+                            </a>
                             <form method="POST" action="{{ route('assets.documents.destroy', [$asset, $doc]) }}"
                                   onsubmit="confirmDelete(this, 'Delete this purchase bill?'); return false;">
                                 @csrf @method('DELETE')
@@ -490,43 +499,34 @@
             @endif
         </div>
 
-        {{-- Purchase bill image/PDF lightbox --}}
-        @if ($previewBills->isNotEmpty())
-            <div x-data="docLightbox()"
-                 x-on:bill-lightbox-open.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
-                 x-show="open"
-                 x-cloak
-                 x-on:keydown.escape.window="if (open) close()"
-                 class="fixed inset-0 z-60 flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-black/85" x-on:click="close()"></div>
-                <div class="relative z-10 flex max-w-5xl w-full flex-col rounded-xl overflow-hidden shadow-2xl" x-on:click.stop>
-                    <div class="flex items-center justify-between bg-zinc-900 px-4 py-2 shrink-0">
-                        <span x-text="title" class="truncate text-sm text-zinc-300"></span>
-                        <button type="button" x-on:click="close()"
-                            class="ml-4 flex shrink-0 items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-4">
-                                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
-                            </svg>
-                            Close
-                        </button>
-                    </div>
-                    <template x-if="!isPdf">
-                        <div class="flex items-center justify-center bg-zinc-950 w-full" style="height:82vh;">
-                            <img :src="src" :alt="title"
-                                 class="max-h-full max-w-full object-contain rounded-lg shadow-xl">
-                        </div>
-                    </template>
-                    <template x-if="isPdf">
-                        <object :data="src" type="application/pdf"
-                                class="w-full bg-white" style="height:82vh;">
-                            <p class="text-center p-4">
-                                <a :href="src" target="_blank" class="underline text-accent">Open PDF in new tab</a>
-                            </p>
-                        </object>
-                    </template>
-                </div>
+        {{-- Purchase bill lightbox --}}
+        <div x-data="docLightbox()"
+             x-on:keydown.escape.window="close()"
+             x-on:bill-lightbox-open.window="show($event.detail.src, $event.detail.title, $event.detail.isPdf)"
+             x-show="open" style="display:none"
+             class="fixed inset-0 z-200 flex flex-col bg-black/80 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div class="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-2.5">
+                <p class="truncate text-sm font-medium text-white" x-text="title"></p>
+                <button type="button" @click="close()"
+                        class="shrink-0 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
+                </button>
             </div>
-        @endif
+            <div class="flex flex-1 items-center justify-center overflow-hidden p-4">
+                <template x-if="isPdf">
+                    <iframe :src="src" class="h-full w-full max-w-4xl rounded-lg border-0 bg-white" style="min-height:70vh"></iframe>
+                </template>
+                <template x-if="!isPdf">
+                    <img :src="src" :alt="title" class="max-h-full max-w-full rounded-lg object-contain shadow-2xl" />
+                </template>
+            </div>
+        </div>
     </div>
 
     {{-- Vehicle Compliance (only for VE category) --}}
@@ -555,60 +555,62 @@
                     </dd>
                 </div>
 
-                {{-- PUC Expiry (editable date + reminder days) --}}
+                {{-- PUC Expiry / Fitness Expiry / Road Tax Expiry (editable date + smart reminder) --}}
                 @foreach ([
-                    ['PUC Expiry',      'puc_expiry_date',       'puc_reminder_before_days',       $asset->puc_expiry_date,       $asset->puc_reminder_before_days,       'pucdate',  'pucdays'],
-                    ['Fitness Expiry',  'fitness_expiry_date',   'fitness_reminder_before_days',   $asset->fitness_expiry_date,   $asset->fitness_reminder_before_days,   'fitdate',  'fitdays'],
-                    ['Road Tax Expiry', 'road_tax_expiry_date',  'road_tax_reminder_before_days',  $asset->road_tax_expiry_date,  $asset->road_tax_reminder_before_days,  'rtaxdate', 'rtaxdays'],
-                ] as [$label, $dateField, $daysField, $date, $reminderDays, $dateRef, $daysRef])
+                    ['PUC Expiry',      'puc_expiry_date',      $asset->puc_expiry_date,      'pucdate',  'puc'],
+                    ['Fitness Expiry',  'fitness_expiry_date',  $asset->fitness_expiry_date,  'fitdate',  'fitness'],
+                    ['Road Tax Expiry', 'road_tax_expiry_date', $asset->road_tax_expiry_date, 'rtaxdate', 'road_tax'],
+                ] as [$label, $dateField, $date, $dateRef, $complianceType])
+                    @php $complianceSrList = $asset->smartReminders->where('reminder_type', $complianceType)->where('is_active', true); @endphp
                     <div>
                         <dt class="text-xs font-medium text-zinc-500">{{ $label }}</dt>
                         <dd class="mt-0.5 space-y-1">
                             {{-- Date row --}}
-                            <div x-data="inlineEdit()" class="flex items-center gap-1.5 min-w-0">
+                            <div x-data="inlineEdit()" class="flex items-center gap-1.5 min-w-0"
+                                 x-init="$watch('editing', v => v && $nextTick(() => flatpickr($el.querySelector('.fp-{{ $dateRef }}'), { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd M Y', allowInput: true, disableMobile: true })))">
                                 @if ($date)
-                                    @php $expired = $date->isPast(); $daysLeft = (int) now()->diffInDays($date, false); $soon = !$expired && $daysLeft <= ($reminderDays ?? 30); @endphp
-                                    <span x-show="!editing" class="{{ $expired ? 'text-red-400' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }} text-sm">
+                                    @php $expired = $date->isPast(); $daysLeft = (int) now()->diffInDays($date, false); $soon = !$expired && $daysLeft <= 30; @endphp
+                                    <span x-show="!editing" data-display class="{{ $expired ? 'text-red-400' : ($soon ? 'text-yellow-400' : 'text-zinc-800 dark:text-zinc-200') }} text-sm">
                                         {{ $date->format('d M Y') }}
                                         @if ($expired) <span class="text-xs">(expired)</span>
                                         @elseif ($soon) <span class="text-xs">(expiring soon)</span>
                                         @endif
                                     </span>
                                 @else
-                                    <span x-show="!editing" class="text-sm text-zinc-500">—</span>
+                                    <span x-show="!editing" data-display class="text-sm text-zinc-500">—</span>
                                 @endif
                                 <button x-show="!editing" type="button" @click="editing = true"
                                         class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
                                 <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0" @submit.prevent="save($el)">
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="field" value="{{ $dateField }}">
-                                    <input type="date" name="value" value="{{ $date?->format('Y-m-d') }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="{{ $dateRef }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['{{ $dateRef }}'].focus()))">
+                                    <input type="text" inputmode="none" name="value" value="{{ $date?->format('Y-m-d') }}" autocomplete="off"
+                                           class="{{ $inpInline }} fp-{{ $dateRef }} w-32"
+                                           @keydown.escape="editing = false">
                                     <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
                                     <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
                                 </form>
                             </div>
-                            {{-- Remind days row --}}
-                            <div x-data="inlineEdit()" class="flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-xs text-zinc-500">
-                                    Remind: {{ $reminderDays ? $reminderDays . 'd before' : '—' }}
-                                </span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0" @submit.prevent="save($el)">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="{{ $daysField }}">
-                                    <input type="number" name="value" value="{{ $reminderDays }}" class="{{ $inpInline }} w-20"
-                                           min="1" max="365" placeholder="days"
-                                           @keydown.escape="editing = false"
-                                           x-ref="{{ $daysRef }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['{{ $daysRef }}'].focus()))">
-                                    <span class="text-xs text-zinc-500 shrink-0">days before</span>
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
+                            {{-- Smart reminder status --}}
+                            <div>
+                                @if ($complianceSrList->isEmpty())
+                                    <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => 1, $complianceType => 1]) }}"
+                                       class="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-accent transition-colors">
+                                        <flux:icon.bell-alert class="size-3" /> Add Smart Reminder
+                                    </a>
+                                @else
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        @foreach ($complianceSrList as $sr)
+                                            <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders']) }}"
+                                               class="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors">
+                                                <flux:icon.bell class="size-2.5" />
+                                                {{ implode(', ', $sr->reminder_days) }}d
+                                            </a>
+                                        @endforeach
+                                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => 1, $complianceType => 1]) }}"
+                                           class="text-[11px] text-zinc-400 hover:text-accent transition-colors">+ Add</a>
+                                    </div>
+                                @endif
                             </div>
                         </dd>
                     </div>
