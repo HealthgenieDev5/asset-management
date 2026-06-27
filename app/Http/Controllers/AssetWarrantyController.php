@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\FilePondDocumentHandler;
 use App\Models\Asset;
 use App\Models\AssetDocument;
 use App\Models\AssetWarranty;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class AssetWarrantyController extends Controller
 {
+    use FilePondDocumentHandler;
+
     public function store(Request $request, Asset $asset)
     {
         $validated = $request->validate($this->rules());
@@ -31,7 +34,7 @@ class AssetWarrantyController extends Controller
     {
         abort_if($warranty->asset_id !== $asset->id, 403);
 
-        // FilePond submits the existing file URL as a string when no new file is chosen — remove it so the file rule is never triggered
+        // FilePond submits the existing file URL as a string when no new file is chosen â€” remove it so the file rule is never triggered
         if ($request->has('warranty_doc') && ! $request->hasFile('warranty_doc')) {
             $request->request->remove('warranty_doc');
         }
@@ -160,52 +163,7 @@ class AssetWarrantyController extends Controller
 
     public function storeDocument(Request $request, Asset $asset, AssetWarranty $warranty)
     {
-        abort_if($warranty->asset_id !== $asset->id, 403);
-
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120'],
-        ]);
-
-        $file = $request->file('file');
-        $path = $file->store("assets/{$asset->id}/warranties", 'public');
-
-        $doc = AssetDocument::create([
-            'asset_id'           => $asset->id,
-            'documentable_type'  => AssetWarranty::class,
-            'documentable_id'    => $warranty->id,
-            'document_type'      => 'warranty_doc',
-            'document_title'     => 'Warranty Document',
-            'file_path'          => $path,
-            'file_original_name' => $file->getClientOriginalName(),
-            'file_mime_type'     => $file->getClientMimeType(),
-            'file_size'          => $file->getSize(),
-            'uploaded_by'        => auth()->id(),
-        ]);
-
-        // FilePond server.process expects plain-text unique ID back
-        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
-    }
-
-    public function destroyDocument(Asset $asset, AssetDocument $document)
-    {
-        abort_if($document->asset_id !== $asset->id, 403);
-
-        Storage::disk('public')->delete($document->file_path);
-        $document->delete();
-
-        return response('', 200);
-    }
-
-    // FilePond server.revert — body contains the document ID returned by storeDocument
-    public function revertDocument(Request $request, Asset $asset)
-    {
-        $id  = (int) $request->getContent();
-        $doc = AssetDocument::where('id', $id)->where('asset_id', $asset->id)->firstOrFail();
-
-        Storage::disk('public')->delete($doc->file_path);
-        $doc->delete();
-
-        return response('', 200);
+        return $this->performStoreDocument($request, $asset, $warranty, 'warranties', 'warranty_doc', 'Warranty Document');
     }
 
     private function rules(): array

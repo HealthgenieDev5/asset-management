@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\HandlesComplaintCreation;
+use App\Concerns\HandlesComplaintCreation;
 use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\AssetComplaint;

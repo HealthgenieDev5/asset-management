@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\FilePondDocumentHandler;
 use App\Models\Asset;
 use App\Models\AssetDocument;
 use App\Models\AssetInsurancePolicy;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 
 class AssetInsurancePolicyController extends Controller
 {
+    use FilePondDocumentHandler;
+
     public function store(Request $request, Asset $asset)
     {
         $validated = $request->validate($this->rules());
@@ -81,35 +84,7 @@ class AssetInsurancePolicyController extends Controller
 
     public function storeDocument(Request $request, Asset $asset, AssetInsurancePolicy $insurance)
     {
-        abort_if($insurance->asset_id !== $asset->id, 403);
-        $request->validate(['file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:5120']]);
-        $file = $request->file('file');
-        $path = $file->store("assets/{$asset->id}/insurance", 'public');
-        $doc = AssetDocument::create([
-            'asset_id'           => $asset->id,
-            'documentable_type'  => AssetInsurancePolicy::class,
-            'documentable_id'    => $insurance->id,
-            'document_type'      => 'insurance_policy',
-            'document_title'     => 'Insurance Document',
-            'file_path'          => $path,
-            'file_original_name' => $file->getClientOriginalName(),
-            'file_mime_type'     => $file->getClientMimeType(),
-            'file_size'          => $file->getSize(),
-            'uploaded_by'        => auth()->id(),
-        ]);
-        return response((string) $doc->id, 200)->header('Content-Type', 'text/plain');
-    }
-
-    public function revertDocument(Request $request, Asset $asset)
-    {
-        $id = trim($request->getContent());
-        $doc = AssetDocument::where('id', $id)
-            ->where('asset_id', $asset->id)
-            ->where('documentable_type', AssetInsurancePolicy::class)
-            ->firstOrFail();
-        Storage::disk('public')->delete($doc->file_path);
-        $doc->delete();
-        return response('', 200);
+        return $this->performStoreDocument($request, $asset, $insurance, 'insurance', 'insurance_policy', 'Insurance Document');
     }
 
     public function destroy(Asset $asset, AssetInsurancePolicy $insurance)
@@ -125,16 +100,6 @@ class AssetInsurancePolicyController extends Controller
 
         return redirect()->route('assets.show', [$asset, 'tab' => 'insurance'])
             ->with('success', 'Insurance policy deleted.');
-    }
-
-    public function destroyDocument(Asset $asset, AssetDocument $document)
-    {
-        abort_if($document->asset_id !== $asset->id, 403);
-
-        Storage::disk('public')->delete($document->file_path);
-        $document->delete();
-
-        return response()->json(['deleted' => true]);
     }
 
     private function rules(): array

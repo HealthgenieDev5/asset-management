@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Concerns;
+namespace App\Concerns;
 
 use App\Mail\ComplaintEscalationMail;
 use App\Models\Asset;

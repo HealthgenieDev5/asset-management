@@ -153,6 +153,9 @@ window.initUploadPond = function (inputEl, options = {}) {
                   .then((r) => {
                       if (r.ok) {
                           load();
+                          toastr.success(
+                              options.revertSuccessMessage ?? "Document removed.",
+                          );
                       } else {
                           error("Failed to revert upload.");
                           toastr.error("Failed to revert upload.");
