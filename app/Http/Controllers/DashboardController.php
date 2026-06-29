@@ -71,8 +71,8 @@ class DashboardController extends Controller
                            + $partWarranties['in30'] + $schedules['in30'],
         ];
 
-        $serviceDue = $this->expiryBuckets('asset_services', 'next_service_date', $now, $in7, $in30, 'deleted_at IS NULL AND next_service_date IS NOT NULL');
-        $certExpiry = $this->expiryBuckets('asset_services', 'certification_expiry', $now, $in7, $in30, 'deleted_at IS NULL AND certification_expiry IS NOT NULL');
+        $serviceDue = $this->expiryBucketsJoined('asset_services', 'next_service_date',    $now, $in7, $in30, 't.deleted_at IS NULL', $activeStatuses);
+        $certExpiry = $this->expiryBucketsJoined('asset_services', 'certification_expiry', $now, $in7, $in30, 't.deleted_at IS NULL', $activeStatuses);
 
         // ── Assets by category (for donut chart) ────────────────────────────
         $assetsByCategory = Asset::select('asset_categories.name', DB::raw('count(*) as count'))
@@ -127,6 +127,7 @@ class DashboardController extends Controller
         $overdueSchedules = DB::table('asset_maintenance_schedules as s')
             ->join('assets as a', 'a.id', '=', 's.asset_id')
             ->whereNull('a.deleted_at')
+            ->whereIn('a.status', ['active', 'under_repair'])
             ->where('s.is_active', 1)
             ->whereNotNull('s.next_due_date')
             ->where('s.next_due_date', '<', $now)

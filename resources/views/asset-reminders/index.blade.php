@@ -189,12 +189,12 @@
                         <tr class="hover:bg-zinc-50 transition-colors dark:hover:bg-zinc-800/30">
                             {{-- Asset --}}
                             <td class="px-4 py-3">
-                                <a href="{{ route('assets.show', $item['asset']) }}" class="group flex items-center gap-2">
-                                    <span class="font-mono text-xs text-accent group-hover:underline">{{ $item['asset']->asset_code }}</span>
-                                    <span class="truncate max-w-36 text-zinc-700 group-hover:text-zinc-900 dark:text-zinc-300 dark:group-hover:text-zinc-100">{{ $item['asset']->asset_name }}</span>
+                                <a href="{{ route('assets.show', $item['asset_id']) }}" class="group flex items-center gap-2">
+                                    <span class="font-mono text-xs text-accent group-hover:underline">{{ $item['asset_code'] }}</span>
+                                    <span class="truncate max-w-36 text-zinc-700 group-hover:text-zinc-900 dark:text-zinc-300 dark:group-hover:text-zinc-100">{{ $item['asset_name'] }}</span>
                                 </a>
-                                @if ($item['asset']->category)
-                                    <p class="mt-0.5 text-[10px] text-zinc-400">{{ $item['asset']->category->name }}</p>
+                                @if ($item['category_name'])
+                                    <p class="mt-0.5 text-[10px] text-zinc-400">{{ $item['category_name'] }}</p>
                                 @endif
                             </td>
                             {{-- Category badge --}}
@@ -225,7 +225,7 @@
                             </td>
                             {{-- Link --}}
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('assets.show', [$item['asset'], 'tab' => $item['tab']]) }}"
+                                <a href="{{ route('assets.show', [$item['asset_id'], 'tab' => $item['tab']]) }}"
                                    class="text-xs text-zinc-500 hover:text-accent transition-colors dark:text-zinc-400">
                                     View →
                                 </a>
@@ -236,8 +236,9 @@
             </table>
         </div>
 
-        <div class="mt-3 text-xs text-zinc-500 dark:text-zinc-600">
-            Showing {{ $items->count() }} {{ Str::plural('item', $items->count()) }}.
+        <div class="mt-3 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-600">
+            <span>Showing {{ $items->firstItem() }}–{{ $items->lastItem() }} of {{ $items->total() }} {{ Str::plural('item', $items->total()) }}.</span>
+            {{ $items->links() }}
         </div>
     @endif
 </x-layouts::app>

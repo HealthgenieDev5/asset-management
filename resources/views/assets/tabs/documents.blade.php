@@ -183,7 +183,7 @@
 
                     @if ($previewDocs->isNotEmpty())
                         @php $pondId = 'filepond-' . Str::slug($type); @endphp
-                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1"
+                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1" wire:ignore
                              x-data
                              x-init="
                                  const wrap     = document.getElementById('pond-wrap-{{ $pondId }}');
@@ -192,7 +192,7 @@
                                  const fileMeta = {{ Js::from($previewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
                                  let pond = null;
                                  const mountPond = () => {
-                                     if (pond) { try { pond.destroy(); } catch(e) {} }
+                                     if (pond) return;
                                      mount.innerHTML = '';
                                      const input = document.createElement('input');
                                      input.type = 'file';
@@ -206,11 +206,10 @@
                                      const idx = Array.from(wrap.querySelectorAll('.filepond--item')).indexOf(item);
                                      if (fileMeta[idx]) $dispatch('docs-lightbox-open', fileMeta[idx]);
                                  });
+                                 if (wrap.offsetParent !== null) setTimeout(mountPond, 50);
                                  window.addEventListener('tab-visible', (e) => {
                                      if (e.detail === 'documents') setTimeout(mountPond, 50);
-                                 });
-                                 if (document.readyState === 'complete') { setTimeout(mountPond, 50); }
-                                 else { window.addEventListener('load', () => setTimeout(mountPond, 50), { once: true }); }
+                                 }, { once: true });
                              ">
                             <div id="pond-mount-{{ $pondId }}"></div>
                         </div>
@@ -328,7 +327,7 @@
                     {{-- Image + PDF documents: FilePond thumbnail strip --}}
                     @if ($previewDocs->isNotEmpty())
                         @php $pondId = 'filepond-' . Str::slug($type); @endphp
-                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1"
+                        <div id="pond-wrap-{{ $pondId }}" class="px-3 pt-3 pb-1" wire:ignore
                              x-data
                              x-init="
                                  const wrap     = document.getElementById('pond-wrap-{{ $pondId }}');
@@ -337,7 +336,7 @@
                                  const fileMeta = {{ Js::from($previewDocs->map(fn($d) => ['src' => Storage::url($d->file_path), 'title' => $d->document_title ?: $d->file_original_name, 'isPdf' => str_contains($d->file_mime_type ?? '', 'pdf')])) }};
                                  let pond = null;
                                  const mountPond = () => {
-                                     if (pond) { try { pond.destroy(); } catch(e) {} }
+                                     if (pond) return;
                                      mount.innerHTML = '';
                                      const input = document.createElement('input');
                                      input.type = 'file';
@@ -351,11 +350,10 @@
                                      const idx = Array.from(wrap.querySelectorAll('.filepond--item')).indexOf(item);
                                      if (fileMeta[idx]) $dispatch('docs-lightbox-open', fileMeta[idx]);
                                  });
+                                 if (wrap.offsetParent !== null) setTimeout(mountPond, 50);
                                  window.addEventListener('tab-visible', (e) => {
                                      if (e.detail === 'documents') setTimeout(mountPond, 50);
-                                 });
-                                 if (document.readyState === 'complete') { setTimeout(mountPond, 50); }
-                                 else { window.addEventListener('load', () => setTimeout(mountPond, 50), { once: true }); }
+                                 }, { once: true });
                              ">
                             <div id="pond-mount-{{ $pondId }}"></div>
                         </div>

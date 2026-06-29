@@ -39,7 +39,7 @@
         <flux:button href="{{ route('assets.create') }}" wire:navigate variant="primary" size="sm">
             <flux:icon.plus class="size-4" /> New Asset
         </flux:button>
-        <flux:button href="{{ route('asset-reminders.index') }}" wire:navigate variant="ghost" size="sm">
+        <flux:button href="{{ route('asset-reminders.index', ['filter' => 'expired']) }}" wire:navigate variant="ghost" size="sm">
             <flux:icon.bell-alert class="size-4" /> Expiry Tracker
             @if($reminderStats['expired'] > 0)
                 <span class="ml-1 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold leading-none text-white">
@@ -307,7 +307,7 @@
                         <p class="text-[11px] text-zinc-500">Next 30 days across all coverage types</p>
                     </div>
                 </div>
-                <a href="{{ route('asset-reminders.index') }}" wire:navigate
+                <a href="{{ route('asset-reminders.index', ['filter' => 'upcoming']) }}" wire:navigate
                    class="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-[11px] font-medium text-zinc-500 transition hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-400">
                     View all →
                 </a>
