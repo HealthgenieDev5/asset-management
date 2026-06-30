@@ -43,8 +43,11 @@
             'documents'  => ['label' => 'Documents',    'icon' => 'paper-clip'],
             'amc'        => ['label' => 'AMC',          'icon' => 'wrench-screwdriver'],
             'insurance'  => ['label' => 'Insurance',    'icon' => 'building-library'],
-            'history'    => ['label' => 'History',      'icon' => 'clock'],
         ];
+        if ($asset->isVehicle()) {
+            $tabs['vehicle-compliance'] = ['label' => 'Compliance', 'icon' => 'clipboard-document-check'];
+        }
+        $tabs['history'] = ['label' => 'History', 'icon' => 'clock'];
     @endphp
 
     <div class="flex gap-6 lg:flex-row flex-col" x-data="{

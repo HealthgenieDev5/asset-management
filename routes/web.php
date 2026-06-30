@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('assets/export', [AssetController::class, 'export'])->name('assets.export');
     Route::resource('assets', AssetController::class);
     Route::patch('assets/{asset}/field', [AssetController::class, 'patchField'])->name('assets.patch-field');
+    Route::post('assets/{asset}/compliance/{type}', [AssetController::class, 'saveCompliance'])->name('assets.compliance.save');
     Route::get('assets/{asset}/history', [AssetAuditLogController::class, 'index'])->name('assets.history');
     Route::post('assets/{asset}/documents', [AssetDocumentController::class, 'store'])->name('assets.documents.store');
     Route::delete('assets/{asset}/documents/revert', [AssetDocumentController::class, 'revertDocument'])->name('assets.documents.revert');

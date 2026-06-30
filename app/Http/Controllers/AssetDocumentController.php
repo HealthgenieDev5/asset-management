@@ -19,6 +19,8 @@ class AssetDocumentController extends Controller
         'insurance_copy'            => 'Insurance Copy',
         'insurance_policy'          => 'Insurance Policy',
         'puc_copy'                  => 'PUC Copy',
+        'fitness_copy'              => 'Fitness Certificate',
+        'road_tax_copy'             => 'Road Tax Copy',
         'rc_copy'                   => 'RC Copy',
         'service_bill'              => 'Service Bill',
         'amc_bill'                  => 'AMC Bill',

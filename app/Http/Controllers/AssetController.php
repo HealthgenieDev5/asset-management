@@ -418,6 +418,31 @@ class AssetController extends Controller
             ->with('success', ucwords(str_replace('_', ' ', $field)) . ' updated.');
     }
 
+    public function saveCompliance(Request $request, Asset $asset, string $type)
+    {
+        abort_if(! $asset->isVehicle(), 403);
+
+        $fieldMap = [
+            'puc'      => 'puc_expiry_date',
+            'fitness'  => 'fitness_expiry_date',
+            'road_tax' => 'road_tax_expiry_date',
+        ];
+
+        abort_if(! array_key_exists($type, $fieldMap), 404);
+
+        $validated = $request->validate([
+            'expiry_date' => ['nullable', 'date'],
+        ]);
+
+        $asset->update([
+            $fieldMap[$type] => $validated['expiry_date'] ?: null,
+            'updated_by'     => auth()->id(),
+        ]);
+
+        return redirect()->route('assets.show', [$asset, 'tab' => 'vehicle-compliance'])
+            ->with('success', ucwords(str_replace('_', ' ', $type)) . ' details saved.');
+    }
+
     public function destroy(Asset $asset)
     {
         $asset->delete();
