@@ -1,10 +1,4 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
-<style>
-.sd-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
-.sd-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
-.sd-upload .filepond--drop-label { min-height: 130px; }
-.sd-upload .filepond--drop-label label { cursor: pointer; }
-</style>
 
 {{-- ── Doc Lightbox ── --}}
 <div x-data="docLightbox()"
@@ -745,18 +739,19 @@
                         </span>
                     </div>
                     <div class="flex shrink-0 items-center gap-1.5">
-                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'serviceid' => $svc->id]) }}"
-                           title="{{ $svc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
-                           class="inline-flex size-6 items-center justify-center rounded-md border transition-colors {{ $svc->smartReminders->isNotEmpty() ? 'border-blue-500/40 text-blue-400 hover:bg-blue-500/10' : 'border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10' }}">
-                            <flux:icon.bell-alert class="size-3.5" />
-                        </a>
+                       
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-view-service-{{ $svc->id }}')"
                                 title="View" aria-label="View service record"
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.eye class="size-3.5" />
                         </button>
-                        <button type="button"
+                         <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'serviceid' => $svc->id]) }}"
+                           title="{{ $svc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                           class="inline-flex size-6 items-center justify-center rounded-md border transition-colors {{ $svc->smartReminders->isNotEmpty() ? 'border-blue-500/40 text-blue-400 hover:bg-blue-500/10' : 'border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10' }}">
+                            <flux:icon.bell-alert class="size-3.5" />
+                        </a>
+                        {{-- <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-service-{{ $svc->id }}')"
                                 title="Edit" aria-label="Edit service record"
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
@@ -769,7 +764,7 @@
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 

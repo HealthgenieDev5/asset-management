@@ -191,7 +191,7 @@ class AssetMaintenanceSchedule extends Model
             if ($days < 0) {
                 return $this->_statusLabelCache = 'overdue';
             }
-            $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 30;
+            $threshold = $this->reminder_thresholds ? max(array_column($this->reminder_thresholds, 'value')) : 30;
             return $this->_statusLabelCache = ($days <= $threshold ? 'due-soon' : 'active');
         }
 
@@ -203,7 +203,7 @@ class AssetMaintenanceSchedule extends Model
             if ($remaining <= 0) {
                 return $this->_statusLabelCache = 'overdue';
             }
-            $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 500;
+            $threshold = $this->reminder_thresholds ? max(array_column($this->reminder_thresholds, 'value')) : 500;
             return $this->_statusLabelCache = ($remaining <= $threshold ? 'due-soon' : 'active');
         }
 
@@ -215,7 +215,7 @@ class AssetMaintenanceSchedule extends Model
             if ($remaining <= 0) {
                 return $this->_statusLabelCache = 'overdue';
             }
-            $threshold = $this->reminder_thresholds ? max($this->reminder_thresholds) : 50;
+            $threshold = $this->reminder_thresholds ? max(array_column($this->reminder_thresholds, 'value')) : 50;
             return $this->_statusLabelCache = ($remaining <= $threshold ? 'due-soon' : 'active');
         }
 

@@ -194,13 +194,7 @@ $formId = 'pf_' . ($part?->id ?? 'new');
 
     {{-- ── Document ── --}}
     <div>
-        <style>
-            .part-doc-upload .filepond--panel-root {
-                border: 1px dashed #4b4b4c;
-                border-radius: 10px;
-            }
-        </style>
-        <p class="{{ $sec }}">Document</p>
+<p class="{{ $sec }}">Document</p>
         @php $partDoc = $part?->documents->first(); @endphp
         <p class="mb-1 text-xs text-zinc-500">Warranty Document <span class="font-normal">(PDF / image, max 5 MB)</span></p>
         <div class="part-doc-upload" x-data x-init="initUploadPond($refs.partDoc, {

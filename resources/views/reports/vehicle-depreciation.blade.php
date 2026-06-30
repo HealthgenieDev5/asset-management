@@ -28,6 +28,7 @@
                     <th class="px-4 py-3">Reg. No.</th>
                     <th class="px-4 py-3">Department</th><th class="px-4 py-3">Custodian</th>
                     <th class="px-4 py-3">Purchase Date</th>
+                    <th class="px-4 py-3 text-right">Age (Yrs)</th>
                     <th class="px-4 py-3 text-right">OBV (₹)</th>
                     <th class="px-4 py-3 text-right">Dep. %</th>
                     <th class="px-4 py-3 text-right">Book Value (₹)</th>
@@ -44,19 +45,22 @@
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->department ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->custodian ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->purchase_date?->format('d M Y') ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-right text-zinc-500 dark:text-zinc-400">
+                            {{ $asset->purchase_date ? $asset->purchase_date->diffInYears(now()) . ' yr' : '—' }}
+                        </td>
                         <td class="px-4 py-2.5 text-right text-zinc-700 dark:text-zinc-200">{{ $asset->vehicle_obv ? number_format($asset->vehicle_obv, 2) : '—' }}</td>
                         <td class="px-4 py-2.5 text-right text-zinc-500 dark:text-zinc-400">{{ $asset->vehicle_depreciation_percent ? $asset->vehicle_depreciation_percent . '%' : '—' }}</td>
                         <td class="px-4 py-2.5 text-right font-semibold text-zinc-800 dark:text-zinc-100">{{ $asset->vehicle_depreciation_book_value ? number_format($asset->vehicle_depreciation_book_value, 2) : '—' }}</td>
                         <td class="px-4 py-2.5"><span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold {{ $asset->status_color }}">{{ $asset->status_label }}</span></td>
                     </tr>
                 @empty
-                    <tr><td colspan="11" class="px-4 py-12 text-center text-zinc-500">No vehicle depreciation records found.</td></tr>
+                    <tr><td colspan="12" class="px-4 py-12 text-center text-zinc-500">No vehicle depreciation records found.</td></tr>
                 @endforelse
             </tbody>
             @if ($assets->isNotEmpty() && ($totalObv > 0 || $totalBook > 0))
                 <tfoot>
                     <tr class="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
-                        <td colspan="7" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Page Total</td>
+                        <td colspan="8" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Page Total</td>
                         <td class="px-4 py-3 text-right font-bold text-zinc-700 dark:text-zinc-200">{{ number_format($totalObv, 2) }}</td>
                         <td></td>
                         <td class="px-4 py-3 text-right font-extrabold text-accent">{{ number_format($totalBook, 2) }}</td>

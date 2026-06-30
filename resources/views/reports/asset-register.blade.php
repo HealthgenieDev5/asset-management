@@ -14,7 +14,7 @@
     @include('reports._filters', [
         'showSearch' => true,
         'showStatus' => true,
-        'exportUrl'  => route('assets.export', array_filter(request()->only(['category_id', 'subcategory_id', 'department', 'status', 'search']))),
+        'exportUrl'  => route('reports.asset-register.export', request()->query()),
     ])
 
     <div class="rounded-xl border border-zinc-200 bg-white overflow-x-auto dark:border-zinc-800 dark:bg-zinc-900 print:border-0 print:bg-white">
@@ -27,10 +27,12 @@
                     <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3">Serial No.</th>
                     <th class="px-4 py-3">Reg. No.</th>
+                    <th class="px-4 py-3">Vendor / Supplier</th>
                     <th class="px-4 py-3">Location</th>
                     <th class="px-4 py-3">Department</th>
                     <th class="px-4 py-3">Custodian</th>
                     <th class="px-4 py-3">Purchase Date</th>
+                    <th class="px-4 py-3">Age</th>
                     <th class="px-4 py-3 text-right">Bill Amount</th>
                     <th class="px-4 py-3">Status</th>
                 </tr>
@@ -56,10 +58,14 @@
                         </td>
                         <td class="px-4 py-2.5 font-mono text-xs text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->serial_number ?: '—' }}</td>
                         <td class="px-4 py-2.5 font-mono text-xs uppercase text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->registration_number ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->vendor_supplier ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->location ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->department ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->custodian ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 print:text-gray-600">{{ $asset->purchase_date?->format('d M Y') ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-xs text-zinc-500 dark:text-zinc-400 print:text-gray-600">
+                            {{ $asset->purchase_date ? $asset->purchase_date->diffInYears(now()) . ' yr' : '—' }}
+                        </td>
                         <td class="px-4 py-2.5 text-right text-zinc-700 dark:text-zinc-300 print:text-gray-700">
                             {{ $asset->bill_amount ? '₹ ' . number_format($asset->bill_amount, 2) : '—' }}
                         </td>
@@ -70,7 +76,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="12" class="px-4 py-12 text-center text-zinc-500">No assets found matching the selected filters.</td></tr>
+                    <tr><td colspan="14" class="px-4 py-12 text-center text-zinc-500">No assets found matching the selected filters.</td></tr>
                 @endforelse
             </tbody>
         </table>

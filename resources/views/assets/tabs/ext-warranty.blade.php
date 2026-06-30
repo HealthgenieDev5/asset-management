@@ -2,12 +2,6 @@
     use Illuminate\Support\Facades\Storage;
     $ew = $asset->extendedWarranties->first();
 @endphp
-<style>
-.ew-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
-.ew-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
-.ew-doc-upload .filepond--drop-label { min-height: 130px; }
-.ew-doc-upload .filepond--drop-label label { cursor: pointer; }
-</style>
 
 {{-- Lightbox overlay --}}
 <div x-data="docLightbox()"

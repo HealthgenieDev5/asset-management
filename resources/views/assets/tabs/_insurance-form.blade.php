@@ -121,8 +121,7 @@ $cal = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="curren
 
     {{-- ── Document ── --}}
     <div>
-        <style>.insurance-doc-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
-        <p class="{{ $sec }}">Document</p>
+<p class="{{ $sec }}">Document</p>
         @php $insDoc = $policy?->documents->first(); @endphp
         <div class="insurance-doc-upload" x-data x-init="initUploadPond($refs.insDoc, {
                 acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],

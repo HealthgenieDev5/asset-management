@@ -1,10 +1,4 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
-<style>
-.cmp-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
-.cmp-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
-.cmp-doc-upload .filepond--drop-label { min-height: 130px; }
-.cmp-doc-upload .filepond--drop-label label { cursor: pointer; }
-</style>
 
 <div class="space-y-5">
 
@@ -139,18 +133,18 @@
                     toastr.success('Updated.');
                     return true;
                 }
-            }" class="flex min-h-0 gap-5 mt-1">
+            }" class="flex min-h-0 gap-5">
 
                 {{-- ── Left: editable fields ── --}}
-                <div class="flex-1 min-w-0 space-y-5">
+                <div class="flex-1 min-w-0 space-y-4">
 
                     {{-- ── Identity ── --}}
                     <div>
                         <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Complaint Info</p>
-                        <dl class="space-y-3">
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             {{-- Title --}}
-                            <div x-data="{ editing: false }">
+                            <div class="sm:col-span-2 lg:col-span-3" x-data="{ editing: false }">
                                 <dt class="{{ $vDt }}">Title</dt>
                                 <dd class="mt-0.5 flex items-start gap-1.5">
                                     <span x-show="!editing" class="text-sm font-semibold text-zinc-800 dark:text-zinc-100" x-text="cTitle"></span>
@@ -165,48 +159,48 @@
                                 </dd>
                             </div>
 
-                            {{-- Priority + Status --}}
-                            <div class="grid grid-cols-2 gap-4">
-                                <div x-data="{ editing: false }">
-                                    <dt class="{{ $vDt }}">Priority</dt>
-                                    <dd class="mt-0.5 flex items-center gap-1.5">
-                                        <span x-show="!editing" class="{{ $vDd }}" x-text="{'low':'Low','medium':'Medium','high':'High','critical':'Critical'}[cPriority]||cPriority"></span>
-                                        <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }}">{!! $vPencil !!}</button>
-                                        <template x-if="editing">
-                                            <span class="flex items-center gap-1">
-                                                <select x-ref="selPri" class="{{ $vInp }}" :value="cPriority">
-                                                    <option value="low">Low</option>
-                                                    <option value="medium">Medium</option>
-                                                    <option value="high">High</option>
-                                                    <option value="critical">Critical</option>
-                                                </select>
-                                                <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('priority',$refs.selPri.value)){cPriority=$refs.selPri.value;editing=false}">{!! $vCheck !!}</button>
-                                                <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
-                                            </span>
-                                        </template>
-                                    </dd>
-                                </div>
-                                <div x-data="{ editing: false }">
-                                    <dt class="{{ $vDt }}">Status</dt>
-                                    <dd class="mt-0.5 flex items-center gap-1.5">
-                                        <span x-show="!editing" class="{{ $vDd }}" x-text="{'open':'Open','acknowledged':'Acknowledged','in_progress':'In Progress','resolved':'Resolved','closed':'Closed','rejected':'Rejected'}[cStatus]||cStatus"></span>
-                                        <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }}">{!! $vPencil !!}</button>
-                                        <template x-if="editing">
-                                            <span class="flex items-center gap-1">
-                                                <select x-ref="selStat" class="{{ $vInp }}" :value="cStatus">
-                                                    <option value="open">Open</option>
-                                                    <option value="acknowledged">Acknowledged</option>
-                                                    <option value="in_progress">In Progress</option>
-                                                    <option value="resolved">Resolved</option>
-                                                    <option value="closed">Closed</option>
-                                                    <option value="rejected">Rejected</option>
-                                                </select>
-                                                <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('status',$refs.selStat.value)){cStatus=$refs.selStat.value;editing=false}">{!! $vCheck !!}</button>
-                                                <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
-                                            </span>
-                                        </template>
-                                    </dd>
-                                </div>
+                            {{-- Priority --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $vDt }}">Priority</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $vDd }}" x-text="{'low':'Low','medium':'Medium','high':'High','critical':'Critical'}[cPriority]||cPriority"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }}">{!! $vPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <select x-ref="selPri" class="{{ $vInp }}" :value="cPriority">
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                <option value="critical">Critical</option>
+                                            </select>
+                                            <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('priority',$refs.selPri.value)){cPriority=$refs.selPri.value;editing=false}">{!! $vCheck !!}</button>
+                                            <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
+                            </div>
+
+                            {{-- Status --}}
+                            <div x-data="{ editing: false }">
+                                <dt class="{{ $vDt }}">Status</dt>
+                                <dd class="mt-0.5 flex items-center gap-1.5">
+                                    <span x-show="!editing" class="{{ $vDd }}" x-text="{'open':'Open','acknowledged':'Acknowledged','in_progress':'In Progress','resolved':'Resolved','closed':'Closed','rejected':'Rejected'}[cStatus]||cStatus"></span>
+                                    <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }}">{!! $vPencil !!}</button>
+                                    <template x-if="editing">
+                                        <span class="flex items-center gap-1">
+                                            <select x-ref="selStat" class="{{ $vInp }}" :value="cStatus">
+                                                <option value="open">Open</option>
+                                                <option value="acknowledged">Acknowledged</option>
+                                                <option value="in_progress">In Progress</option>
+                                                <option value="resolved">Resolved</option>
+                                                <option value="closed">Closed</option>
+                                                <option value="rejected">Rejected</option>
+                                            </select>
+                                            <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('status',$refs.selStat.value)){cStatus=$refs.selStat.value;editing=false}">{!! $vCheck !!}</button>
+                                            <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
+                                        </span>
+                                    </template>
+                                </dd>
                             </div>
 
                         </dl>
@@ -215,7 +209,7 @@
                     {{-- ── Reporter ── --}}
                     <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
                         <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Reporter</p>
-                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             <div x-data="{ editing: false }">
                                 <dt class="{{ $vDt }}">Name</dt>
@@ -303,29 +297,27 @@
                     </div>
 
                     {{-- ── Description ── --}}
-                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                        <div x-data="{ editing: false }">
-                            <dt class="{{ $vDt }}">Description</dt>
-                            <dd class="mt-0.5 flex items-start gap-1.5">
-                                <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="cDesc||'--'"></span>
-                                <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }} mt-0.5">{!! $vPencil !!}</button>
-                                <template x-if="editing">
-                                    <span class="flex w-full flex-col gap-1">
-                                        <textarea x-ref="taDesc" rows="3" class="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100" x-text="cDesc"></textarea>
-                                        <span class="flex gap-1">
-                                            <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('description',$refs.taDesc.value)){cDesc=$refs.taDesc.value;editing=false}">{!! $vCheck !!}</button>
-                                            <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
-                                        </span>
+                    <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800" x-data="{ editing: false }">
+                        <dt class="{{ $vDt }}">Description</dt>
+                        <dd class="mt-0.5 flex items-start gap-1.5">
+                            <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="cDesc||'--'"></span>
+                            <button x-show="!editing" type="button" @click="editing=true" class="{{ $vBtnX }} mt-0.5">{!! $vPencil !!}</button>
+                            <template x-if="editing">
+                                <span class="flex w-full flex-col gap-1">
+                                    <textarea x-ref="taDesc" rows="3" class="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100" x-text="cDesc"></textarea>
+                                    <span class="flex gap-1">
+                                        <button type="button" class="{{ $vBtnOk }}" @click="if(await cp('description',$refs.taDesc.value)){cDesc=$refs.taDesc.value;editing=false}">{!! $vCheck !!}</button>
+                                        <button type="button" class="{{ $vBtnX }}" @click="editing=false">{!! $vX !!}</button>
                                     </span>
-                                </template>
-                            </dd>
-                        </div>
+                                </span>
+                            </template>
+                        </dd>
                     </div>
 
                     {{-- ── Resolution ── --}}
                     <div class="border-t border-zinc-100 pt-4 dark:border-zinc-800">
                         <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Resolution</p>
-                        <dl class="space-y-3">
+                        <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
                             <div x-data="{ editing: false }"
                                  x-init="$watch('editing', v => { if(v) $nextTick(() => flatpickr($refs.fpResolved, { dateFormat:'Y-m-d', altInput:true, altFormat:'d M Y', allowInput:true, disableMobile:true })) })">
@@ -343,7 +335,7 @@
                                 </dd>
                             </div>
 
-                            <div x-data="{ editing: false }">
+                            <div class="sm:col-span-2 lg:col-span-2" x-data="{ editing: false }">
                                 <dt class="{{ $vDt }}">Resolution Summary</dt>
                                 <dd class="mt-0.5 flex items-start gap-1.5">
                                     <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="cResolution||'--'"></span>
@@ -360,7 +352,7 @@
                                 </dd>
                             </div>
 
-                            <div x-data="{ editing: false }">
+                            <div class="sm:col-span-2 lg:col-span-3" x-data="{ editing: false }">
                                 <dt class="{{ $vDt }}">Remarks</dt>
                                 <dd class="mt-0.5 flex items-start gap-1.5">
                                     <span x-show="!editing" class="whitespace-pre-line text-sm text-zinc-800 dark:text-zinc-200" x-text="cRemarks||'--'"></span>
@@ -587,7 +579,7 @@
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.eye class="size-3.5" />
                         </button>
-                        <button type="button"
+                        {{-- <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-complaint-{{ $cmp->id }}')"
                                 aria-label="Edit complaint"
                                 title="Edit complaint"
@@ -603,7 +595,7 @@
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 
@@ -613,44 +605,16 @@
                     {{-- Info grid --}}
                     <dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
 
-                        {{-- Location (editable) --}}
-                        <div x-data="{ editing: false }">
+                        {{-- Location --}}
+                        <div>
                             <dt class="text-xs font-medium text-zinc-500">Location</dt>
-                            <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->location ?: '—' }}</span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="location">
-                                    <input type="text" name="value" value="{{ $cmp->location }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="loc{{ $cmp->id }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['loc{{ $cmp->id }}'].focus()))">
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
-                            </dd>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->location ?: '—' }}</dd>
                         </div>
 
-                        {{-- Department (editable) --}}
-                        <div x-data="{ editing: false }">
+                        {{-- Department --}}
+                        <div>
                             <dt class="text-xs font-medium text-zinc-500">Department</dt>
-                            <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->department ?: '—' }}</span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="department">
-                                    <input type="text" name="value" value="{{ $cmp->department }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="dept{{ $cmp->id }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['dept{{ $cmp->id }}'].focus()))">
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
-                            </dd>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->department ?: '—' }}</dd>
                         </div>
 
                         {{-- Category --}}
@@ -661,64 +625,22 @@
                             </div>
                         @endif
 
-                        {{-- Reporter Name (editable) --}}
-                        <div x-data="{ editing: false }">
+                        {{-- Reporter Name --}}
+                        <div>
                             <dt class="text-xs font-medium text-zinc-500">Reporter</dt>
-                            <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->reported_by_name ?: '—' }}</span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="reported_by_name">
-                                    <input type="text" name="value" value="{{ $cmp->reported_by_name }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="rname{{ $cmp->id }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['rname{{ $cmp->id }}'].focus()))">
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
-                            </dd>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->reported_by_name ?: '—' }}</dd>
                         </div>
 
-                        {{-- Reporter Email (editable) --}}
-                        <div x-data="{ editing: false }">
+                        {{-- Reporter Email --}}
+                        <div>
                             <dt class="text-xs font-medium text-zinc-500">Email</dt>
-                            <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-sm text-zinc-800 dark:text-zinc-200 truncate">{{ $cmp->reported_by_email ?: '—' }}</span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="reported_by_email">
-                                    <input type="email" name="value" value="{{ $cmp->reported_by_email }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="remail{{ $cmp->id }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['remail{{ $cmp->id }}'].focus()))">
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
-                            </dd>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200 truncate">{{ $cmp->reported_by_email ?: '—' }}</dd>
                         </div>
 
-                        {{-- Reporter Phone (editable) --}}
-                        <div x-data="{ editing: false }">
+                        {{-- Reporter Phone --}}
+                        <div>
                             <dt class="text-xs font-medium text-zinc-500">Phone</dt>
-                            <dd class="mt-0.5 flex items-center gap-1.5 min-w-0">
-                                <span x-show="!editing" class="text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->reported_by_phone ?: '—' }}</span>
-                                <button x-show="!editing" type="button" @click="editing = true"
-                                        class="rounded p-0.5 text-zinc-400 hover:text-accent transition-colors shrink-0">{!! $pencilSvg !!}</button>
-                                <form x-show="editing" x-cloak method="POST" action="{{ $patchUrl }}" class="flex items-center gap-1 min-w-0">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="field" value="reported_by_phone">
-                                    <input type="text" name="value" value="{{ $cmp->reported_by_phone }}" class="{{ $inpInline }}"
-                                           @keydown.escape="editing = false"
-                                           x-ref="rphone{{ $cmp->id }}"
-                                           x-init="$watch('editing', v => v && $nextTick(() => $refs['rphone{{ $cmp->id }}'].focus()))">
-                                    <button type="submit" class="{{ $btnCheck }}">{!! $checkSvg !!}</button>
-                                    <button type="button" @click="editing = false" class="{{ $btnX }}">{!! $xSvg !!}</button>
-                                </form>
-                            </dd>
+                            <dd class="mt-0.5 text-sm text-zinc-800 dark:text-zinc-200">{{ $cmp->reported_by_phone ?: '—' }}</dd>
                         </div>
 
                     </dl>

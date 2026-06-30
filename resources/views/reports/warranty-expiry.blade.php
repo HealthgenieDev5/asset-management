@@ -12,6 +12,8 @@
         <span class="text-xs text-zinc-500">{{ $assets->total() }} {{ Str::plural('record', $assets->total()) }}</span>
     </div>
 
+    @include('reports._expiry-stats', compact('statExpired', 'stat30', 'stat90'))
+
     @include('reports._filters', ['showExpiry' => true, 'showStatus' => true, 'expiryOptions' => $expiryFilterOptions,
         'exportUrl' => route('reports.warranty-expiry.export', request()->query())])
 
@@ -24,9 +26,12 @@
                     <th class="px-4 py-3">Asset Name</th>
                     <th class="px-4 py-3">Category</th>
                     <th class="px-4 py-3">Department</th>
+                    <th class="px-4 py-3">Location</th>
+                    <th class="px-4 py-3">Vendor / Supplier</th>
                     <th class="px-4 py-3">Custodian</th>
                     <th class="px-4 py-3">Warranty Details</th>
                     <th class="px-4 py-3">Lapse Date</th>
+                    <th class="px-4 py-3">Days</th>
                     <th class="px-4 py-3">Status</th>
                 </tr>
             </thead>
@@ -36,7 +41,7 @@
                         $days    = $asset->warranty_lapse_date ? (int) now()->startOfDay()->diffInDays($asset->warranty_lapse_date->startOfDay(), false) : null;
                         $expired = $days !== null && $days < 0;
                         $soon    = $days !== null && ! $expired && $days <= 30;
-                        $dateClass = $expired ? 'text-red-400 font-semibold' : ($soon ? 'text-yellow-400' : 'text-zinc-700 dark:text-zinc-200');
+                        $dateClass = $expired ? 'text-red-500 font-semibold' : ($soon ? 'text-amber-500 font-medium' : 'text-zinc-700 dark:text-zinc-200');
                     @endphp
                     <tr class="hover:bg-accent/5">
                         <td class="px-4 py-2.5 text-zinc-500">{{ $assets->firstItem() + $loop->index }}</td>
@@ -44,12 +49,20 @@
                         <td class="px-4 py-2.5 font-medium text-zinc-800 dark:text-zinc-100">{{ $asset->asset_name }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->category?->name ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->department ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->location ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->vendor_supplier ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->custodian ?: '—' }}</td>
-                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 text-xs max-w-48 truncate">{{ $asset->warranty_details ?: '—' }}</td>
-                        <td class="px-4 py-2.5 {{ $dateClass }}">
-                            {{ $asset->warranty_lapse_date?->format('d M Y') ?: '—' }}
-                            @if ($expired) <span class="text-xs font-normal">(Expired)</span>
-                            @elseif ($soon) <span class="text-xs">({{ $days }}d)</span>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400 text-xs max-w-40 truncate">{{ $asset->warranty_details ?: '—' }}</td>
+                        <td class="px-4 py-2.5 {{ $dateClass }}">{{ $asset->warranty_lapse_date?->format('d M Y') ?: '—' }}</td>
+                        <td class="px-4 py-2.5">
+                            @if ($days === null)
+                                <span class="text-zinc-400">—</span>
+                            @elseif ($expired)
+                                <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">Overdue</span>
+                            @elseif ($soon)
+                                <span class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">{{ $days }}d</span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600 dark:bg-green-900/30 dark:text-green-400">{{ $days }}d</span>
                             @endif
                         </td>
                         <td class="px-4 py-2.5">
@@ -57,7 +70,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
+                    <tr><td colspan="12" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
                 @endforelse
             </tbody>
         </table>

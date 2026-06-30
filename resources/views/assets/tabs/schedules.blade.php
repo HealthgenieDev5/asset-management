@@ -439,8 +439,8 @@ $serviceTypeColors = [
                             <div class="sm:col-span-2">
                                 <dt class="{{ $schDt }}">Smart Reminders</dt>
                                 <dd class="mt-1 flex flex-wrap gap-1">
-                                    @foreach (array_reverse(array_values(array_unique($sch->reminder_thresholds))) as $t)
-                                        <span class="rounded-full bg-blue-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">{{ number_format($t) }} {{ $rSuffix }}</span>
+                                    @foreach (array_reverse(array_values($sch->reminder_thresholds)) as $t)
+                                        <span class="rounded-full bg-blue-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">{{ number_format(is_array($t) ? $t['value'] : $t) }} {{ $rSuffix }}</span>
                                     @endforeach
                                 </dd>
                             </div>
@@ -555,7 +555,7 @@ $serviceTypeColors = [
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.eye class="size-3.5" />
                         </button>
-                        <button type="button" x-on:click="$dispatch('open-modal-edit-schedule-{{ $sch->id }}')"
+                        {{-- <button type="button" x-on:click="$dispatch('open-modal-edit-schedule-{{ $sch->id }}')"
                                 title="Edit"
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.pencil class="size-3.5" />
@@ -567,7 +567,7 @@ $serviceTypeColors = [
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 
@@ -617,10 +617,10 @@ $serviceTypeColors = [
                                 <span class="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Smart Reminder</span>
                             </div>
                             <div class="flex flex-wrap gap-1">
-                                @foreach (array_reverse(array_values(array_unique($sch->reminder_thresholds))) as $t)
+                                @foreach (array_reverse(array_values($sch->reminder_thresholds)) as $t)
                                     <span class="inline-flex items-center gap-1 rounded-full bg-blue-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-400">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-2.5 opacity-70"><path fill-rule="evenodd" d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.03 7.78a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z" clip-rule="evenodd"/></svg>
-                                        {{ number_format($t) }} {{ $rSuffix }}
+                                        {{ number_format(is_array($t) ? $t['value'] : $t) }} {{ $rSuffix }}
                                     </span>
                                 @endforeach
                             </div>

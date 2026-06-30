@@ -31,6 +31,7 @@
                     <th class="px-4 py-3">#</th><th class="px-4 py-3">Code</th><th class="px-4 py-3">Asset Name</th>
                     <th class="px-4 py-3">Category</th><th class="px-4 py-3">Department</th>
                     <th class="px-4 py-3">Service Type</th><th class="px-4 py-3">Service Date</th>
+                    <th class="px-4 py-3">Agency</th>
                     <th class="px-4 py-3 text-right">Labour</th>
                     <th class="px-4 py-3 text-right">Parts</th>
                     <th class="px-4 py-3 text-right">Total</th>
@@ -50,18 +51,19 @@
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $svc->asset?->department ?: '—' }}</td>
                         <td class="px-4 py-2.5"><span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold {{ $svc->service_type_color }}">{{ $svc->service_type_label }}</span></td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $svc->service_date->format('d M Y') }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $svc->service_agency ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-right text-zinc-600 dark:text-zinc-300">{{ $svc->service_cost ? '₹ ' . number_format($svc->service_cost, 2) : '—' }}</td>
                         <td class="px-4 py-2.5 text-right text-zinc-600 dark:text-zinc-300">{{ $pCost > 0 ? '₹ ' . number_format($pCost, 2) : '—' }}</td>
                         <td class="px-4 py-2.5 text-right font-semibold text-zinc-800 dark:text-zinc-100">{{ $tot > 0 ? '₹ ' . number_format($tot, 2) : '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
+                    <tr><td colspan="11" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
                 @endforelse
             </tbody>
             @if ($grandTotal > 0 && $records->isNotEmpty())
                 <tfoot>
                     <tr class="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
-                        <td colspan="7" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Page Total</td>
+                        <td colspan="8" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Page Total</td>
                         <td class="px-4 py-3 text-right font-bold text-zinc-700 dark:text-zinc-200">₹ {{ number_format($totalService, 2) }}</td>
                         <td class="px-4 py-3 text-right font-bold text-zinc-700 dark:text-zinc-200">₹ {{ number_format($totalParts, 2) }}</td>
                         <td class="px-4 py-3 text-right font-extrabold text-accent">₹ {{ number_format($grandTotal, 2) }}</td>

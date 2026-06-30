@@ -25,6 +25,7 @@
                     <th class="px-4 py-3">Code</th>
                     <th class="px-4 py-3">Asset Name</th>
                     <th class="px-4 py-3">Category</th>
+                    <th class="px-4 py-3">Department</th>
                     <th class="px-4 py-3">Vendor / Supplier</th>
                     <th class="px-4 py-3">Bill No.</th>
                     <th class="px-4 py-3">Bill Date</th>
@@ -41,6 +42,7 @@
                         </td>
                         <td class="px-4 py-2.5 font-medium text-zinc-800 dark:text-zinc-100">{{ $asset->asset_name }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->category?->name ?: '—' }}</td>
+                        <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->department ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->vendor_supplier ?: '—' }}</td>
                         <td class="px-4 py-2.5 font-mono text-xs text-zinc-600 dark:text-zinc-300">{{ $asset->bill_no ?: '—' }}</td>
                         <td class="px-4 py-2.5 text-zinc-500 dark:text-zinc-400">{{ $asset->bill_date?->format('d M Y') ?: '—' }}</td>
@@ -54,13 +56,13 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
+                    <tr><td colspan="10" class="px-4 py-12 text-center text-zinc-500">No records found.</td></tr>
                 @endforelse
             </tbody>
             @if ($assets->isNotEmpty() && $totalAmount > 0)
                 <tfoot>
                     <tr class="border-t border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/50">
-                        <td colspan="7" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Total</td>
+                        <td colspan="8" class="px-4 py-3 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">Total</td>
                         <td class="px-4 py-3 text-right font-extrabold text-accent">₹ {{ number_format($totalAmount, 2) }}</td>
                         <td></td>
                     </tr>

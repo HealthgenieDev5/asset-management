@@ -2,12 +2,6 @@
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Str;
 @endphp
-<style>
-.amc-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
-.amc-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
-.amc-doc-upload .filepond--drop-label { min-height: 130px; }
-.amc-doc-upload .filepond--drop-label label { cursor: pointer; }
-</style>
 
 
 <div class="space-y-5">
@@ -485,11 +479,7 @@
                         @elseif ($days !== null)
                             <span class="rounded-full bg-green-400/10 px-2 py-0.5 text-xs font-medium text-green-400">Active</span>
                         @endif
-                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'amcid' => $amc->id]) }}"
-                           title="{{ $amc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
-                           class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
-                            <flux:icon.bell-alert class="size-3.5" />
-                        </a>
+                        
                         <button type="button"
                                 x-on:click="$dispatch('open-modal-view-amc-{{ $amc->id }}')"
                                 aria-label="View AMC contract"
@@ -497,14 +487,19 @@
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.eye class="size-3.5" />
                         </button>
-                        <button type="button"
+                        <a href="{{ route('assets.show', [$asset, 'tab' => 'reminders', 'showform' => '1', 'amcid' => $amc->id]) }}"
+                           title="{{ $amc->smartReminders->isNotEmpty() ? 'Manage Reminders' : 'Add Reminder' }}"
+                           class="inline-flex size-6 items-center justify-center rounded-md border border-accent text-accent hover:bg-accent/10 transition-colors">
+                            <flux:icon.bell-alert class="size-3.5" />
+                        </a>
+                        {{-- <button type="button"
                                 x-on:click="$dispatch('open-modal-edit-amc-{{ $amc->id }}')"
                                 aria-label="Edit AMC contract"
                                 title="Edit AMC contract"
                                 class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-600 transition-colors hover:border-accent hover:text-accent dark:border-zinc-700 dark:text-zinc-300">
                             <flux:icon.pencil class="size-3.5" />
-                        </button>
-                        <form method="POST" action="{{ route('assets.amc.destroy', [$asset, $amc]) }}"
+                        </button> --}}
+                        {{-- <form method="POST" action="{{ route('assets.amc.destroy', [$asset, $amc]) }}"
                               onsubmit="confirmDelete(this, 'Delete this AMC contract?'); return false;">
                             @csrf @method('DELETE')
                             <button type="submit"
@@ -513,7 +508,7 @@
                                     class="inline-flex size-6 items-center justify-center rounded-md border border-zinc-300 text-zinc-500 transition-colors hover:border-red-500/60 hover:text-red-400 dark:border-zinc-700">
                                 <flux:icon.trash class="size-3.5" />
                             </button>
-                        </form>
+                        </form> --}}
                     </div>
                 </div>
 

@@ -10,7 +10,6 @@ use App\Models\AssetService;
 use App\Models\AssetSubcategory;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -131,20 +130,22 @@ class ReportController extends Controller
                 $a->subcategory?->name,
                 $a->serial_number,
                 $a->registration_number,
+                $a->vendor_supplier,
                 $a->manufacturer,
                 $a->model,
                 $a->location,
                 $a->department,
                 $a->custodian,
                 $a->purchase_date?->format('d/m/Y'),
+                $a->purchase_date ? $a->purchase_date->diffInYears(now()) . ' yr' : '',
                 $a->bill_amount ? number_format($a->bill_amount, 2) : '',
                 $this->statusLabel($a->status),
             ]);
 
         return $this->csvResponse('asset-register-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Sub-Category', 'Serial No.',
-            'Reg. No.', 'Manufacturer', 'Model', 'Location', 'Department', 'Custodian',
-            'Purchase Date', 'Bill Amount (₹)', 'Status',
+            'Code', 'Asset Name', 'Category', 'Sub-Category', 'Serial No.', 'Reg. No.',
+            'Vendor / Supplier', 'Manufacturer', 'Model', 'Location', 'Department', 'Custodian',
+            'Purchase Date', 'Age', 'Bill Amount (₹)', 'Status',
         ], $rows);
     }
 
@@ -176,6 +177,7 @@ class ReportController extends Controller
             ->map(fn($a) => [
                 $a->asset_code, $a->asset_name,
                 $a->category?->name,
+                $a->department,
                 $a->vendor_supplier,
                 $a->bill_no,
                 $a->bill_date?->format('d/m/Y'),
@@ -185,7 +187,7 @@ class ReportController extends Controller
             ]);
 
         return $this->csvResponse('purchase-bills-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Vendor / Supplier',
+            'Code', 'Asset Name', 'Category', 'Department', 'Vendor / Supplier',
             'Bill No.', 'Bill Date', 'Bill Amount (₹)', 'Purchase Date', 'Warranty Lapse Date',
         ], $rows);
     }
@@ -194,11 +196,17 @@ class ReportController extends Controller
 
     public function warrantyExpiry(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = $this->baseAssetQuery($request)->whereNotNull('warranty_lapse_date');
-        $query  = $this->applyExpiryFilter($query, 'warranty_lapse_date', $filter);
-        $assets = $query->orderBy('warranty_lapse_date')->paginate(50)->withQueryString();
-        return view('reports.warranty-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
+        $filter    = $request->get('expiry_filter', 'all');
+        $base      = $this->baseAssetQuery($request)->whereNotNull('warranty_lapse_date');
+        $query     = $this->applyExpiryFilter(clone $base, 'warranty_lapse_date', $filter);
+        $assets    = $query->orderBy('warranty_lapse_date')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('warranty_lapse_date', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('warranty_lapse_date', '>=', today())->whereDate('warranty_lapse_date', '<=', today()->addDays(90))->count();
+        return view('reports.warranty-expiry', array_merge(
+            $this->filterOptions(),
+            compact('assets', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportWarrantyExpiry(Request $request): StreamedResponse
@@ -208,90 +216,106 @@ class ReportController extends Controller
         $query  = $this->applyExpiryFilter($query, 'warranty_lapse_date', $filter);
         $rows = $query->orderBy('warranty_lapse_date')->get()->map(fn($a) => [
             $a->asset_code, $a->asset_name, $a->category?->name, $a->department,
+            $a->location, $a->vendor_supplier, $a->custodian,
             $a->warranty_details, $a->warranty_lapse_date?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($a->warranty_lapse_date->startOfDay(), false),
+            $this->statusLabel($a->status),
         ]);
         return $this->csvResponse('warranty-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department',
-            'Warranty Details', 'Warranty Lapse Date', 'Days Remaining',
+            'Code', 'Asset Name', 'Category', 'Department', 'Location', 'Vendor / Supplier',
+            'Custodian', 'Warranty Details', 'Lapse Date', 'Days Remaining', 'Status',
         ], $rows);
     }
 
     // ── 4. AMC Expiry ─────────────────────────────────────────────────────────
 
-    public function amcExpiry(Request $request)
+    private function baseAmcQuery(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetAmcContract::with(['asset.category', 'asset.subcategory'])
+        return AssetAmcContract::with(['asset.category', 'asset.subcategory'])
             ->whereHas('asset')
             ->whereNotNull('amc_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query   = $this->applyExpiryFilter($query, 'amc_date_to', $filter);
-        $records = $query->orderBy('amc_date_to')->paginate(50)->withQueryString();
-        return view('reports.amc-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
+    }
+
+    public function amcExpiry(Request $request)
+    {
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseAmcQuery($request);
+        $query       = $this->applyExpiryFilter(clone $base, 'amc_date_to', $filter);
+        $records     = $query->orderBy('amc_date_to')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('amc_date_to', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('amc_date_to', '>=', today())->whereDate('amc_date_to', '<=', today()->addDays(90))->count();
+        return view('reports.amc-expiry', array_merge(
+            $this->filterOptions(),
+            compact('records', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportAmcExpiry(Request $request): StreamedResponse
     {
         $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetAmcContract::with(['asset.category'])
-            ->whereHas('asset')
-            ->whereNotNull('amc_date_to')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query = $this->applyExpiryFilter($query, 'amc_date_to', $filter);
+        $query  = $this->baseAmcQuery($request);
+        $query  = $this->applyExpiryFilter($query, 'amc_date_to', $filter);
         $rows = $query->orderBy('amc_date_to')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
+            $r->asset?->department, $r->asset?->location,
             $r->vendor_name, $r->contract_number, $r->coverage_type,
             $r->amc_date_from?->format('d/m/Y'), $r->amc_date_to?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($r->amc_date_to->startOfDay(), false),
             $r->amc_amount ? number_format($r->amc_amount, 2) : '',
         ]);
         return $this->csvResponse('amc-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'AMC Vendor', 'Contract No.',
-            'Coverage Type', 'Date From', 'Date To', 'Days Remaining', 'Amount (₹)',
+            'Code', 'Asset Name', 'Category', 'Department', 'Location',
+            'Vendor', 'Contract No.', 'Coverage', 'From', 'Lapse Date', 'Days Remaining', 'Amount (₹)',
         ], $rows);
     }
 
     // ── 6. Insurance Expiry ───────────────────────────────────────────────────
 
-    public function insuranceExpiry(Request $request)
+    private function baseInsuranceQuery(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetInsurancePolicy::with(['asset.category', 'asset.subcategory'])
+        return AssetInsurancePolicy::with(['asset.category', 'asset.subcategory'])
             ->whereHas('asset')
             ->whereNotNull('policy_date_to')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query   = $this->applyExpiryFilter($query, 'policy_date_to', $filter);
-        $records = $query->orderBy('policy_date_to')->paginate(50)->withQueryString();
-        return view('reports.insurance-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
+    }
+
+    public function insuranceExpiry(Request $request)
+    {
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseInsuranceQuery($request);
+        $query       = $this->applyExpiryFilter(clone $base, 'policy_date_to', $filter);
+        $records     = $query->orderBy('policy_date_to')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('policy_date_to', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('policy_date_to', '>=', today())->whereDate('policy_date_to', '<=', today()->addDays(90))->count();
+        return view('reports.insurance-expiry', array_merge(
+            $this->filterOptions(),
+            compact('records', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportInsuranceExpiry(Request $request): StreamedResponse
     {
         $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetInsurancePolicy::with(['asset.category'])
-            ->whereHas('asset')
-            ->whereNotNull('policy_date_to')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query = $this->applyExpiryFilter($query, 'policy_date_to', $filter);
+        $query  = $this->baseInsuranceQuery($request);
+        $query  = $this->applyExpiryFilter($query, 'policy_date_to', $filter);
         $rows = $query->orderBy('policy_date_to')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
-            $r->policy_number, $r->insurer_name, $r->policy_type,
+            $r->asset?->department,
+            $r->insurer_name, $r->policy_number, $r->policy_type,
             $r->policy_date_from?->format('d/m/Y'), $r->policy_date_to?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($r->policy_date_to->startOfDay(), false),
             $r->premium_amount ? number_format($r->premium_amount, 2) : '',
         ]);
         return $this->csvResponse('insurance-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Policy Number', 'Insurer',
-            'Policy Type', 'Date From', 'Date To', 'Days Remaining', 'Premium (₹)',
+            'Code', 'Asset Name', 'Category', 'Department',
+            'Insurer', 'Policy No.', 'Policy Type', 'From', 'Expiry Date', 'Days Remaining', 'Premium (₹)',
         ], $rows);
     }
 
@@ -299,11 +323,17 @@ class ReportController extends Controller
 
     public function pucExpiry(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = $this->baseAssetQuery($request)->whereNotNull('puc_expiry_date');
-        $query  = $this->applyExpiryFilter($query, 'puc_expiry_date', $filter);
-        $assets = $query->orderBy('puc_expiry_date')->paginate(50)->withQueryString();
-        return view('reports.puc-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseAssetQuery($request)->whereNotNull('puc_expiry_date');
+        $query       = $this->applyExpiryFilter(clone $base, 'puc_expiry_date', $filter);
+        $assets      = $query->orderBy('puc_expiry_date')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('puc_expiry_date', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('puc_expiry_date', '>=', today())->whereDate('puc_expiry_date', '<=', today()->addDays(90))->count();
+        return view('reports.puc-expiry', array_merge(
+            $this->filterOptions(),
+            compact('assets', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportPucExpiry(Request $request): StreamedResponse
@@ -312,13 +342,14 @@ class ReportController extends Controller
         $query  = $this->baseAssetQuery($request)->whereNotNull('puc_expiry_date');
         $query  = $this->applyExpiryFilter($query, 'puc_expiry_date', $filter);
         $rows = $query->orderBy('puc_expiry_date')->get()->map(fn($a) => [
-            $a->asset_code, $a->asset_name, $a->category?->name,
+            $a->asset_code, $a->asset_name, $a->registration_number,
             $a->department, $a->custodian, $a->puc_expiry_date?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($a->puc_expiry_date->startOfDay(), false),
+            $this->statusLabel($a->status),
         ]);
         return $this->csvResponse('puc-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Custodian',
-            'PUC Expiry Date', 'Days Remaining',
+            'Code', 'Asset Name', 'Reg. No.', 'Department', 'Custodian',
+            'PUC Expiry Date', 'Days Remaining', 'Status',
         ], $rows);
     }
 
@@ -326,11 +357,17 @@ class ReportController extends Controller
 
     public function fitnessExpiry(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = $this->baseAssetQuery($request)->whereNotNull('fitness_expiry_date');
-        $query  = $this->applyExpiryFilter($query, 'fitness_expiry_date', $filter);
-        $assets = $query->orderBy('fitness_expiry_date')->paginate(50)->withQueryString();
-        return view('reports.fitness-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseAssetQuery($request)->whereNotNull('fitness_expiry_date');
+        $query       = $this->applyExpiryFilter(clone $base, 'fitness_expiry_date', $filter);
+        $assets      = $query->orderBy('fitness_expiry_date')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('fitness_expiry_date', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('fitness_expiry_date', '>=', today())->whereDate('fitness_expiry_date', '<=', today()->addDays(90))->count();
+        return view('reports.fitness-expiry', array_merge(
+            $this->filterOptions(),
+            compact('assets', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportFitnessExpiry(Request $request): StreamedResponse
@@ -339,13 +376,14 @@ class ReportController extends Controller
         $query  = $this->baseAssetQuery($request)->whereNotNull('fitness_expiry_date');
         $query  = $this->applyExpiryFilter($query, 'fitness_expiry_date', $filter);
         $rows = $query->orderBy('fitness_expiry_date')->get()->map(fn($a) => [
-            $a->asset_code, $a->asset_name, $a->category?->name,
+            $a->asset_code, $a->asset_name, $a->registration_number,
             $a->department, $a->custodian, $a->fitness_expiry_date?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($a->fitness_expiry_date->startOfDay(), false),
+            $this->statusLabel($a->status),
         ]);
         return $this->csvResponse('fitness-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Custodian',
-            'Fitness Expiry Date', 'Days Remaining',
+            'Code', 'Asset Name', 'Reg. No.', 'Department', 'Custodian',
+            'Fitness Expiry Date', 'Days Remaining', 'Status',
         ], $rows);
     }
 
@@ -353,11 +391,17 @@ class ReportController extends Controller
 
     public function roadTaxExpiry(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = $this->baseAssetQuery($request)->whereNotNull('road_tax_expiry_date');
-        $query  = $this->applyExpiryFilter($query, 'road_tax_expiry_date', $filter);
-        $assets = $query->orderBy('road_tax_expiry_date')->paginate(50)->withQueryString();
-        return view('reports.road-tax-expiry', array_merge($this->filterOptions(), compact('assets', 'filter')));
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseAssetQuery($request)->whereNotNull('road_tax_expiry_date');
+        $query       = $this->applyExpiryFilter(clone $base, 'road_tax_expiry_date', $filter);
+        $assets      = $query->orderBy('road_tax_expiry_date')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('road_tax_expiry_date', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('road_tax_expiry_date', '>=', today())->whereDate('road_tax_expiry_date', '<=', today()->addDays(90))->count();
+        return view('reports.road-tax-expiry', array_merge(
+            $this->filterOptions(),
+            compact('assets', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportRoadTaxExpiry(Request $request): StreamedResponse
@@ -366,13 +410,14 @@ class ReportController extends Controller
         $query  = $this->baseAssetQuery($request)->whereNotNull('road_tax_expiry_date');
         $query  = $this->applyExpiryFilter($query, 'road_tax_expiry_date', $filter);
         $rows = $query->orderBy('road_tax_expiry_date')->get()->map(fn($a) => [
-            $a->asset_code, $a->asset_name, $a->category?->name,
+            $a->asset_code, $a->asset_name, $a->registration_number,
             $a->department, $a->custodian, $a->road_tax_expiry_date?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($a->road_tax_expiry_date->startOfDay(), false),
+            $this->statusLabel($a->status),
         ]);
         return $this->csvResponse('road-tax-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Custodian',
-            'Road Tax Expiry Date', 'Days Remaining',
+            'Code', 'Asset Name', 'Reg. No.', 'Department', 'Custodian',
+            'Road Tax Expiry Date', 'Days Remaining', 'Status',
         ], $rows);
     }
 
@@ -400,87 +445,99 @@ class ReportController extends Controller
                     : '',
             ]);
         return $this->csvResponse('inspection-due-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Custodian',
-            'Location', 'Inspection Frequency',
+            'Code', 'Asset Name', 'Category', 'Department', 'Custodian',
+            'Location', 'Frequency',
         ], $rows);
     }
 
     // ── 11. Certification Expiry ──────────────────────────────────────────────
 
-    public function certificationExpiry(Request $request)
+    private function baseCertificationQuery(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetService::with(['asset.category', 'asset.subcategory'])
+        return AssetService::with(['asset.category', 'asset.subcategory'])
             ->whereHas('asset')
             ->whereNotNull('certification_expiry')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query   = $this->applyExpiryFilter($query, 'certification_expiry', $filter);
-        $records = $query->orderBy('certification_expiry')->paginate(50)->withQueryString();
-        return view('reports.certification-expiry', array_merge($this->filterOptions(), compact('records', 'filter')));
+    }
+
+    public function certificationExpiry(Request $request)
+    {
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseCertificationQuery($request);
+        $query       = $this->applyExpiryFilter(clone $base, 'certification_expiry', $filter);
+        $records     = $query->orderBy('certification_expiry')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('certification_expiry', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('certification_expiry', '>=', today())->whereDate('certification_expiry', '<=', today()->addDays(90))->count();
+        return view('reports.certification-expiry', array_merge(
+            $this->filterOptions(),
+            compact('records', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportCertificationExpiry(Request $request): StreamedResponse
     {
         $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetService::with(['asset.category'])
-            ->whereHas('asset')
-            ->whereNotNull('certification_expiry')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)));
-        $query = $this->applyExpiryFilter($query, 'certification_expiry', $filter);
+        $query  = $this->baseCertificationQuery($request);
+        $query  = $this->applyExpiryFilter($query, 'certification_expiry', $filter);
         $rows = $query->orderBy('certification_expiry')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
+            $r->asset?->department,
             $r->service_type_label, $r->service_date?->format('d/m/Y'),
             $r->service_agency, $r->certification_expiry?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($r->certification_expiry->startOfDay(), false),
         ]);
         return $this->csvResponse('certification-expiry-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Service Type', 'Service Date',
-            'Agency', 'Certification Expiry', 'Days Remaining',
+            'Code', 'Asset Name', 'Category', 'Department', 'Service Type', 'Service Date',
+            'Agency', 'Cert. Expiry', 'Days Remaining',
         ], $rows);
     }
 
     // ── 12. Service Due ───────────────────────────────────────────────────────
 
-    public function serviceDue(Request $request)
+    private function baseServiceDueQuery(Request $request)
     {
-        $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetService::with(['asset.category', 'asset.subcategory'])
+        return AssetService::with(['asset.category', 'asset.subcategory'])
             ->whereHas('asset')
             ->whereNotNull('next_service_date')
             ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
             ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
             ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
             ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
-        $query   = $this->applyExpiryFilter($query, 'next_service_date', $filter);
-        $records = $query->orderBy('next_service_date')->paginate(50)->withQueryString();
-        return view('reports.service-due', array_merge($this->filterOptions(), compact('records', 'filter')));
+    }
+
+    public function serviceDue(Request $request)
+    {
+        $filter      = $request->get('expiry_filter', 'all');
+        $base        = $this->baseServiceDueQuery($request);
+        $query       = $this->applyExpiryFilter(clone $base, 'next_service_date', $filter);
+        $records     = $query->orderBy('next_service_date')->paginate(50)->withQueryString();
+        $statExpired = (clone $base)->whereDate('next_service_date', '<', today())->count();
+        $stat30      = (clone $base)->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(30))->count();
+        $stat90      = (clone $base)->whereDate('next_service_date', '>=', today())->whereDate('next_service_date', '<=', today()->addDays(90))->count();
+        return view('reports.service-due', array_merge(
+            $this->filterOptions(),
+            compact('records', 'filter', 'statExpired', 'stat30', 'stat90')
+        ));
     }
 
     public function exportServiceDue(Request $request): StreamedResponse
     {
         $filter = $request->get('expiry_filter', 'all');
-        $query  = AssetService::with(['asset.category'])
-            ->whereHas('asset')
-            ->whereNotNull('next_service_date')
-            ->when($request->category_id,    fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_category_id', $v)))
-            ->when($request->subcategory_id, fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('asset_subcategory_id', $v)))
-            ->when($request->department,     fn($q, $v) => $q->whereHas('asset', fn($a) => $a->where('department', $v)))
-            ->when($request->service_type,   fn($q, $v) => $q->where('service_type', $v));
-        $query = $this->applyExpiryFilter($query, 'next_service_date', $filter);
+        $query  = $this->baseServiceDueQuery($request);
+        $query  = $this->applyExpiryFilter($query, 'next_service_date', $filter);
         $rows = $query->orderBy('next_service_date')->get()->map(fn($r) => [
             $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
-            $r->asset?->department, $r->service_type_label,
+            $r->asset?->department, $r->asset?->custodian, $r->service_type_label,
             $r->service_date?->format('d/m/Y'), $r->service_agency,
             $r->next_service_date?->format('d/m/Y'),
             (int) now()->startOfDay()->diffInDays($r->next_service_date->startOfDay(), false),
         ]);
         return $this->csvResponse('service-due-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Service Type',
-            'Last Service Date', 'Agency', 'Next Service Due', 'Days',
+            'Code', 'Asset Name', 'Category', 'Department', 'Custodian', 'Service Type',
+            'Last Service', 'Agency', 'Next Service Due', 'Days',
         ], $rows);
     }
 
@@ -516,6 +573,7 @@ class ReportController extends Controller
                 $partsCost = $r->parts->sum(fn($p) => ($p->part_cost ?? 0) * $p->quantity);
                 return [
                     $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
+                    $r->asset?->department,
                     $r->service_type_label, $r->service_date?->format('d/m/Y'),
                     $r->service_agency, $r->technician_name, $r->condition_rating_label,
                     $r->service_cost ? number_format($r->service_cost, 2) : '',
@@ -524,8 +582,8 @@ class ReportController extends Controller
                 ];
             });
         return $this->csvResponse('service-history-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Service Type', 'Service Date',
-            'Agency', 'Technician', 'Condition', 'Labour Cost (₹)', 'Parts Cost (₹)', 'Total (₹)',
+            'Code', 'Asset Name', 'Category', 'Department', 'Service Type', 'Service Date',
+            'Agency', 'Technician', 'Condition', 'Service Cost (₹)', 'Parts Cost (₹)', 'Total (₹)',
         ], $rows);
     }
 
@@ -562,14 +620,15 @@ class ReportController extends Controller
                 return [
                     $r->asset?->asset_code, $r->asset?->asset_name, $r->asset?->category?->name,
                     $r->asset?->department, $r->service_type_label, $r->service_date?->format('d/m/Y'),
+                    $r->service_agency,
                     $r->service_cost ? number_format($r->service_cost, 2) : '',
                     number_format($partsCost, 2),
                     number_format(($r->service_cost ?? 0) + $partsCost, 2),
                 ];
             });
         return $this->csvResponse('maintenance-cost-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Category', 'Department', 'Service Type',
-            'Service Date', 'Labour Cost (₹)', 'Parts Cost (₹)', 'Total (₹)',
+            'Code', 'Asset Name', 'Category', 'Department', 'Service Type',
+            'Service Date', 'Agency', 'Labour (₹)', 'Parts (₹)', 'Total (₹)',
         ], $rows);
     }
 
@@ -609,14 +668,15 @@ class ReportController extends Controller
                 $a->asset_code, $a->asset_name, $a->registration_number ?: '',
                 $a->category?->name, $a->department, $a->custodian,
                 $a->purchase_date?->format('d/m/Y'),
+                $a->purchase_date ? $a->purchase_date->diffInYears(now()) . ' yr' : '',
                 $a->vehicle_obv ? number_format($a->vehicle_obv, 2) : '',
                 $a->vehicle_depreciation_percent,
                 $a->vehicle_depreciation_book_value ? number_format($a->vehicle_depreciation_book_value, 2) : '',
                 $this->statusLabel($a->status),
             ]);
         return $this->csvResponse('vehicle-depreciation-' . today()->format('Y-m-d') . '.csv', [
-            'Asset Code', 'Asset Name', 'Reg. No.', 'Category', 'Department', 'Custodian',
-            'Purchase Date', 'OBV (₹)', 'Dep %', 'Book Value (₹)', 'Status',
+            'Code', 'Asset Name', 'Reg. No.', 'Category', 'Department', 'Custodian',
+            'Purchase Date', 'Age', 'OBV (₹)', 'Dep. %', 'Book Value (₹)', 'Status',
         ], $rows);
     }
 
@@ -664,6 +724,7 @@ class ReportController extends Controller
             $v->name,
             $v->typeLabel(),
             $v->phone ?? '',
+            $v->email ?? '',
             $v->warranties_count,
             $v->amc_contracts_count,
             $v->active_amc_count,
@@ -673,9 +734,9 @@ class ReportController extends Controller
         ]);
 
         return $this->csvResponse('vendor-performance-' . today()->format('Y-m-d') . '.csv', [
-            'Name', 'Type', 'Phone',
-            'Warranties', 'Total AMC', 'Active AMC', 'Service Incidents',
-            'Total Service Cost (₹)', 'Status',
+            'Vendor Name', 'Type', 'Phone', 'Email',
+            'Warranties', 'AMC Total', 'AMC Active', 'Services',
+            'Total Cost (₹)', 'Status',
         ], $rows);
     }
 

@@ -119,10 +119,24 @@ select:focus[data-flux-control] {
 /* Upload widget (initUploadPond): stock FilePond look, just retheme accent + dark mode */
 .filepond--root.fp-upload .filepond--panel-root {
     background-color: var(--color-zinc-50);
+    border: 1px dashed #3f3f46;
     border-radius: 0.75rem;
 }
 .dark .filepond--root.fp-upload .filepond--panel-root {
-    background-color: var(--color-zinc-800);
+    background-color: rgba(39,39,42,0.3);
+    border-color: #3f3f46;
+}
+.filepond--root.fp-upload:hover .filepond--panel-root {
+    border-color: var(--color-accent, #6366f1);
+}
+.dark .filepond--root.fp-upload:hover .filepond--panel-root {
+    background-color: rgba(39,39,42,0.5);
+}
+.filepond--root.fp-upload .filepond--drop-label {
+    min-height: 130px;
+}
+.filepond--root.fp-upload .filepond--drop-label label {
+    cursor: pointer;
 }
 .filepond--root.fp-upload .filepond--drop-label {
     color: var(--color-zinc-500);

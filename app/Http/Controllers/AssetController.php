@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\AssetFullExport;
 use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Models\AssetDocument;
@@ -11,7 +10,6 @@ use App\Models\Department;
 use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Maatwebsite\Excel\Facades\Excel;
 
 class AssetController extends Controller
 {
@@ -48,8 +46,43 @@ class AssetController extends Controller
     public function export(Request $request)
     {
         $filters = $request->only(['status', 'category_id', 'department']);
-        $filename = 'assets-' . now()->format('Y-m-d') . '.xlsx';
-        return Excel::download(new AssetFullExport($filters), $filename);
+
+        $q = Asset::with(['category', 'subcategory'])->withoutTrashed();
+
+        if (! empty($filters['status']))      { $q->where('status', $filters['status']); }
+        if (! empty($filters['category_id'])) { $q->where('asset_category_id', $filters['category_id']); }
+        if (! empty($filters['department']))  { $q->where('department', 'like', '%' . $filters['department'] . '%'); }
+
+        $assets   = $q->orderBy('asset_code')->get();
+        $filename = 'assets-' . now()->format('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($assets) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['Code', 'Asset Name', 'Category', 'Sub-Category', 'Serial No.', 'Reg. No.', 'Manufacturer', 'Model', 'Location', 'Department', 'Custodian', 'Purchase Date', 'Bill Amount (₹)', 'Status']);
+            foreach ($assets as $a) {
+                fputcsv($out, [
+                    $a->asset_code,
+                    $a->asset_name,
+                    $a->category?->name,
+                    $a->subcategory?->name,
+                    $a->serial_number,
+                    $a->registration_number,
+                    $a->manufacturer,
+                    $a->model,
+                    $a->location,
+                    $a->department,
+                    $a->custodian,
+                    $a->purchase_date?->format('d/m/Y'),
+                    $a->bill_amount ? number_format($a->bill_amount, 2) : '',
+                    ucfirst(str_replace('_', ' ', $a->status)),
+                ]);
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function create()

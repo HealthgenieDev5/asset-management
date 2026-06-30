@@ -124,8 +124,7 @@ $err = 'mt-0.5 text-[11px] text-red-400';
 
     {{-- ── Document ── --}}
     <div>
-        <style>.amc-doc-upload .filepond--panel-root { border: 1px dashed #4b4b4c; border-radius: 10px; }</style>
-        <p class="{{ $sec }}">Document</p>
+<p class="{{ $sec }}">Document</p>
         @php $amcDoc = $amc?->documents->first(); @endphp
         <div class="amc-doc-upload" x-data x-init="initUploadPond($refs.amcBill, {
                 acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],

@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6IlNTZWw5am01MW5PVXU1MVdhZHQ1S1E9PSIsInZhbHVlIjoiU2pJeGFEekRqZkpMc0ZGVnJNMDNnY042K0ttSWN0eUZQeTVoSEFPaHY3MzFZKzdQcWZ3bW9xZ1d2a2tjdldOeHQyYSthR1d3RHR1S200T0g1ZlZIVjVtTHVmUitwNGFCLzU2SVNROGlNVXBhaU82QzI1a3lwd0gyVHlONHpCbGkiLCJtYWMiOiJiMDQ5YzY1MGFjYzg2MWM0MGQ2MmIwYzNiMjllOWZiZTdkMWE2MWRkN2Y1NDI1NTlkMjRjZDJmZGM5ZjdhMjc3IiwidGFnIjoiIn0%3D",
+      "domain": "asset-management.test",
+      "path": "/",
+      "expires": 1782734047.808913,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "asset-and-maintenance-management-system-session",
+      "value": "eyJpdiI6IlpzRngrQ1dtRm4zU1BCZlVhSFh5b1E9PSIsInZhbHVlIjoiN3lMY01LUGE2UkV0STZnYUs3bnFaUHpwVGsyMVJwMVdDUVhHYnhMSUNGdUJ3SFdteUlTYTZmQjZESkwyd2JoMzJUS1dmcVpkNHIzTnBMQVdOMDZxUnFSNDFSdEtjamw2Mm45YlVsOWxIV3VBY3MrVHQzUmtlZkZ2QTFBRlc3cjYiLCJtYWMiOiIzMjljMTZhNWI1ZmM4NDVjMzVhOGQ3ODg5Y2E2NmIxYmE0ZjY4MTJhODAzZTI2ODgwNzc3YzY1Njc4MjcwZTdlIiwidGFnIjoiIn0%3D",
+      "domain": "asset-management.test",
+      "path": "/",
+      "expires": 1782734047.809105,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

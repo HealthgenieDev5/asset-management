@@ -1,10 +1,4 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
-<style>
-.part-doc-upload .filepond--panel-root { border: 2px dashed #3f3f46; border-radius: 12px; background: rgba(39,39,42,0.3); }
-.part-doc-upload .filepond--root:hover .filepond--panel-root { border-color: var(--color-accent, #6366f1); background: rgba(39,39,42,0.5); }
-.part-doc-upload .filepond--drop-label { min-height: 130px; }
-.part-doc-upload .filepond--drop-label label { cursor: pointer; }
-</style>
 
 {{-- ── Doc Lightbox ── --}}
 <div x-data="docLightbox()"
